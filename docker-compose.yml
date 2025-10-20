@@ -1,0 +1,50 @@
+﻿name: flashcards
+
+services:
+
+  db: 
+    image: postgres 
+    ports:
+      - "5432:5432"
+    networks:
+        - net1
+    environment: 
+      POSTGRES_USER: postgres 
+      POSTGRES_PASSWORD: postgres 
+      POSTGRES_DB: flashcards_db
+    volumes:
+      - flashcards_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 5s
+      timeout: 1s
+      retries: 5
+      
+  gatewayapi:
+    image: gatewayapi
+    build:
+      context: .
+      dockerfile: GatewayApi/Dockerfile
+    #command: ["migrate"] # flag to start the migration process - JWT_SECRET_KEY = "test_secret_for_migrations"; Add-Migration Tokens -Project Infrastructure -StartupProject GatewayApi
+    ports:
+      - "8080:8080"
+    networks:
+      - net1
+    environment:
+      - ConnectionStrings__FlashCardsConnectionString=${FLASHCARDS_DB_CONNECTION_STRING} # connection string from .env or secrets
+      - ASPNETCORE_ENVIRONMENT=Development 
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - FILE_STORAGE_PATH=/storage/images
+    volumes:
+      - ./Infrastructure/Storage/Images:/storage/images
+    depends_on:
+      db:      
+        condition: service_healthy
+    
+
+networks:
+  net1:
+    driver: bridge
+
+volumes:
+    flashcards_db_data:
