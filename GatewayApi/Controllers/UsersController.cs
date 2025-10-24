@@ -39,7 +39,6 @@ namespace GatewayApi.Controllers
             _logger = logger;
         }
 
-
         /// <summary>        
         /// Gets user info
         /// </summary>
@@ -58,7 +57,7 @@ namespace GatewayApi.Controllers
 
             var user = await _userService.GetByIdAsync(id, ct);
             if (user == null)
-                throw new KeyNotFoundException($"User with ID {id} not found.");
+                return NotFound("User not found.");
 
             var dto = UserMapper.ToDto(user);
             return Ok(dto);
@@ -90,9 +89,9 @@ namespace GatewayApi.Controllers
             _logger.LogInformation($"> UsersController.Register: Username = {user.Username}");
             User newUser = UserMapper.ToDomain(user);
             var createdUser = await _userService.CreateAsync(newUser, ct);
+            var dto = UserMapper.ToDto(createdUser);
 
-            // Returning 201 Created with a link to the newly created user
-            return CreatedAtAction(nameof(GetById), new { id = createdUser.Id }, createdUser);
+            return CreatedAtAction(nameof(GetById), new { id = dto.Id }, dto);
         }
 
         /// <summary>

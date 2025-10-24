@@ -1,8 +1,10 @@
 ﻿using Application.DTO.User;
 using Domain.Entities;
+using Shared;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -15,6 +17,7 @@ namespace Application.Mapping
             return new UserInfoDto
             {
                 Id = user.Id,
+                Username = user.Username,
                 AccessToken = accessToken ?? string.Empty,
                 RefreshToken = refreshToken ?? string.Empty,
             };
@@ -27,6 +30,8 @@ namespace Application.Mapping
                 Username = dto.Username,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
                 Email = dto.Email,
+                Level = Levels.A1,
+                LastActive = DateTime.UtcNow,
             };
         }
 

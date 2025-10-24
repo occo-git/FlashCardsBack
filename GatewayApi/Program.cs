@@ -1,8 +1,10 @@
 ﻿using Application.Extentions;
+using FluentValidation;
 using GatewayApi.Extensions;
 using Infrastructure;
-using Infrastructure.Services;
 using Infrastructure.Services.Contracts;
+using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi.Models;
 using Shared;
 
@@ -52,7 +54,7 @@ builder.Services.AddEndpointsApiExplorer(); // Swagger/OpenAPI
 builder.Services.AddSwaggerGen(); // SwaggerGen
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc(SharedConstants.ApiVersion, 
+    c.SwaggerDoc(SharedConstants.ApiVersion,
         new OpenApiInfo
         {
             Title = SharedConstants.ApiTitle,
@@ -61,14 +63,17 @@ builder.Services.AddSwaggerGen(c =>
 });
 #endregion
 
-#region ProblemDetails (RFC 7807)
+#region ⚠️ ProblemDetails (RFC 7807)
 builder.Services.AddProblemDetails(options =>
 {
     options.CustomizeProblemDetails = context =>
     {
-        // Add a traceId to the response
-        context.ProblemDetails.Extensions["traceId"] = context.HttpContext.TraceIdentifier;
         context.ProblemDetails.Detail ??= "An error occurred. Please try again.";
+        // IHostEnvironment from services
+        var env = context.HttpContext.RequestServices.GetRequiredService<IHostEnvironment>();
+        if (env.IsDevelopment())
+            // Add a traceId to the response in development
+            context.ProblemDetails.Extensions["traceId"] = context.HttpContext.TraceIdentifier;
 
         context.ProblemDetails.Title = context.HttpContext.Response.StatusCode switch
         {
@@ -76,6 +81,9 @@ builder.Services.AddProblemDetails(options =>
             StatusCodes.Status404NotFound => "Not Found",
             StatusCodes.Status401Unauthorized => "Unauthorized",
             StatusCodes.Status403Forbidden => "Forbidden",
+            StatusCodes.Status408RequestTimeout => "Request Timeout",
+            StatusCodes.Status409Conflict => "Conflict",
+            StatusCodes.Status422UnprocessableEntity => "Unprocessable Entity",
             StatusCodes.Status500InternalServerError => "Internal Server Error",
             _ => context.ProblemDetails.Title
         };
@@ -98,29 +106,87 @@ if (args.Length > 0 && args[0].Equals(InfrastructureConstants.Migrate, StringCom
 }
 #endregion
 
+#region ⚠️ Exception handling
+//if (app.Environment.IsDevelopment())
+//{
+//    // In development: detaild HTML-page for debuging
+//    app.UseDeveloperExceptionPage();
+//}
+//else
+{
+    // In production: intercepts  exceptions and returns secure JSON (Problem Details)
+    app.UseExceptionHandler(errorApp =>
+    {
+        errorApp.Run(async context =>
+        {
+            var problemDetailsService = context.RequestServices.GetRequiredService<IProblemDetailsService>();
+            var exception = context.Features.Get<IExceptionHandlerPathFeature>()?.Error;
+            var problem = new ProblemDetails
+            {
+                Status = exception switch
+                {
+                    ArgumentException _ => StatusCodes.Status400BadRequest,
+                    UnauthorizedAccessException _ => StatusCodes.Status403Forbidden,
+                    KeyNotFoundException _ => StatusCodes.Status404NotFound,
+                    OperationCanceledException _ => StatusCodes.Status408RequestTimeout,
+                    ValidationException _ => StatusCodes.Status422UnprocessableEntity,
+                    ApplicationException _ => StatusCodes.Status409Conflict,
+                    _ => StatusCodes.Status500InternalServerError
+                },
+                Detail = exception?.Message
+            };
+
+            // Exception logging
+            //if (exception != null)
+            //{
+            //    var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+            //    logger.LogError(exception, "Unhandled exception occurred at {Path}", context.Request.Path);
+            //}
+
+            await problemDetailsService.WriteAsync(new ProblemDetailsContext
+            {
+                HttpContext = context,
+                ProblemDetails = problem
+            });
+        });
+    });
+}
+#endregion
+
 #region Middleware
-// custom middleware can be added here ...
+//app.UseMiddleware<ApiExceptionHandler>(); // ⚠️ Custom exception handling middleware
 app.UseRouting();
 app.UseHttpsRedirection();
 app.UseCors(CONST_CorsPolicy);
-app.UseStatusCodePages(); // middleware to return status code pages for HTTP errors 
 
 if (app.Environment.IsDevelopment())
 {
-    app.UseDeveloperExceptionPage(); // detailed error pages in development
     app.UseSwagger(); // generate Swagger as a JSON endpoint
     app.UseSwaggerUI(); // Swagger UI at /swagger
     app.MapGet("/", () => Results.Redirect("/swagger")); // redirect from "/" to "/swagger"
 }
-else
-{
-    app.UseExceptionHandler(); // generic error handler in production
-    app.UseStatusCodePages(); // middleware to return status code pages for HTTP errors
-}
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+// ⚠️ middleware to return status code pages for HTTP errors - app.UseStatusCodePages();
+app.UseStatusCodePagesWithReExecute("/error/{0}");
 #endregion
+
+// Route to process errors by status code
+app.MapGet("/error/{code}", (int code, HttpContext context) =>
+{
+    var problemDetailsService = context.RequestServices.GetRequiredService<IProblemDetailsService>();
+    var problem = new ProblemDetails
+    {
+        Status = code
+    };
+    return problemDetailsService.WriteAsync(new ProblemDetailsContext
+    {
+        HttpContext = context,
+        ProblemDetails = problem
+    });
+});
 
 app.MapControllers();
 

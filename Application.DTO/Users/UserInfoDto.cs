@@ -9,6 +9,7 @@ namespace Application.DTO.User
     public record UserInfoDto
     {
         public Guid Id { get; set; }
+        public string Username { get; set; } = string.Empty;
         public string AccessToken { get; set; } = string.Empty;
         public string RefreshToken { get; set; } = string.Empty;
     }
