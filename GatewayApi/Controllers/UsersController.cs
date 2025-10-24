@@ -43,13 +43,13 @@ namespace GatewayApi.Controllers
         /// Gets user info
         /// </summary>
         /// <remarks>
-        /// GET: api/users/info/{id}
+        /// GET: api/users/{id}
         /// Requires authentication.
         /// </remarks>
         /// <returns>
         /// A user info.
         /// </returns>
-        [HttpGet("info/{id:guid}")]
+        [HttpGet("{id:guid}")]
         [Authorize]
         public async Task<ActionResult<UserInfoDto>> GetById(Guid id, CancellationToken ct)
         {

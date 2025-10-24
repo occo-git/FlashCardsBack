@@ -26,21 +26,8 @@ namespace GatewayApi.Controllers
         }
 
         /// <summary>
-        /// Get cards
-        /// GET: api/cards?lastId={lastId}&pageSize={pageSize}
-        /// <param name="request">Request parameters</param>
-        /// </summary>
-        [HttpGet]
-        public IAsyncEnumerable<CardDto?> GetCards(
-            [FromQuery] long lastId,
-            [FromQuery] int pageSize,
-            CancellationToken ct)
-        {
-            return _wordService.GetCards(new GetCardsDto(lastId, pageSize), ct);
-        }
-
-        /// <summary>
         /// Get card by id
+        /// GET: api/cards/{id}
         /// </summary>
         /// <param name="id">Card ID</param>
         /// <returns></returns>
@@ -55,5 +42,20 @@ namespace GatewayApi.Controllers
 
             return Ok(card);
         }
+
+        /// <summary>
+        /// Get cards
+        /// GET: api/cards/deck?lastId={lastId}&pageSize={pageSize}
+        /// <param name="request">Request parameters</param>
+        /// </summary>
+        [HttpGet("deck")]
+        public IAsyncEnumerable<CardDto?> GetCards(
+            [FromQuery] long lastId,
+            [FromQuery] int pageSize,
+            CancellationToken ct)
+        {
+            return _wordService.GetCards(new GetCardsDto(lastId, pageSize), ct);
+        }
+
     }
 }

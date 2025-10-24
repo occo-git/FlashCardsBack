@@ -28,6 +28,11 @@ namespace GatewayApi.Controllers
         //    }
         //}
 
+        /// <summary>
+        /// GET: api/images/{fileId}
+        /// </summary>
+        /// <param name="fileId"></param>
+        /// <returns></returns>
         [HttpGet("{fileId}")]
         public IActionResult GetFile(string fileId)
         {
