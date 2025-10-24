@@ -131,6 +131,27 @@ namespace GatewayApi.Controllers
         }
 
         /// <summary>
+        /// Updates refresh token to a new one
+        /// </summary>
+        /// <remarks>
+        /// POST: api//users/refresh
+        /// </remarks>
+        /// <param name="request">The old refresh token.</param>
+        /// <returns>
+        /// New refresh token for the authenticated user.
+        /// </returns>
+        [HttpPost("refresh")]
+        [Authorize]
+        public async Task<ActionResult<TokenResponseDto>> Refresh(
+            [FromBody] RefreshTokenRequestDto request,
+            CancellationToken ct)
+        {
+            var sessionId = GetSessionIdFromHeader();
+            var tokenResponse = await _authenticationService.UpdateTokensAsync(request.RefreshToken, sessionId, ct);
+            return Ok(tokenResponse);
+        }
+
+        /// <summary>
         /// Gets the currently logged-in user information
         /// </summary>
         /// <remarks>
@@ -142,20 +163,20 @@ namespace GatewayApi.Controllers
         [Authorize]
         public async Task<ActionResult<UserInfoDto>> GetLoggedUser(CancellationToken token)
         {
-            return await GetCurrentUser<UserInfoDto>(token, async (ct, ut) =>
+            return await GetCurrentUser<UserInfoDto>(token, async (ct, userId) =>
             {
-                _logger.LogInformation("> UsersController.GetLoggedUser: Finding user: Id={id}", ut.UserId);
-                var user = await _userService.GetByIdAsync(ut.UserId, ct);
+                _logger.LogInformation("> UsersController.GetLoggedUser: Finding user: Id={id}", userId);
+                var user = await _userService.GetByIdAsync(userId, ct);
                 if (user == null)
                 {
-                    _logger.LogWarning("> UsersController.GetLoggedUser: User not found: Id={id}", ut.UserId);
+                    _logger.LogWarning("> UsersController.GetLoggedUser: User not found: Id={id}", userId);
                     return NotFound("User not found");
                 }
                 else
                 {
                     _logger.LogInformation("> UsersController.GetLoggedUser: Found user: Id={id}, Username={username}", user.Id, user.Username);
                     //_logger.LogInformation("Access token {accessToken}", accessToken);
-                    var dto = UserMapper.ToDto(user, ut.AccessToken, ut.RefreshToken);
+                    var dto = UserMapper.ToDto(user);
                     return Ok(dto);
                 }
             });
@@ -172,21 +193,19 @@ namespace GatewayApi.Controllers
         [Authorize]
         public async Task<ActionResult<bool>> Logout(CancellationToken token)
         {
-            return await GetCurrentUser<bool>(token, async (ct, ut) =>
+            return await GetCurrentUser<bool>(token, async (ct, userId) =>
             {
                 var sessionId = GetSessionIdFromHeader();
-                await _authenticationService.RevokeRefreshTokensAsync(ut.UserId, sessionId, ct);
+                await _authenticationService.RevokeRefreshTokensAsync(userId, sessionId, ct);
                 return Ok(true);
             });
         }
 
         private async Task<ActionResult<T>> GetCurrentUser<T>(
             CancellationToken ct,
-            Func<CancellationToken, UserTokens, Task<ActionResult<T>>> action)
+            Func<CancellationToken, Guid, Task<ActionResult<T>>> action)
         {
             var id = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var accessToken = GetAccessTokenFromHeader();
-            var refreshToken = GetRefreshTokenFromHeader();
             if (string.IsNullOrEmpty(id))
             {
                 _logger.LogWarning("> UsersController.GetCurrentUser: User ID claim not found");
@@ -195,7 +214,7 @@ namespace GatewayApi.Controllers
 
             if (Guid.TryParse(id, out var userId))
             {
-                return await action(ct, new UserTokens(userId, accessToken, refreshToken));
+                return await action(ct, userId);
             }
             else
             {
@@ -205,10 +224,5 @@ namespace GatewayApi.Controllers
         }
 
         private string GetSessionIdFromHeader() => Request.Headers[HeaderNames.SessionId].FirstOrDefault() ?? string.Empty;
-        private string GetAccessTokenFromHeader() => Request.Headers[HeaderNames.AccessToken].FirstOrDefault() ?? string.Empty;
-        private string GetRefreshTokenFromHeader() => Request.Headers[HeaderNames.RefreshToken].FirstOrDefault() ?? string.Empty;
-
-
-        private record UserTokens(Guid UserId, string? AccessToken, string? RefreshToken);
     }
 }

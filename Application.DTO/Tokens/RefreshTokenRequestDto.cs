@@ -6,9 +6,8 @@ using System.Threading.Tasks;
 
 namespace Application.DTO.User
 {
-    public record UserInfoDto
+    public record RefreshTokenRequestDto
     {
-        public Guid Id { get; set; }
-        public string Username { get; set; } = string.Empty;
+        public string RefreshToken { get; init; } = string.Empty;
     }
 }
