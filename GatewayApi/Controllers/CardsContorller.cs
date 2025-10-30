@@ -1,9 +1,8 @@
 ﻿using Application.DTO.Words;
 using Application.Services.Contracts;
-using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
-using System.Runtime.CompilerServices;
+using Shared;
 
 namespace GatewayApi.Controllers
 {
@@ -12,16 +11,13 @@ namespace GatewayApi.Controllers
     public class CardsController : ControllerBase
     {
         private readonly IWordService _wordService;
-        private readonly IUserService _userService;
         private readonly ILogger<CardsController> _logger;
 
         public CardsController(
             IWordService wordService,
-            IUserService userService,
             ILogger<CardsController> logger)
         {
             _wordService = wordService;
-            _userService = userService;
             _logger = logger;
         }
 
@@ -32,6 +28,7 @@ namespace GatewayApi.Controllers
         /// <param name="id">Card ID</param>
         /// <returns></returns>
         [HttpGet("{id:long}")]
+        [Authorize]
         public async Task<IActionResult> GetCardById(
             [FromRoute] long id,
             CancellationToken ct)
@@ -45,17 +42,78 @@ namespace GatewayApi.Controllers
 
         /// <summary>
         /// Get cards
-        /// GET: api/cards/deck?lastId={lastId}&pageSize={pageSize}
+        /// POST: api/cards/card-from-deck
         /// <param name="request">Request parameters</param>
         /// </summary>
-        [HttpGet("deck")]
-        public IAsyncEnumerable<CardDto?> GetCards(
-            [FromQuery] long lastId,
-            [FromQuery] int pageSize,
+        [HttpPost("card-from-deck")]
+        [Authorize]
+        public Task<CardExtendedDto?> GetCardFromDeck(
+            [FromBody] CardRequestDto request,
             CancellationToken ct)
         {
-            return _wordService.GetCards(new GetCardsDto(lastId, pageSize), ct);
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+            return _wordService.GetCardWithNeighbors(request, ct);
         }
 
+        /// <summary>
+        /// Get cards
+        /// POST: api/cards/deck
+        /// <param name="request">Request parameters</param>
+        /// </summary>
+        [HttpPost("deck")]
+        [Authorize]
+        public IAsyncEnumerable<CardDto?> GetCardsFromDeck(
+            [FromBody] CardsPageRequestDto request,
+            CancellationToken ct)
+        {
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+            return _wordService.GetCards(request, ct);
+        }
+
+        /// <summary>
+        /// Get cards
+        /// POST: api/cards/list
+        /// <param name="request">Request parameters</param>
+        /// </summary>
+        [HttpPost("list")]
+        [Authorize]
+        public IAsyncEnumerable<WordDto?> GetWordList(
+            [FromBody] CardsPageRequestDto request,
+            CancellationToken ct)
+        {
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+            return _wordService.GetWords(request, ct);
+        }
+
+        /// <summary>
+        /// Get levels
+        /// GET: api/cards/levels
+        /// </summary>
+        [HttpGet("levels")]
+        [Authorize]
+        public IEnumerable<string> GetLevels(CancellationToken ct)
+        {
+            return Levels.All;
+        }
+
+        /// <summary>
+        /// Get levels
+        /// POST: api/cards/themes
+        /// </summary>
+        [HttpPost("themes")]
+        [Authorize]
+        public IAsyncEnumerable<ThemeDto?> GetThemes(
+            [FromBody] LevelFilterDto filter,
+            CancellationToken ct)
+        {
+            _logger.LogInformation("CardsController.GetThemes: {filter}", filter);
+
+            if (filter == null)
+                throw new ArgumentNullException(nameof(filter));
+            return _wordService.GetThemes(filter, ct);
+        }
     }
 }

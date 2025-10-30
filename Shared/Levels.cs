@@ -14,5 +14,10 @@ namespace Shared
         public const string B2 = "B2";
         public const string C1 = "C1";
         public const string C2 = "C2";
+
+        public static string[] All
+        {
+            get { return new string[] { A1, A2, B1, B2, C1, C2 }; }
+        }
     }
 }

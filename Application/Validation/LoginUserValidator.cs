@@ -1,4 +1,4 @@
-﻿using Application.DTO.User;
+﻿using Application.DTO.Users;
 using FluentValidation;
 using System;
 using System.Collections.Generic;
@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Application.Validation
 {
-    public class LoginUserValidator : AbstractValidator<LoginUserDto>
+    public class LoginUserValidator : AbstractValidator<LoginRequestDto>
     {
         public LoginUserValidator()
         {

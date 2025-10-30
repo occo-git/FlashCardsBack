@@ -10,7 +10,10 @@ namespace Application.Services.Contracts
 {
     public interface IWordService
     {
-        IAsyncEnumerable<CardDto?> GetCards(GetCardsDto? request, CancellationToken ct);
         Task<CardDto?> GetCardById(long wordId, CancellationToken ct);
+        IAsyncEnumerable<CardDto?> GetCards(CardsPageRequestDto request, CancellationToken ct);
+        IAsyncEnumerable<WordDto?> GetWords(CardsPageRequestDto request, CancellationToken ct);
+        Task<CardExtendedDto?> GetCardWithNeighbors(CardRequestDto request, CancellationToken ct);
+        IAsyncEnumerable<ThemeDto?> GetThemes(LevelFilterDto filter, CancellationToken ct);
     }
 }

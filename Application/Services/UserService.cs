@@ -98,13 +98,26 @@ namespace Application.Services
             return existingUser;
         }
 
-        public async Task<bool> DeleteAsync(Guid id, CancellationToken ct)
+        public async Task<bool> DeleteAsync(Guid userId, CancellationToken ct)
         {
             using var context = await _dbContextFactory.CreateDbContextAsync(ct);
-            var user = await context.Users.FindAsync(id, ct);
+            var user = await context.Users.FindAsync(userId, ct);
             if (user == null) return false;
 
             context.Users.Remove(user);
+            await context.SaveChangesAsync(ct);
+
+            return true;
+        }
+
+        public async Task<bool> SetLevel(Guid userId, string level, CancellationToken ct)
+        {
+            using var context = await _dbContextFactory.CreateDbContextAsync();
+            var existingUser = await context.Users.FindAsync(userId, ct);
+            if (existingUser == null)
+                throw new KeyNotFoundException("User not found");
+
+            existingUser.Level = level;
             await context.SaveChangesAsync(ct);
 
             return true;

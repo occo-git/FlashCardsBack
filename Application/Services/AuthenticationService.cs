@@ -1,5 +1,5 @@
 ﻿using Application.DTO.Tokens;
-using Application.DTO.User;
+using Application.DTO.Users;
 using Application.Extensions;
 using Application.Mapping;
 using Application.Services.Contracts;
@@ -25,7 +25,7 @@ namespace Application.Services
     {
         private readonly IDbContextFactory<DataContext> _dbContextFactory;
         private readonly IRefreshTokenRepository _refreshTokenRepository;
-        private readonly IValidator<LoginUserDto> _loginValidator;
+        private readonly IValidator<LoginRequestDto> _loginValidator;
         private readonly SymmetricSecurityKey _sKey;
         private readonly ITokenGenerator<string> _accessTokenGenerator;
         private readonly ITokenGenerator<RefreshToken> _refreshTokenGenerator;
@@ -34,7 +34,7 @@ namespace Application.Services
         public AuthenticationService(
             IDbContextFactory<DataContext> dbContextFactory,
             IRefreshTokenRepository refreshTokenRepository,
-            IValidator<LoginUserDto> loginValidator,
+            IValidator<LoginRequestDto> loginValidator,
             SymmetricSecurityKey sKey,
             ITokenGenerator<string> accessTokenGenerator,
             ITokenGenerator<RefreshToken> refreshTokenGenerator,
@@ -53,7 +53,7 @@ namespace Application.Services
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public async Task<TokenResponseDto> AuthenticateAsync(LoginUserDto loginUserDto, string sessionId, CancellationToken ct)
+        public async Task<TokenResponseDto> AuthenticateAsync(LoginRequestDto loginUserDto, string sessionId, CancellationToken ct)
         {
             await _loginValidator.ValidationCheck(loginUserDto);
             _logger.LogInformation("Authenticate user: {Username}", loginUserDto.Username);

@@ -11,6 +11,7 @@ namespace Application.Services.Contracts
         Task<IAsyncEnumerable<User>> GetAllAsyncEnumerable(CancellationToken ct);
         Task<User> CreateAsync(User user, CancellationToken ct);
         Task<User> UpdateAsync(User user, CancellationToken ct);
-        Task<bool> DeleteAsync(Guid id, CancellationToken ct);
+        Task<bool> DeleteAsync(Guid userId, CancellationToken ct);
+        Task<bool> SetLevel(Guid userId, string level, CancellationToken ct);
     }
 }

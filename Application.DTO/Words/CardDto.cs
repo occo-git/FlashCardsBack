@@ -15,4 +15,8 @@ namespace Application.DTO.Words
         string Example, 
         string Level, 
         int Difficulty);
+
+    public record CardExtendedDto(CardDto? Card, CardInfo? PrevCard, CardInfo? NextCard, int Index, int Total);
+
+    public record CardInfo(long Id, string WordText);
 }

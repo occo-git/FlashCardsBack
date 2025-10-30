@@ -4,11 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Application.DTO.User
+namespace Application.DTO.Users
 {
     public record UserInfoDto
     {
         public Guid Id { get; set; }
         public string Username { get; set; } = string.Empty;
+        public string Level { get; set; } = string.Empty;
     }
 }

@@ -3,7 +3,7 @@
 services:
 
   db: 
-    image: postgres 
+    image: postgres
     ports:
       - "5432:5432"
     networks:
@@ -13,7 +13,7 @@ services:
       POSTGRES_PASSWORD: postgres 
       POSTGRES_DB: flashcards_db
     volumes:
-      - flashcards_db_data:/var/lib/postgresql/data
+      - flashcards_db_data:/var/lib/postgresql
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "postgres"]
       interval: 5s

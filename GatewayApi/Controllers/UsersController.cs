@@ -1,5 +1,5 @@
 ﻿using Application.DTO.Tokens;
-using Application.DTO.User;
+using Application.DTO.Users;
 using Application.Extensions;
 using Application.Mapping;
 using Application.Services;
@@ -77,8 +77,8 @@ namespace GatewayApi.Controllers
         [HttpPost("register")]
         [AllowAnonymous]
         public async Task<ActionResult<UserInfoDto>> Register(
-            [FromBody] CreateUserDto user,
-            [FromServices] IValidator<CreateUserDto> validator,
+            [FromBody] RegisterRequestDto user,
+            [FromServices] IValidator<RegisterRequestDto> validator,
             CancellationToken ct)
         {
             if (user == null)
@@ -108,8 +108,8 @@ namespace GatewayApi.Controllers
         [HttpPost("login")]
         [AllowAnonymous]
         public async Task<ActionResult<TokenResponseDto>> Login(
-            [FromBody] LoginUserDto user,
-            [FromServices] IValidator<LoginUserDto> validator,
+            [FromBody] LoginRequestDto user,
+            [FromServices] IValidator<LoginRequestDto> validator,
             CancellationToken ct)
         {
             if (user == null)
@@ -146,6 +146,9 @@ namespace GatewayApi.Controllers
             [FromBody] RefreshTokenRequestDto request,
             CancellationToken ct)
         {
+            if (request == null)
+                throw new ArgumentNullException(nameof(request), "Request cannot be null");
+
             var sessionId = GetSessionIdFromHeader();
             var tokenResponse = await _authenticationService.UpdateTokensAsync(request.RefreshToken, sessionId, ct);
             return Ok(tokenResponse);
@@ -197,6 +200,29 @@ namespace GatewayApi.Controllers
             {
                 var sessionId = GetSessionIdFromHeader();
                 await _authenticationService.RevokeRefreshTokensAsync(userId, sessionId, ct);
+                return Ok(true);
+            });
+        }
+
+        /// <summary>
+        /// Sets the Level of the currently logged-in user
+        /// </summary>
+        /// <remarks>
+        /// POST: api/users/level
+        /// Requires authentication.
+        /// </remarks>
+        [HttpPost("level")]
+        [Authorize]
+        public async Task<ActionResult<bool>> SetLevel(
+            [FromBody] LevelRequestDto request,
+            CancellationToken token)
+        {
+            if (request == null)
+                throw new ArgumentNullException(nameof(request), "Request cannot be null");
+
+            return await GetCurrentUser<bool>(token, async (ct, userId) =>
+            {
+                await _userService.SetLevel(userId, request.Level, ct);
                 return Ok(true);
             });
         }

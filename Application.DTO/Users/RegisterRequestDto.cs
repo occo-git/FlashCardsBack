@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Application.DTO.User
+namespace Application.DTO.Users
 {
-    public record CreateUserDto
+    public record RegisterRequestDto
     {
         public string Username { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;

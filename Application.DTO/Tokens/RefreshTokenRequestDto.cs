@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Application.DTO.User
+namespace Application.DTO.Tokens
 {
     public record RefreshTokenRequestDto
     {

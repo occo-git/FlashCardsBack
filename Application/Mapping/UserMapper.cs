@@ -1,4 +1,4 @@
-﻿using Application.DTO.User;
+﻿using Application.DTO.Users;
 using Domain.Entities;
 using Shared;
 using System;
@@ -17,11 +17,12 @@ namespace Application.Mapping
             return new UserInfoDto
             {
                 Id = user.Id,
-                Username = user.Username
+                Username = user.Username,
+                Level = user.Level
             };
         }
 
-        public static User ToDomain(CreateUserDto dto)
+        public static User ToDomain(RegisterRequestDto dto)
         {
             return new User
             {
@@ -33,7 +34,7 @@ namespace Application.Mapping
             };
         }
 
-        public static bool CheckPassword(User user, LoginUserDto loginUserDto)
+        public static bool CheckPassword(User user, LoginRequestDto loginUserDto)
         {
             return BCrypt.Net.BCrypt.Verify(loginUserDto.Password, user.PasswordHash);
         }

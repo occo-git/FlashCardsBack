@@ -6,5 +6,9 @@ using System.Threading.Tasks;
 
 namespace Application.DTO.Words
 {
-    public record ThemeDto(long Id, string Level, TranslationDto Translation, int WordsCount);
+    public record WordDto(
+        long Id, 
+        string Text, 
+        TranslationDto Translation
+    );
 }

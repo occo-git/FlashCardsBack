@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Application.DTO.User
+namespace Application.DTO.Users
 {
-    public record LoginUserDto
+    public record LoginRequestDto
     {
         public string Username { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;

@@ -6,8 +6,5 @@ using System.Threading.Tasks;
 
 namespace Application.DTO.Words
 {
-    public record GetCardsDto(long LastId, int PageSize)
-    {
-        public static GetCardsDto Default => new(0, 10);
-    }
+    public record DeckFilterDto(string Level, int IsMarked, int ThemeId, int Difficulty);
 }
