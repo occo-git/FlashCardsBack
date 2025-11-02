@@ -12,7 +12,8 @@ namespace Application.Services.Contracts
     {
         Task<CardDto?> GetCardById(long wordId, CancellationToken ct);
         IAsyncEnumerable<CardDto?> GetCards(CardsPageRequestDto request, CancellationToken ct);
-        IAsyncEnumerable<WordDto?> GetWords(CardsPageRequestDto request, CancellationToken ct);
+        IAsyncEnumerable<WordDto?> GetWords(CardsPageRequestDto request, CancellationToken ct);        
+        Task<CardDto?> ChangeMark(long wordId, CancellationToken ct);
         Task<CardExtendedDto?> GetCardWithNeighbors(CardRequestDto request, CancellationToken ct);
         IAsyncEnumerable<ThemeDto?> GetThemes(LevelFilterDto filter, CancellationToken ct);
     }

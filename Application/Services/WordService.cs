@@ -140,6 +140,23 @@ namespace Application.Services
                 total);
         }
 
+        public async Task<CardDto?> ChangeMark(long wordId, CancellationToken ct) 
+        {
+            _logger.LogInformation("ChangeMark: WordId = {WordId}", wordId);
+
+            await using var dbContext = _dbContextFactory.CreateDbContext();
+            var word = await dbContext.Words
+                .FirstOrDefaultAsync(w => w.Id == wordId, ct);
+
+            if (word != null)
+            {
+                word.Mark = !word.Mark;
+                await dbContext.SaveChangesAsync();
+            }
+
+            return word.ToCardDto();
+        }
+
         public async IAsyncEnumerable<ThemeDto?> GetThemes(LevelFilterDto filter, [EnumeratorCancellation] CancellationToken ct)
         {
             _logger.LogInformation("GetThemes: {filter}", filter);

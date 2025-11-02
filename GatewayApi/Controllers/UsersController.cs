@@ -70,7 +70,7 @@ namespace GatewayApi.Controllers
         /// POST: api/users/register
         /// This endpoint is open to anonymous users.
         /// </remarks>
-        /// <param name="registerUser">The user registration details.</param>
+        /// <param name="user">The user registration details.</param>
         /// <returns>
         /// The created user information.
         /// </returns>
@@ -98,10 +98,10 @@ namespace GatewayApi.Controllers
         /// Logs in a user and returns a JWT token
         /// </summary>
         /// <remarks>
-        /// POST: api//users/login
+        /// POST: api/users/login
         /// This endpoint is open to anonymous users.
         /// </remarks>
-        /// <param name="loginUser">The user login details.</param>
+        /// <param name="user">The user login details.</param>
         /// <returns>
         /// JWT tokens for the authenticated user.
         /// </returns>
@@ -134,7 +134,8 @@ namespace GatewayApi.Controllers
         /// Updates refresh token to a new one
         /// </summary>
         /// <remarks>
-        /// POST: api//users/refresh
+        /// POST: api/users/refresh
+        /// Requires authentication.
         /// </remarks>
         /// <param name="request">The old refresh token.</param>
         /// <returns>

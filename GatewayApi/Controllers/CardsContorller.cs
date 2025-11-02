@@ -2,6 +2,7 @@
 using Application.Services.Contracts;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Filters;
 using Shared;
 
 namespace GatewayApi.Controllers
@@ -70,6 +71,26 @@ namespace GatewayApi.Controllers
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
             return _wordService.GetCards(request, ct);
+        }
+
+        /// <summary>
+        /// Changes card Mark property
+        /// POST: api/cards/change-mark
+        /// <param name="request">Request parameters</param>
+        /// </summary>
+        [HttpPost("change-mark")]
+        [Authorize]
+        public async Task<IActionResult> ChangeMark(
+            [FromBody] WordRequestDto request,
+            CancellationToken ct)
+        {
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+            var card = await _wordService.ChangeMark(request.WordId, ct);
+            if (card == null)
+                return NotFound();
+
+            return Ok(card);
         }
 
         /// <summary>

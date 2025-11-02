@@ -24,6 +24,7 @@ namespace Application.Mapping
                 LocalizationMapper.GetLocalizationDto(word.Translation),
                 word.Example ?? String.Empty,
                 word.Level,
+                word.Mark,
                 word.Difficulty
             );
         }
@@ -42,7 +43,8 @@ namespace Application.Mapping
             return new WordDto(
                 word.Id,
                 word.WordText,
-                LocalizationMapper.GetLocalizationDto(word.Translation)
+                LocalizationMapper.GetLocalizationDto(word.Translation),
+                word.Mark
             );
         }
     }

@@ -8,12 +8,13 @@ namespace Application.DTO.Words
 {
     public record CardDto(
         long Id, 
-        string Text, 
+        string WordText, 
         string Transcription,
         string PartOfSpeech,
         TranslationDto Translation, 
         string Example, 
         string Level, 
+        bool isMarked,
         int Difficulty);
 
     public record CardExtendedDto(CardDto? Card, CardInfo? PrevCard, CardInfo? NextCard, int Index, int Total);

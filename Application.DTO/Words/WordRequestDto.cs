@@ -6,10 +6,5 @@ using System.Threading.Tasks;
 
 namespace Application.DTO.Words
 {
-    public record WordDto(
-        long Id, 
-        string Text, 
-        TranslationDto Translation,
-        bool IsMarked
-    );
+    public record WordRequestDto(long WordId);
 }

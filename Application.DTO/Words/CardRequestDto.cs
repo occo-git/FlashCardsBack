@@ -6,5 +6,5 @@ using System.Threading.Tasks;
 
 namespace Application.DTO.Words
 {
-    public record CardRequestDto(int WordId, DeckFilterDto Filter);
+    public record CardRequestDto(long WordId, DeckFilterDto Filter);
 }
