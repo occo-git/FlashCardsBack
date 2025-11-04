@@ -17,13 +17,16 @@ namespace Application.Services
     public class WordService : IWordService
     {
         private readonly IDbContextFactory<DataContext> _dbContextFactory;
+        private readonly IWordQueryBuilder _wordQueryBuilder;
         private readonly ILogger _logger;
 
         public WordService(
             IDbContextFactory<DataContext> dbContextFactory,
+            IWordQueryBuilder wordQueryBuilder,
             ILogger<WordService> logger)
         {
             _dbContextFactory = dbContextFactory ?? throw new ArgumentNullException(nameof(dbContextFactory));
+            _wordQueryBuilder = wordQueryBuilder ?? throw new ArgumentNullException(nameof(wordQueryBuilder));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -42,6 +45,7 @@ namespace Application.Services
         public async IAsyncEnumerable<CardDto?> GetCards(CardsPageRequestDto request, [EnumeratorCancellation] CancellationToken ct)
         {
             _logger.LogInformation("GetCards: {request}", request);
+
             await using var dbContext = _dbContextFactory.CreateDbContext();
             var words = GetWords(dbContext, request, ct);
             await foreach (var word in words.WithCancellation(ct))
@@ -56,14 +60,14 @@ namespace Application.Services
             var words = GetWords(dbContext, request, ct);
             await foreach (var word in words.WithCancellation(ct))
             {
-                Console.WriteLine(word);
+                //Console.WriteLine(word);
                 yield return word.ToWordDto();
             }
         }
 
         private async IAsyncEnumerable<Word> GetWords(DataContext dbContext, CardsPageRequestDto request, [EnumeratorCancellation] CancellationToken ct)
         {
-            var query = GetQuery(dbContext, request.Filter);
+            var query = _wordQueryBuilder.BuildQuery(dbContext, request.Filter);
 
             if (request.isDirectionForward)
             {
@@ -72,7 +76,7 @@ namespace Application.Services
                     .Where(w => w.Id > request.WordId)
                     .OrderBy(w => w.Id)
                     .Take(request.PageSize);
-                Console.WriteLine(query.ToQueryString());
+                //Console.WriteLine(query.ToQueryString());
                 
                 await foreach (var word in query.AsAsyncEnumerable().WithCancellation(ct))
                     yield return word;
@@ -84,7 +88,7 @@ namespace Application.Services
                     .Where(w => w.Id < request.WordId)
                     .OrderByDescending(w => w.Id)
                     .Take(request.PageSize);
-                Console.WriteLine(query.ToQueryString());
+                //Console.WriteLine(query.ToQueryString());
 
                 // stack to reverse elements
                 var stack = new Stack<Word>();
@@ -101,7 +105,7 @@ namespace Application.Services
             _logger.LogInformation("GetCardWithNeighbors: {request}", request);
 
             await using var dbContext = _dbContextFactory.CreateDbContext();
-            var filtered = GetQuery(dbContext, request.Filter);
+            var filtered = _wordQueryBuilder.BuildQuery(dbContext, request.Filter);
 
             Word? currentCard;
             if (request.WordId == 0)
@@ -168,21 +172,9 @@ namespace Application.Services
                 .ToListAsync(ct);
             foreach (var theme in themes)
             {
-                Console.WriteLine(theme);
+                //Console.WriteLine(theme);
                 yield return theme;
             }
-        }
-
-        private IQueryable<Word> GetQuery(DataContext dbContext, DeckFilterDto filter)
-        {
-            var query = dbContext.Words.AsNoTracking().Where(w => w.Level == filter.Level);
-            if (filter.IsMarked != 0)
-                query = query.Where(w => (w.Mark ? 1 : -1) == filter.IsMarked);
-            if (filter.ThemeId > 0)
-                query = query.Where(w => w.WordThemes.Any(t => t.ThemeId == filter.ThemeId));
-            if (filter.Difficulty > 0)
-                query = query.Where(w => w.Difficulty == filter.Difficulty);
-            return query;
         }
     }
 }

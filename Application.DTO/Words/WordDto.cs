@@ -8,7 +8,8 @@ namespace Application.DTO.Words
 {
     public record WordDto(
         long Id, 
-        string Text, 
+        string WordText,
+        string PartOfSpeech,
         TranslationDto Translation,
         bool IsMarked
     );

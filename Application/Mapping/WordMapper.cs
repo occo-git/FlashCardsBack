@@ -43,6 +43,7 @@ namespace Application.Mapping
             return new WordDto(
                 word.Id,
                 word.WordText,
+                word.PartOfSpeech,
                 LocalizationMapper.GetLocalizationDto(word.Translation),
                 word.Mark
             );

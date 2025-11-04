@@ -37,7 +37,9 @@ namespace GatewayApi.Extensions
             services.AddScoped<ITokenGenerator<RefreshToken>, JwtRefreshTokenGenerator>();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IAuthenticationService, AuthenticationService>();
+            services.AddScoped<IWordQueryBuilder, WordQueryBuilder>();
             services.AddScoped<IWordService, WordService>();
+            services.AddScoped<IActivityService, ActivityService>();
 
             return services;
         }
