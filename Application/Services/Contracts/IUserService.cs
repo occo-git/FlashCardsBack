@@ -1,4 +1,5 @@
-﻿using Domain.Entities;
+﻿using Application.DTO.Activity;
+using Domain.Entities;
 
 namespace Application.Services.Contracts
 {
@@ -13,5 +14,6 @@ namespace Application.Services.Contracts
         Task<User> UpdateAsync(User user, CancellationToken ct);
         Task<bool> DeleteAsync(Guid userId, CancellationToken ct);
         Task<bool> SetLevel(Guid userId, string level, CancellationToken ct);
+        Task<bool> SaveProgress(Guid userId, ActivityProgressRequestDto request, CancellationToken ct);
     }
 }

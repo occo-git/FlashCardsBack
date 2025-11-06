@@ -1,4 +1,5 @@
 ﻿using Application.DTO.Activity;
+using Application.DTO.Words;
 using Application.Services.Contracts;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -24,6 +25,7 @@ namespace GatewayApi.Controllers
         [Authorize]
         public async Task<QuizResponseDto> GetQuiz(ActivityRequestDto request, CancellationToken ct)
         {
+            _logger.LogInformation($"GetQuiz {request}");
             if (request == null) 
                 throw new ArgumentNullException(nameof(request));
             return await _activityService.GetQuiz(request, ct);
@@ -31,11 +33,22 @@ namespace GatewayApi.Controllers
 
         [HttpPost("type-word")]
         [Authorize]
-        public async Task<QuizResponseDto> GetTypeWord(ActivityRequestDto request, CancellationToken ct)
+        public async Task<TypeWordResponseDto> GetTypeWord(ActivityRequestDto request, CancellationToken ct)
         {
+            _logger.LogInformation($"GetTypeWord {request}");
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
-            return await _activityService.GetQuiz(request, ct);
+            return await _activityService.GetTypeWord(request, ct);
+        }
+
+        [HttpPost("fill-blank")]
+        [Authorize]
+        public async Task<FillBlankResponseDto> GetFillBlank(ActivityRequestDto request, CancellationToken ct)
+        {
+            _logger.LogInformation($"GetFillBlank {request}");
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+            return await _activityService.GetFillBlank(request, ct);
         }
     }
 }

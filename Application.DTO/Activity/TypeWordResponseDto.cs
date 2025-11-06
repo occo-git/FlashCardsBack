@@ -7,5 +7,5 @@ using System.Threading.Tasks;
 
 namespace Application.DTO.Activity
 {
-    public record QuizResponseDto(string ActivityType, WordDto[] Words);
+    public record TypeWordResponseDto(string ActivityType, WordDto Word);
 }

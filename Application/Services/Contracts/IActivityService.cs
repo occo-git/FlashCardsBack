@@ -1,4 +1,5 @@
 ﻿using Application.DTO.Activity;
+using Application.DTO.Words;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,5 +11,7 @@ namespace Application.Services.Contracts
     public interface IActivityService
     {
         Task<QuizResponseDto> GetQuiz(ActivityRequestDto request, CancellationToken ct);
+        Task<TypeWordResponseDto> GetTypeWord(ActivityRequestDto request, CancellationToken ct);
+        Task<FillBlankResponseDto> GetFillBlank(ActivityRequestDto request, CancellationToken ct);
     }
 }

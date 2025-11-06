@@ -1,5 +1,7 @@
-﻿using Application.Services.Contracts;
+﻿using Application.DTO.Activity;
+using Application.Services.Contracts;
 using Domain.Entities;
+using Domain.Entities.Users;
 using Infrastructure.DataContexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -118,6 +120,53 @@ namespace Application.Services
                 throw new KeyNotFoundException("User not found");
 
             existingUser.Level = level;
+            await context.SaveChangesAsync(ct);
+
+            return true;
+        }
+
+        public async Task<bool> SaveProgress(Guid userId, ActivityProgressRequestDto request, CancellationToken ct)
+        {
+            await using var context = _dbContextFactory.CreateDbContext();
+            var existingUser = await context.Users.FindAsync(userId, ct);
+            if (existingUser == null)
+                throw new KeyNotFoundException("User not found");
+
+            // get existing progress
+            var existingProgress = await context.UserWordsProgress
+                .Where(p =>
+                    p.UserId == userId &&
+                    p.ActivityType == request.ActivityType &&
+                    p.WordId == request.WordId &&
+                    p.FillBlankId == request.FillBlankId)
+                .FirstOrDefaultAsync(ct);
+
+            if (existingProgress == null)
+            {
+                existingProgress = new UserWordsProgress()
+                {
+                    UserId = userId,
+                    ActivityType = request.ActivityType,
+                    WordId = request.WordId,
+                    FillBlankId = request.FillBlankId,
+                    CorrectCount = request.IsSuccess ? 1 : 0,
+                    TotalAttempts = 1,
+                    SuccessRate = request.IsSuccess ? 1 : 0,
+                    LastSeen = DateTime.UtcNow
+                };
+                await context.UserWordsProgress.AddAsync(existingProgress, ct);
+            }
+            else
+            {
+                var correctCount = existingProgress.CorrectCount + (request.IsSuccess ? 1 : 0);
+                var totalAttempts = existingProgress.TotalAttempts + 1;
+                var successRate = (double)correctCount / totalAttempts;
+
+                existingProgress.CorrectCount = correctCount;
+                existingProgress.TotalAttempts = totalAttempts;
+                existingProgress.SuccessRate = successRate;
+                existingProgress.LastSeen = DateTime.UtcNow;
+            }
             await context.SaveChangesAsync(ct);
 
             return true;
