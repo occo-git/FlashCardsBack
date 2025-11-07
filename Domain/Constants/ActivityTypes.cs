@@ -10,9 +10,17 @@ namespace Domain.Constants
     {
         public const string Quiz = "Quiz";
         public const string TypeWord = "Type Word";
-        public const string ChooseBlank = "Choose Blank";
         public const string FillBlank = "Fill Blank";
 
-        public static readonly HashSet<string> AllActivityTypes = new() { Quiz, TypeWord, ChooseBlank, FillBlank };
+        public static readonly HashSet<string> AllActivityTypes = new() { Quiz, TypeWord, FillBlank };
+        public static readonly Dictionary<string, int> ActivityTypeOrder;
+
+        static ActivityTypes()
+        {
+            int i = 0;
+            ActivityTypeOrder = new Dictionary<string, int>();
+            foreach (var val in AllActivityTypes)
+                ActivityTypeOrder[val] = i++;
+        }
     }
 }

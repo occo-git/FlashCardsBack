@@ -1,5 +1,6 @@
 ﻿using Application.DTO.Activity;
 using Application.Services.Contracts;
+using Domain.Constants;
 using Domain.Entities;
 using Domain.Entities.Users;
 using Infrastructure.DataContexts;
@@ -145,26 +146,44 @@ namespace Application.Services
                 new[] {
                     new ProgressSummaryGroup
                     (
-                        Name: "Total",
+                        Name: "All Cards",
                         Key: "Total",
                         CorrectCount: progressList.Sum(p => p.CorrectCount),
                         TotalAttempts: progressList.Sum(p => p.TotalAttempts)
                     ) 
                 };
 
-            // Summarize by Level
-            var levelSummaryGroups = progressList
-                .GroupBy(p => p.Word?.Level ?? "Unknown")
+            // Summarize by Activity Type
+            var activitySummaryGroups = progressList
+                .GroupBy(p => p.ActivityType ?? "Unknown")
+                .OrderBy(g =>
+                    ActivityTypes.ActivityTypeOrder.TryGetValue(g.Key, out var index) ? index : int.MaxValue
+                )
                 .Select(g => new ProgressSummaryGroup
                 (
-                    Name: "Level",
+                    Name: "By Activity",
                     Key: g.Key,
                     CorrectCount: g.Sum(p => p.CorrectCount),
                     TotalAttempts: g.Sum(p => p.TotalAttempts)
                 ));
 
+            // Summarize by Level
+            var levelSummaryGroups = progressList
+                .GroupBy(p => p.Word?.Level ?? "Unknown")
+                .Select(g => new ProgressSummaryGroup
+                (
+                    Name: "By Level",
+                    Key: g.Key,
+                    CorrectCount: g.Sum(p => p.CorrectCount),
+                    TotalAttempts: g.Sum(p => p.TotalAttempts)
+                ))
+                .OrderByDescending(g => g.Key);
+
             return new ProgressResponseDto(
-                totalSummaryGroups.Union(levelSummaryGroups).ToArray()
+                totalSummaryGroups
+                    .Union(activitySummaryGroups)
+                    .Union(levelSummaryGroups)
+                    .ToArray()
             );
         }
 
