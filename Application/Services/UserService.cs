@@ -125,6 +125,49 @@ namespace Application.Services
             return true;
         }
 
+        public async Task<ProgressResponseDto> GetProgress(Guid userId, CancellationToken ct)
+        {
+            await using var context = _dbContextFactory.CreateDbContext();
+            var existingUser = await context.Users.FindAsync(userId, ct);
+            if (existingUser == null)
+                throw new KeyNotFoundException("User not found");
+
+            var progressList = await context.UserWordsProgress
+                .AsNoTracking()
+                .Include(up => up.Word)
+                .ThenInclude(w => w!.WordThemes)
+                .ThenInclude(wt => wt.Theme)
+                .Where(up => up.UserId == userId)
+                .ToListAsync(ct);
+
+            // Total Summary across all cards
+            var totalSummaryGroups =
+                new[] {
+                    new ProgressSummaryGroup
+                    (
+                        Name: "Total",
+                        Key: "Total",
+                        CorrectCount: progressList.Sum(p => p.CorrectCount),
+                        TotalAttempts: progressList.Sum(p => p.TotalAttempts)
+                    ) 
+                };
+
+            // Summarize by Level
+            var levelSummaryGroups = progressList
+                .GroupBy(p => p.Word?.Level ?? "Unknown")
+                .Select(g => new ProgressSummaryGroup
+                (
+                    Name: "Level",
+                    Key: g.Key,
+                    CorrectCount: g.Sum(p => p.CorrectCount),
+                    TotalAttempts: g.Sum(p => p.TotalAttempts)
+                ));
+
+            return new ProgressResponseDto(
+                totalSummaryGroups.Union(levelSummaryGroups).ToArray()
+            );
+        }
+
         public async Task<bool> SaveProgress(Guid userId, ActivityProgressRequestDto request, CancellationToken ct)
         {
             await using var context = _dbContextFactory.CreateDbContext();

@@ -236,6 +236,24 @@ namespace GatewayApi.Controllers
         }
 
         /// <summary>
+        /// Get progress of the currently logged-in user
+        /// </summary>
+        /// <remarks>
+        /// GET: api/users/progress
+        /// Requires authentication.
+        /// </remarks>
+        [HttpGet("progress")]
+        [Authorize]
+        public async Task<ActionResult<ProgressResponseDto>> GetPorgress(CancellationToken token)
+        {
+            return await GetCurrentUser<ProgressResponseDto>(token, async (ct, userId) =>
+            {
+                var progress = await _userService.GetProgress(userId, ct);
+                return Ok(progress);
+            });
+        }
+
+        /// <summary>
         /// Saves an activity progress for the currently logged-in user
         /// </summary>
         /// <remarks>
