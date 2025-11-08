@@ -1,5 +1,7 @@
-﻿using Application.DTO.Words;
+﻿using Application.DTO.Users;
+using Application.DTO.Words;
 using Application.Services.Contracts;
+using Domain.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
@@ -110,18 +112,18 @@ namespace GatewayApi.Controllers
         }
 
         /// <summary>
-        /// Get levels
+        /// Get Levels
         /// GET: api/cards/levels
         /// </summary>
         [HttpGet("levels")]
         [Authorize]
-        public IEnumerable<string> GetLevels(CancellationToken ct)
+        public IEnumerable<LevelDto> GetLevels(CancellationToken ct)
         {
-            return Levels.All;
+            return Levels.AllLevelsWithDescriptions.Select(d => new LevelDto(d.Key, d.Value));
         }
 
         /// <summary>
-        /// Get levels
+        /// Get Themes
         /// POST: api/cards/themes
         /// </summary>
         [HttpPost("themes")]

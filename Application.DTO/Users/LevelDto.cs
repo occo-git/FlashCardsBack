@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Application.DTO.Tokens
+namespace Application.DTO.Users
 {
-    public record RefreshTokenRequestDto(string RefreshToken);
+    public record LevelDto(string Name, string Description);
 }

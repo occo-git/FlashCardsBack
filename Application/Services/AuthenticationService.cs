@@ -108,8 +108,8 @@ namespace Application.Services
         {
             _logger.LogInformation("Refreshing tokens for user: {UserId}", user.Id);
 
-            var newRefreshToken = _refreshTokenGenerator.GenerateToken(user, sessionId);
             var newAccessToken = _accessTokenGenerator.GenerateToken(user, sessionId);
+            var newRefreshToken = _refreshTokenGenerator.GenerateToken(user, sessionId);
 
             await _refreshTokenRepository.UpdateRefreshTokenAsync(oldRefreshToken, newRefreshToken, ct);
 

@@ -47,7 +47,7 @@ namespace Application.Services
                 .OrderBy(w => Guid.NewGuid())
                 .FirstOrDefaultAsync(ct);
             if (word == null)
-                throw new InvalidOperationException("No words match the filter.");
+                throw new InvalidOperationException("Not enough words match the filter.");
 
             return new TypeWordResponseDto(ActivityTypes.TypeWord, word);
         }
@@ -61,7 +61,7 @@ namespace Application.Services
                 .OrderBy(w => Guid.NewGuid())
                 .FirstOrDefault();
             if (word == null)
-                throw new InvalidOperationException("No words match the filter");
+                throw new InvalidOperationException("Not enough words match the filter.");
 
             // random fill blank for a word
             await using var dbContext = _dbContextFactory.CreateDbContext();

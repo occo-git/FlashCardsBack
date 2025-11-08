@@ -51,7 +51,6 @@ namespace Infrastructure.Repositories
             {
                 using var context = await _dbContextFactory.CreateDbContextAsync(ct);
                 return await context.RefreshTokens
-                    .AsNoTracking()
                     .FirstOrDefaultAsync(t => t.Token == tokenValue, ct);
             }
             catch (Exception ex)
