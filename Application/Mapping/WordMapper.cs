@@ -25,7 +25,8 @@ namespace Application.Mapping
                 word.Example ?? String.Empty,
                 word.Level,
                 word.Mark,
-                word.Difficulty
+                word.Difficulty,
+                ImageAttributesMapper.GetDto(word.ImageAttributes)
             );
         }
 

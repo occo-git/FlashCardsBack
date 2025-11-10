@@ -26,6 +26,7 @@ namespace Domain.Entities.Words
         public string Level { get; set; } = null!; // e.g., A1, A2, B1, B2, C1, C2
         public int Difficulty { get; set; }
         public bool Mark { get; set; }
+        public string ImageAttributes { get; set; } = null!;
 
 
         public List<WordTheme> WordThemes { get; set; } = new();

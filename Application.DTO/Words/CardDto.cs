@@ -15,7 +15,8 @@ namespace Application.DTO.Words
         string Example, 
         string Level, 
         bool isMarked,
-        int Difficulty);
+        int Difficulty,
+        ImageAttributesDto ImageAttributes);
 
     public record CardExtendedDto(CardDto? Card, CardInfo? PrevCard, CardInfo? NextCard, int Index, int Total);
 
