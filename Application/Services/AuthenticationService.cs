@@ -40,17 +40,20 @@ namespace Application.Services
             ITokenGenerator<RefreshToken> refreshTokenGenerator,
             ILogger<AuthenticationService> logger)
         {
-            _dbContextFactory = dbContextFactory ?? throw new ArgumentNullException(nameof(dbContextFactory));
-            _refreshTokenRepository = refreshTokenRepository ?? throw new ArgumentNullException(nameof(refreshTokenRepository));
-            _loginValidator = loginValidator ?? throw new ArgumentNullException(nameof(loginValidator));
+            ArgumentNullException.ThrowIfNull(dbContextFactory, nameof(dbContextFactory));
+            ArgumentNullException.ThrowIfNull(refreshTokenRepository, nameof(refreshTokenRepository));
+            ArgumentNullException.ThrowIfNull(loginValidator, nameof(loginValidator));
+            ArgumentNullException.ThrowIfNull(sKey, nameof(sKey));
+            ArgumentNullException.ThrowIfNull(accessTokenGenerator, nameof(accessTokenGenerator));
+            ArgumentNullException.ThrowIfNull(logger, nameof(logger));
 
-            _sKey = sKey ?? throw new ArgumentNullException(nameof(sKey));
-            //Console.WriteLine($"======== AuthenticationService.key = {_sKey}");
-
-            _accessTokenGenerator = accessTokenGenerator ?? throw new ArgumentNullException(nameof(accessTokenGenerator));
-            _refreshTokenGenerator = refreshTokenGenerator ?? throw new ArgumentNullException(nameof(refreshTokenGenerator));
-
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _dbContextFactory = dbContextFactory;
+            _refreshTokenRepository = refreshTokenRepository;
+            _loginValidator = loginValidator;
+            _sKey = sKey;
+            _accessTokenGenerator = accessTokenGenerator;
+            _refreshTokenGenerator = refreshTokenGenerator;
+            _logger = logger;
         }
 
         public async Task<TokenResponseDto> AuthenticateAsync(LoginRequestDto loginUserDto, string sessionId, CancellationToken ct)

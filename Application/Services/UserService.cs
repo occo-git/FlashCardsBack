@@ -23,8 +23,11 @@ namespace Application.Services
             IDbContextFactory<DataContext> dbContextFactory,
             ILogger<UserService> logger)
         {
-            _dbContextFactory = dbContextFactory ?? throw new ArgumentNullException(nameof(dbContextFactory));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            ArgumentNullException.ThrowIfNull(dbContextFactory, nameof(dbContextFactory));
+            ArgumentNullException.ThrowIfNull(logger, nameof(logger));
+
+            _dbContextFactory = dbContextFactory;
+            _logger = logger;
         }
 
         public async Task<User?> GetByIdAsync(Guid id, CancellationToken ct)
@@ -64,7 +67,7 @@ namespace Application.Services
 
         public async Task<User> CreateAsync(User user, CancellationToken ct)
         {
-            if (user == null) throw new ArgumentNullException(nameof(user));
+            ArgumentNullException.ThrowIfNull(user, nameof(user));
 
             var existingUsername = await GetByUsernameAsync(user.Username, ct);
             if (existingUsername != null)
@@ -85,7 +88,7 @@ namespace Application.Services
 
         public async Task<User> UpdateAsync(User user, CancellationToken ct)
         {
-            if (user == null) throw new ArgumentNullException(nameof(user));
+            ArgumentNullException.ThrowIfNull(user, nameof(user));
 
             using var context = await _dbContextFactory.CreateDbContextAsync(ct);
             var existingUser = await context.Users.FindAsync(user.Id, ct);

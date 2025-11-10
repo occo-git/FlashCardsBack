@@ -31,8 +31,9 @@ namespace GatewayApi.Controllers
             IUserService userService,
             ILogger<UsersController> logger)
         {
-            if (accessTokenOptions == null || accessTokenOptions.Value == null)
-                throw new ArgumentNullException(nameof(accessTokenOptions));
+            ArgumentNullException.ThrowIfNull(accessTokenOptions, nameof(accessTokenOptions));
+            ArgumentNullException.ThrowIfNull(accessTokenOptions.Value, nameof(accessTokenOptions.Value));
+
             _accessTokenMinutesBeforeExpiration = accessTokenOptions.Value.AccessTokenMinutesBeforeExpiration;
 
             _userService = userService;
@@ -82,13 +83,10 @@ namespace GatewayApi.Controllers
             [FromServices] IValidator<RegisterRequestDto> validator,
             CancellationToken ct)
         {
-            _logger.LogInformation($"> UsersController.Register {request}");
-            if (request == null)
-                throw new ArgumentNullException(nameof(request), "Request cannot be null");
+            ArgumentNullException.ThrowIfNull(request, nameof(request));
+            _logger.LogInformation($"> UsersController.Register Username = {request.Username}");
 
             await validator.ValidationCheck(request);
-
-            _logger.LogInformation($"> UsersController.Register: Username = {request.Username}");
             User newUser = UserMapper.ToDomain(request);
             var createdUser = await _userService.CreateAsync(newUser, ct);
             var dto = UserMapper.ToDto(createdUser);
@@ -114,14 +112,11 @@ namespace GatewayApi.Controllers
             [FromServices] IValidator<LoginRequestDto> validator,
             CancellationToken ct)
         {
-            _logger.LogInformation($"> UsersController.Login {request}");
-            if (request == null)
-                throw new ArgumentNullException(nameof(request), "Request cannot be null");
+            ArgumentNullException.ThrowIfNull(request, nameof(request));
+            _logger.LogInformation($"> UsersController.Login Username = {request.Username}");
 
             var sessionId = GetSessionIdFromHeader();
-            if (string.IsNullOrWhiteSpace(sessionId))
-                throw new ArgumentNullException(nameof(sessionId), "Session ID is required.");
-
+            ArgumentException.ThrowIfNullOrWhiteSpace(sessionId, nameof(sessionId));
             _logger.LogInformation($"> UsersController.Login: sessionId = {sessionId}");
 
             await validator.ValidationCheck(request);
@@ -150,11 +145,13 @@ namespace GatewayApi.Controllers
             [FromBody] RefreshTokenRequestDto request,
             CancellationToken ct)
         {
-            _logger.LogInformation($"> UsersController.Refresh {request}");
-            if (request == null)
-                throw new ArgumentNullException(nameof(request), "Request cannot be null");
+            ArgumentNullException.ThrowIfNull(request, nameof(request));
+            _logger.LogInformation("> UsersController.Refresh");
 
             var sessionId = GetSessionIdFromHeader();
+            ArgumentException.ThrowIfNullOrWhiteSpace(sessionId, nameof(sessionId));
+            _logger.LogInformation($"> UsersController.Refresh: sessionId = {sessionId}");
+
             var tokenResponse = await _authenticationService.UpdateTokensAsync(request.RefreshToken, sessionId, ct);
             return Ok(tokenResponse);
         }
@@ -224,9 +221,8 @@ namespace GatewayApi.Controllers
             [FromBody] LevelRequestDto request,
             CancellationToken token)
         {
+            ArgumentNullException.ThrowIfNull(request, nameof(request));
             _logger.LogInformation($"> UsersController.SetLevel {request}");
-            if (request == null)
-                throw new ArgumentNullException(nameof(request), "Request cannot be null");
 
             return await GetCurrentUser<bool>(token, async (ct, userId) =>
             {
@@ -246,6 +242,7 @@ namespace GatewayApi.Controllers
         [Authorize]
         public async Task<ActionResult<ProgressResponseDto>> GetPorgress(CancellationToken token)
         {
+            _logger.LogInformation($"> UsersController.GetPorgress");
             return await GetCurrentUser<ProgressResponseDto>(token, async (ct, userId) =>
             {
                 var progress = await _userService.GetProgress(userId, ct);
@@ -266,10 +263,8 @@ namespace GatewayApi.Controllers
             [FromBody] ActivityProgressRequestDto request,
             CancellationToken token)
         {
-            _logger.LogInformation($"{nameof(SaveProgress)}");
-            _logger.LogInformation($"> UsersController.SaveActivityProgress {request}");
-            if (request == null)
-                throw new ArgumentNullException(nameof(request), "Request cannot be null");
+            ArgumentNullException.ThrowIfNull(request, nameof(request));
+            _logger.LogInformation($"> UsersController.SaveProgress {request}");
 
             return await GetCurrentUser<bool>(token, async (ct, userId) =>
             {
@@ -291,6 +286,7 @@ namespace GatewayApi.Controllers
 
             if (Guid.TryParse(id, out var userId))
             {
+                _logger.LogInformation($"> UsersController.GetCurrentUser UserId = {userId}");
                 return await action(ct, userId);
             }
             else

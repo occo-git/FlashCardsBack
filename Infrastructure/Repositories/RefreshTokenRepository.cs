@@ -20,7 +20,10 @@ namespace Infrastructure.Repositories
             IDbContextFactory<DataContext> dbContextFactory, 
             ILogger<RefreshTokenRepository> logger)
         {
-            _dbContextFactory = dbContextFactory ?? throw new ArgumentNullException(nameof(dbContextFactory));
+            ArgumentNullException.ThrowIfNull(dbContextFactory, nameof(dbContextFactory));
+            ArgumentNullException.ThrowIfNull(logger, nameof(logger));
+
+            _dbContextFactory = dbContextFactory;
             _logger = logger;
         }
 

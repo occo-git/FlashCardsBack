@@ -19,8 +19,9 @@ namespace Application.Services.Tokens
         public JwtRefreshTokenGenerator(SymmetricSecurityKey sKey, IOptions<ApiTokenOptions> refreshTokenOptions)
             : base(sKey)
         {
-            if (refreshTokenOptions == null || refreshTokenOptions.Value == null)
-                throw new ArgumentNullException(nameof(refreshTokenOptions));
+            ArgumentNullException.ThrowIfNull(refreshTokenOptions, nameof(refreshTokenOptions));
+            ArgumentNullException.ThrowIfNull(refreshTokenOptions.Value, nameof(refreshTokenOptions.Value));
+
             _refreshTokenExpirationDays = refreshTokenOptions.Value.RefreshTokenExpiresDays;
         }
 

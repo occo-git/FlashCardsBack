@@ -25,9 +25,13 @@ namespace Application.Services
             IWordQueryBuilder wordQueryBuilder,
             ILogger<WordService> logger)
         {
-            _dbContextFactory = dbContextFactory ?? throw new ArgumentNullException(nameof(dbContextFactory));
-            _wordQueryBuilder = wordQueryBuilder ?? throw new ArgumentNullException(nameof(wordQueryBuilder));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            ArgumentNullException.ThrowIfNull(dbContextFactory, nameof(dbContextFactory));
+            ArgumentNullException.ThrowIfNull(wordQueryBuilder, nameof(wordQueryBuilder));
+            ArgumentNullException.ThrowIfNull(logger, nameof(logger));
+
+            _dbContextFactory = dbContextFactory;
+            _wordQueryBuilder = wordQueryBuilder;
+            _logger = logger;
         }
 
         public async Task<CardDto?> GetCardById(long wordId, CancellationToken ct)

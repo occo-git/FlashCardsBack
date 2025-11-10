@@ -21,8 +21,7 @@ namespace GatewayApi.Extensions
 
             // get the JWT signing key from the environment variable
             var signingKeyString = configuration[SharedConstants.JwtSecretEnv];
-            if (string.IsNullOrWhiteSpace(signingKeyString))
-                throw new Exception("JWT Signing Key is not set");
+            ArgumentException.ThrowIfNullOrWhiteSpace(signingKeyString, nameof(signingKeyString));
  
             // Symmetric key to validate the token
             var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(signingKeyString));
@@ -35,8 +34,7 @@ namespace GatewayApi.Extensions
                 .AddJwtBearer(jwtBearerOption =>
                 {
                     var options = configuration.GetSection(SharedConstants.JwtValidationOptions).Get<JwtValidationOptions>();
-                    if (options == null)
-                        throw new ArgumentNullException(nameof(options), "JwtValidationOptions cannot be null.");
+                    ArgumentNullException.ThrowIfNull(options, nameof(options));
 
                     var sp = services.BuildServiceProvider();
                     jwtBearerOption.Events = sp.GetRequiredService<CustomJwtBearerEvents>();

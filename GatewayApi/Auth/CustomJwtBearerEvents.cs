@@ -19,7 +19,8 @@ namespace GatewayApi.Auth
 
         public CustomJwtBearerEvents(IRefreshTokenRepository refreshTokenRepository)
         {
-            _refreshTokenRepository = refreshTokenRepository ?? throw new ArgumentNullException(nameof(refreshTokenRepository), "RefreshTokenRepository cannot be null.");
+            ArgumentNullException.ThrowIfNull(refreshTokenRepository, nameof(refreshTokenRepository));
+            _refreshTokenRepository = refreshTokenRepository;
         }
 
         public override async Task TokenValidated(TokenValidatedContext context)

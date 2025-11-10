@@ -18,8 +18,9 @@ namespace Application.Services.Tokens
         public JwtAccessTokenGenerator(SymmetricSecurityKey sKey, IOptions<ApiTokenOptions> accessTokenOptions)
             : base(sKey)
         {
-            if (accessTokenOptions == null || accessTokenOptions.Value == null)
-                throw new ArgumentNullException(nameof(accessTokenOptions));
+            ArgumentNullException.ThrowIfNull(accessTokenOptions, nameof(accessTokenOptions));
+            ArgumentNullException.ThrowIfNull(accessTokenOptions.Value, nameof(accessTokenOptions.Value));
+
             _accessTokenExpirationMinutes = accessTokenOptions.Value.AccessTokenExpiresMinutes;
         }
 

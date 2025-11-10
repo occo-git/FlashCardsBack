@@ -17,11 +17,14 @@ namespace GatewayApi.Services.Background
             IOptions<ApiTokenOptions> options,
             ILogger<RefreshTokenCleanupService> logger)
         {
-            _dbContextFactory = dbContextFactory ?? throw new ArgumentNullException(nameof(dbContextFactory));
+            ArgumentNullException.ThrowIfNull(dbContextFactory, nameof(dbContextFactory));
+            ArgumentNullException.ThrowIfNull(logger, nameof(logger));
+
+            _dbContextFactory = dbContextFactory;
+            _logger = logger;
+
             if (options?.Value?.RefreshTokenCleanupIntervalMinutes > 0)
                 _cleanupInterval = TimeSpan.FromMinutes(options.Value.RefreshTokenCleanupIntervalMinutes);
-
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         protected override async Task ExecuteAsync(CancellationToken ct)

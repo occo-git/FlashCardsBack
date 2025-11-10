@@ -54,8 +54,7 @@ namespace GatewayApi.Controllers
             [FromBody] CardRequestDto request,
             CancellationToken ct)
         {
-            if (request == null)
-                throw new ArgumentNullException(nameof(request));
+            ArgumentNullException.ThrowIfNull(request, nameof(request));
             return _wordService.GetCardWithNeighbors(request, ct);
         }
 
@@ -70,8 +69,7 @@ namespace GatewayApi.Controllers
             [FromBody] CardsPageRequestDto request,
             CancellationToken ct)
         {
-            if (request == null)
-                throw new ArgumentNullException(nameof(request));
+            ArgumentNullException.ThrowIfNull(request, nameof(request));
             return _wordService.GetCards(request, ct);
         }
 
@@ -86,8 +84,7 @@ namespace GatewayApi.Controllers
             [FromBody] WordRequestDto request,
             CancellationToken ct)
         {
-            if (request == null)
-                throw new ArgumentNullException(nameof(request));
+            ArgumentNullException.ThrowIfNull(request, nameof(request));
             var card = await _wordService.ChangeMark(request.WordId, ct);
             if (card == null)
                 return NotFound();
@@ -106,8 +103,7 @@ namespace GatewayApi.Controllers
             [FromBody] CardsPageRequestDto request,
             CancellationToken ct)
         {
-            if (request == null)
-                throw new ArgumentNullException(nameof(request));
+            ArgumentNullException.ThrowIfNull(request, nameof(request));
             return _wordService.GetWords(request, ct);
         }
 
@@ -132,10 +128,9 @@ namespace GatewayApi.Controllers
             [FromBody] LevelFilterDto filter,
             CancellationToken ct)
         {
+            ArgumentNullException.ThrowIfNull(filter, nameof(filter));
             _logger.LogInformation("CardsController.GetThemes: {filter}", filter);
 
-            if (filter == null)
-                throw new ArgumentNullException(nameof(filter));
             return _wordService.GetThemes(filter, ct);
         }
     }

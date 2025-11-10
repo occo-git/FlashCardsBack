@@ -16,7 +16,8 @@ namespace Application.Services.Tokens
 
         protected JwtTokenGeneratorBase(SymmetricSecurityKey sKey)
         {
-            _sKey = sKey ?? throw new ArgumentNullException(nameof(sKey));
+            ArgumentNullException.ThrowIfNull(sKey, nameof(sKey));
+            _sKey = sKey;
         }
 
         protected Claim[] GetClaims(User user, DateTime expires, string sessionId)
