@@ -45,62 +45,19 @@ namespace Application.Services
 
             return word.ToCardDto();
         }
-
-        public async IAsyncEnumerable<CardDto?> GetCards(CardsPageRequestDto request, [EnumeratorCancellation] CancellationToken ct)
+        public async IAsyncEnumerable<ThemeDto?> GetThemes(LevelFilterDto filter, [EnumeratorCancellation] CancellationToken ct)
         {
-            _logger.LogInformation("GetCards: {request}", request);
+            _logger.LogInformation("GetThemes: {filter}", filter);
 
             await using var dbContext = _dbContextFactory.CreateDbContext();
-            var words = GetWords(dbContext, request, ct);
-            await foreach (var word in words.WithCancellation(ct))
-                yield return word.ToCardDto();
-        }
-
-        public async IAsyncEnumerable<WordDto?> GetWords(CardsPageRequestDto request, [EnumeratorCancellation] CancellationToken ct)
-        {
-            _logger.LogInformation("GetWords: {request}", request);
-
-            await using var dbContext = _dbContextFactory.CreateDbContext();
-            var words = GetWords(dbContext, request, ct);
-            await foreach (var word in words.WithCancellation(ct))
+            var themes = await dbContext.Themes
+                .Where(t => t.WordThemes.Any(wt => wt.Word != null && wt.Word.Level == filter.Level))
+                .Select(t => t.ToDto(t.WordThemes.Count(wt => wt.Word != null && wt.Word.Level == filter.Level)))
+                .ToListAsync(ct);
+            foreach (var theme in themes)
             {
-                //Console.WriteLine(word);
-                yield return word.ToWordDto();
-            }
-        }
-
-        private async IAsyncEnumerable<Word> GetWords(DataContext dbContext, CardsPageRequestDto request, [EnumeratorCancellation] CancellationToken ct)
-        {
-            var query = _wordQueryBuilder.BuildQuery(dbContext, request.Filter);
-
-            if (request.isDirectionForward)
-            {
-                // go forward: WordId - id of the first element on the page
-                query = query
-                    .Where(w => w.Id > request.WordId)
-                    .OrderBy(w => w.Id)
-                    .Take(request.PageSize);
-                //Console.WriteLine(query.ToQueryString());
-                
-                await foreach (var word in query.AsAsyncEnumerable().WithCancellation(ct))
-                    yield return word;
-            }
-            else
-            {
-                // go back: WordId - id of the last element on the page
-                query = query
-                    .Where(w => w.Id < request.WordId)
-                    .OrderByDescending(w => w.Id)
-                    .Take(request.PageSize);
-                //Console.WriteLine(query.ToQueryString());
-
-                // stack to reverse elements
-                var stack = new Stack<Word>();
-                await foreach (var word in query.AsAsyncEnumerable().WithCancellation(ct))
-                    stack.Push(word);
-
-                while (stack.Count > 0)
-                    yield return stack.Pop();
+                //Console.WriteLine(theme);
+                yield return theme;
             }
         }
 
@@ -148,7 +105,7 @@ namespace Application.Services
                 total);
         }
 
-        public async Task<CardDto?> ChangeMark(long wordId, CancellationToken ct) 
+        public async Task<CardDto?> ChangeMark(long wordId, CancellationToken ct)
         {
             _logger.LogInformation("ChangeMark: WordId = {WordId}", wordId);
 
@@ -165,19 +122,78 @@ namespace Application.Services
             return word.ToCardDto();
         }
 
-        public async IAsyncEnumerable<ThemeDto?> GetThemes(LevelFilterDto filter, [EnumeratorCancellation] CancellationToken ct)
+        public async IAsyncEnumerable<WordDto?> GetWords(CardsPageRequestDto request, [EnumeratorCancellation] CancellationToken ct)
         {
-            _logger.LogInformation("GetThemes: {filter}", filter);
+            _logger.LogInformation("GetWords: {request}", request);
 
             await using var dbContext = _dbContextFactory.CreateDbContext();
-            var themes = await dbContext.Themes
-                .Where(t => t.WordThemes.Any(wt => wt.Word != null && wt.Word.Level == filter.Level))
-                .Select(t => t.ToDto(t.WordThemes.Count(wt => wt.Word != null && wt.Word.Level == filter.Level)))
-                .ToListAsync(ct);
-            foreach (var theme in themes)
+            var words = GetWords(dbContext, request, ct);
+            await foreach (var word in words.WithCancellation(ct))
             {
-                //Console.WriteLine(theme);
-                yield return theme;
+                //Console.WriteLine(word);
+                yield return word.ToWordDto();
+            }
+        }
+
+        private async IAsyncEnumerable<Word?> GetWords(DataContext dbContext, CardsPageRequestDto request, [EnumeratorCancellation] CancellationToken ct)
+        {
+            var query = _wordQueryBuilder.BuildQuery(dbContext, request.Filter);
+
+            if (request.isDirectionForward)
+            {
+                // previous one
+                var prev = await query
+                    .Where(w => w.Id < request.WordId)
+                    .OrderByDescending(w => w.Id)
+                    .FirstOrDefaultAsync(ct);
+                yield return prev;
+
+                // main query
+                var pageQuery = query
+                    .Where(w => w.Id > request.WordId)
+                    .OrderBy(w => w.Id)
+                    .Take(request.PageSize);
+
+                await foreach (var word in pageQuery.AsAsyncEnumerable().WithCancellation(ct))
+                    yield return word;
+
+                // next one
+                var next = await query
+                    .Where(w => w.Id > request.WordId)
+                    .OrderBy(w => w.Id)
+                    .Skip(request.PageSize)
+                    .FirstOrDefaultAsync(ct);
+                yield return next;
+            }
+            else
+            {
+                // next one
+                var next = await query
+                    .Where(w => w.Id > request.WordId)
+                    .OrderBy(w => w.Id)
+                    .FirstOrDefaultAsync(ct);
+                yield return next;
+
+                // main query
+                var pageQuery = query
+                    .Where(w => w.Id < request.WordId)
+                    .OrderByDescending(w => w.Id)
+                    .Take(request.PageSize);
+
+                var stack = new Stack<Word>();
+                await foreach (var word in pageQuery.AsAsyncEnumerable().WithCancellation(ct))
+                    stack.Push(word);
+
+                while (stack.Count > 0)
+                    yield return stack.Pop();
+
+                // previous one
+                var prev = await query
+                    .Where(w => w.Id < request.WordId)
+                    .OrderByDescending(w => w.Id)
+                    .Skip(request.PageSize)
+                    .FirstOrDefaultAsync(ct);
+                yield return prev;
             }
         }
     }

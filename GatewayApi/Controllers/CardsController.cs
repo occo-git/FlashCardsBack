@@ -59,21 +59,6 @@ namespace GatewayApi.Controllers
         }
 
         /// <summary>
-        /// Get cards
-        /// POST: api/cards/deck
-        /// <param name="request">Request parameters</param>
-        /// </summary>
-        [HttpPost("deck")]
-        [Authorize]
-        public IAsyncEnumerable<CardDto?> GetCardsFromDeck(
-            [FromBody] CardsPageRequestDto request,
-            CancellationToken ct)
-        {
-            ArgumentNullException.ThrowIfNull(request, nameof(request));
-            return _wordService.GetCards(request, ct);
-        }
-
-        /// <summary>
         /// Changes card Mark property
         /// POST: api/cards/change-mark
         /// <param name="request">Request parameters</param>
