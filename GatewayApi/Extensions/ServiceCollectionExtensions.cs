@@ -12,6 +12,7 @@ using Infrastructure.Services.FileStorage;
 using Infrastructure.Services.Migration;
 using Infrastructure.UseCases;
 using Microsoft.EntityFrameworkCore;
+using Shared;
 
 namespace GatewayApi.Extensions
 {
@@ -20,7 +21,7 @@ namespace GatewayApi.Extensions
         public static IServiceCollection AddDataContext(this IServiceCollection services, IConfiguration configuration)
         {
             // DbContext registration with Npgsql (PostgreSQL) provider
-            var connectionString = configuration.GetConnectionString(InfrastructureConstants.FlashCardsConnectionString);
+            var connectionString = configuration.GetConnectionString(SharedConstants.FlashCardsConnectionString);
             services.AddDbContextFactory<DataContext>(options => options.UseNpgsql(connectionString));
             return services;
         }

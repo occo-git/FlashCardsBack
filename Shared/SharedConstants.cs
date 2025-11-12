@@ -8,9 +8,10 @@
         public const string ApiSettings = "ApiSettings";
         public const string ApiTokenOptions = "ApiTokenOptions";
         public const string JwtSecretEnv = "JWT_SECRET_KEY";
-        public const string JwtValidationOptions = "JwtValidationOptions";
-        
+        public const string JwtValidationOptions = "JwtValidationOptions";        
+
         public const string FlashCardsConnectionString = "FlashCardsConnectionString";
+        public const string Migrate = "migrate";
 
         public const string Redis_Host = "REDIS_HOST";
         public const string Redis_Port = "REDIS_PORT";

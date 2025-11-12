@@ -21,7 +21,6 @@
   <ItemGroup>
     <ProjectReference Include="..\Application.Abstractions\Application.Abstractions.csproj" />
     <ProjectReference Include="..\Application.DTO\Application.DTO.csproj" />
-    <ProjectReference Include="..\Application.Mapping\Application.Mapping.csproj" />
     <ProjectReference Include="..\Application\Application.csproj" />
     <ProjectReference Include="..\Domain\Domain.csproj" />
     <ProjectReference Include="..\Shared\Shared.csproj" />

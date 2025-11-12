@@ -99,7 +99,7 @@ builder.Services.AddProblemDetails(options =>
 var app = builder.Build();
 
 #region Migration
-if (args.Length > 0 && args[0].Equals(InfrastructureConstants.Migrate, StringComparison.InvariantCultureIgnoreCase))
+if (args.Length > 0 && args[0].Equals(SharedConstants.Migrate, StringComparison.InvariantCultureIgnoreCase))
 {
     using var scope = app.Services.CreateScope();
     var migrationService = scope.ServiceProvider.GetRequiredService<IDatabaseMigrationService>();
