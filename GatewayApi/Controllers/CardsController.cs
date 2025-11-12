@@ -1,6 +1,6 @@
 ﻿using Application.DTO.Users;
 using Application.DTO.Words;
-using Application.Services.Contracts;
+using Application.UseCases;
 using Domain.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

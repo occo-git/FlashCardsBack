@@ -1,8 +1,9 @@
-﻿using Application.Extentions;
+﻿using Application.Abstractions.Services;
+using Application.Extentions;
 using FluentValidation;
 using GatewayApi.Extensions;
 using Infrastructure;
-using Infrastructure.Services.Contracts;
+using Infrastructure.Services.Migration;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi.Models;
@@ -39,6 +40,10 @@ builder.Services.AddCors(options =>
 
 #region DataContext
 builder.Services.AddDataContext(builder.Configuration);
+#endregion
+
+#region Cache
+builder.Services.AddCache(builder.Configuration);
 #endregion
 
 #region Registration

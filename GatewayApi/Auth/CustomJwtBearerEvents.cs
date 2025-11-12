@@ -1,4 +1,4 @@
-﻿using Infrastructure.Repositories.Contracts;
+﻿using Application.Abstractions.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Components.Server.Circuits;
 using Microsoft.Extensions.Options;

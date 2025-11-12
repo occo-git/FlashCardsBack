@@ -1,6 +1,6 @@
 ﻿using Application.DTO.Activity;
 using Application.DTO.Words;
-using Application.Services.Contracts;
+using Application.UseCases;
 using Infrastructure.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

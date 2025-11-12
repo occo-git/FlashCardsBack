@@ -1,4 +1,4 @@
-﻿using Infrastructure.Services.Contracts;
+﻿using Application.Abstractions.Services;
 using Microsoft.AspNetCore.Mvc;
 using System.Net.Http;
 using System.Threading.Tasks;

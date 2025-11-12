@@ -1,6 +1,6 @@
-﻿using Domain.Entities.Auth;
+﻿using Application.Abstractions.Repositories;
+using Domain.Entities.Auth;
 using Infrastructure.DataContexts;
-using Infrastructure.Repositories.Contracts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;

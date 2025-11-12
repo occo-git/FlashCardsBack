@@ -1,14 +1,16 @@
-﻿using Application.Services;
-using Application.Services.Contracts;
-using Application.Services.Tokens;
+﻿using Application.Abstractions.Repositories;
+using Application.Abstractions.Services;
+using Application.UseCases;
 using Domain.Entities.Auth;
 using GatewayApi.Services.Background;
 using Infrastructure;
 using Infrastructure.DataContexts;
 using Infrastructure.Repositories;
-using Infrastructure.Repositories.Contracts;
-using Infrastructure.Services;
-using Infrastructure.Services.Contracts;
+using Infrastructure.Services.Auth;
+using Infrastructure.Services.Auth.Tokens;
+using Infrastructure.Services.FileStorage;
+using Infrastructure.Services.Migration;
+using Infrastructure.UseCases;
 using Microsoft.EntityFrameworkCore;
 
 namespace GatewayApi.Extensions

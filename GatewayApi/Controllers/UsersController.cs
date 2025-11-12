@@ -1,10 +1,10 @@
-﻿using Application.DTO.Activity;
+﻿using Application.Abstractions.Services;
+using Application.DTO.Activity;
 using Application.DTO.Tokens;
 using Application.DTO.Users;
 using Application.Extensions;
 using Application.Mapping;
-using Application.Services;
-using Application.Services.Contracts;
+using Application.UseCases;
 using Domain.Entities;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;

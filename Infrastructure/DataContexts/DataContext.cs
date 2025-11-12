@@ -1,8 +1,8 @@
-﻿using Domain.Entities;
+﻿using Application.Abstractions.DataContexts;
+using Domain.Entities;
 using Domain.Entities.Auth;
 using Domain.Entities.Users;
 using Domain.Entities.Words;
-using Infrastructure.DataContexts.Contracts;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
