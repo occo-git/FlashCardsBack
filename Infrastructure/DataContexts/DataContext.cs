@@ -21,6 +21,7 @@ namespace Infrastructure.DataContexts
         public DbSet<Word> Words { get; set; }
         public DbSet<WordTheme> WordThemes { get; set; }
         public DbSet<WordFillBlank> FillBlanks { get; set; }
+        public DbSet<UserBookmark> UserBookmarks{ get; set; }
         public DbSet<UserWordsProgress> UserWordsProgress { get; set; }
 
 

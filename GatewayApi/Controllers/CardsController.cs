@@ -1,7 +1,10 @@
-﻿using Application.DTO.Users;
+﻿using Application.DTO.Activity;
+using Application.DTO.Users;
 using Application.DTO.Words;
 using Application.UseCases;
 using Domain.Constants;
+using Domain.Entities;
+using Infrastructure.Migrations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
@@ -11,17 +14,15 @@ namespace GatewayApi.Controllers
 {
     [ApiController]
     [Route("api/cards")]
-    public class CardsController : ControllerBase
+    public class CardsController : UserControllerBase
     {
         private readonly IWordService _wordService;
-        private readonly ILogger<CardsController> _logger;
 
         public CardsController(
             IWordService wordService,
-            ILogger<CardsController> logger)
+            ILogger<CardsController> logger) : base(logger) 
         {
             _wordService = wordService;
-            _logger = logger;
         }
 
         /// <summary>
@@ -32,9 +33,7 @@ namespace GatewayApi.Controllers
         /// <returns></returns>
         [HttpGet("{id:long}")]
         [Authorize]
-        public async Task<IActionResult> GetCardById(
-            [FromRoute] long id,
-            CancellationToken ct)
+        public async Task<IActionResult> GetCardById([FromRoute] long id, CancellationToken ct)
         {
             var card = await _wordService.GetCardById(id, ct);
             if (card == null)
@@ -50,12 +49,15 @@ namespace GatewayApi.Controllers
         /// </summary>
         [HttpPost("card-from-deck")]
         [Authorize]
-        public Task<CardExtendedDto?> GetCardFromDeck(
-            [FromBody] CardRequestDto request,
-            CancellationToken ct)
+        public async Task<ActionResult<CardExtendedDto?>> GetCardFromDeck([FromBody] CardRequestDto request, CancellationToken ct)
         {
             ArgumentNullException.ThrowIfNull(request, nameof(request));
-            return _wordService.GetCardWithNeighbors(request, ct);
+            _logger.LogInformation($"GetCardFromDeck {request}");
+
+            var result = await GetCurrentUserAsync(async userId =>
+                await _wordService.GetCardWithNeighbors(request, userId, ct));
+            
+            return Ok(result);
         }
 
         /// <summary>
@@ -65,11 +67,11 @@ namespace GatewayApi.Controllers
         /// </summary>
         [HttpPost("change-mark")]
         [Authorize]
-        public async Task<IActionResult> ChangeMark(
-            [FromBody] WordRequestDto request,
-            CancellationToken ct)
+        public async Task<IActionResult> ChangeMark([FromBody] WordRequestDto request, CancellationToken ct)
         {
             ArgumentNullException.ThrowIfNull(request, nameof(request));
+            _logger.LogInformation($"ChangeMark {request}");
+
             var card = await _wordService.ChangeMark(request.WordId, ct);
             if (card == null)
                 return NotFound();
@@ -84,12 +86,13 @@ namespace GatewayApi.Controllers
         /// </summary>
         [HttpPost("list")]
         [Authorize]
-        public IAsyncEnumerable<WordDto?> GetWordList(
-            [FromBody] CardsPageRequestDto request,
-            CancellationToken ct)
+        public IAsyncEnumerable<WordDto?> GetWordList([FromBody] CardsPageRequestDto request, CancellationToken ct)
         {
             ArgumentNullException.ThrowIfNull(request, nameof(request));
-            return _wordService.GetWords(request, ct);
+            _logger.LogInformation($"GetWordList {request}");
+            
+            return GetCurrentUser(userId =>
+                _wordService.GetWords(request, userId, ct));
         }
 
         /// <summary>

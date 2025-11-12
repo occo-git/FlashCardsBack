@@ -12,8 +12,8 @@ namespace Application.UseCases
     {
         Task<CardDto?> GetCardById(long wordId, CancellationToken ct);
         IAsyncEnumerable<ThemeDto?> GetThemes(LevelFilterDto filter, CancellationToken ct);
-        Task<CardExtendedDto?> GetCardWithNeighbors(CardRequestDto request, CancellationToken ct);      
+        Task<CardExtendedDto?> GetCardWithNeighbors(CardRequestDto request, Guid userId, CancellationToken ct);      
         Task<CardDto?> ChangeMark(long wordId, CancellationToken ct);
-        IAsyncEnumerable<WordDto?> GetWords(CardsPageRequestDto request, CancellationToken ct);  
+        IAsyncEnumerable<WordDto?> GetWords(CardsPageRequestDto request, Guid userId, CancellationToken ct);  
     }
 }

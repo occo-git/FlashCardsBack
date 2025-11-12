@@ -105,19 +105,7 @@ namespace Infrastructure.UseCases
             return existingUser;
         }
 
-        public async Task<bool> DeleteAsync(Guid userId, CancellationToken ct)
-        {
-            using var context = await _dbContextFactory.CreateDbContextAsync(ct);
-            var user = await context.Users.FindAsync(userId, ct);
-            if (user == null) return false;
-
-            context.Users.Remove(user);
-            await context.SaveChangesAsync(ct);
-
-            return true;
-        }
-
-        public async Task<bool> SetLevel(Guid userId, string level, CancellationToken ct)
+        public async Task<int> SetLevel(Guid userId, string level, CancellationToken ct)
         {
             using var context = await _dbContextFactory.CreateDbContextAsync();
             var existingUser = await context.Users.FindAsync(userId, ct);
@@ -125,9 +113,7 @@ namespace Infrastructure.UseCases
                 throw new KeyNotFoundException("User not found");
 
             existingUser.Level = level;
-            await context.SaveChangesAsync(ct);
-
-            return true;
+            return await context.SaveChangesAsync(ct);
         }
 
         public async Task<ProgressResponseDto> GetProgress(Guid userId, CancellationToken ct)
@@ -191,7 +177,7 @@ namespace Infrastructure.UseCases
             );
         }
 
-        public async Task<bool> SaveProgress(Guid userId, ActivityProgressRequestDto request, CancellationToken ct)
+        public async Task<int> SaveProgress(Guid userId, ActivityProgressRequestDto request, CancellationToken ct)
         {
             await using var context = _dbContextFactory.CreateDbContext();
             var existingUser = await context.Users.FindAsync(userId, ct);
@@ -233,9 +219,7 @@ namespace Infrastructure.UseCases
                 existingProgress.SuccessRate = successRate;
                 existingProgress.LastSeen = DateTime.UtcNow;
             }
-            await context.SaveChangesAsync(ct);
-
-            return true;
+            return await context.SaveChangesAsync(ct);
         }
     }
 }

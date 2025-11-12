@@ -12,9 +12,8 @@ namespace Application.UseCases
         Task<IAsyncEnumerable<User>> GetAllAsyncEnumerable(CancellationToken ct);
         Task<User> CreateAsync(User user, CancellationToken ct);
         Task<User> UpdateAsync(User user, CancellationToken ct);
-        Task<bool> DeleteAsync(Guid userId, CancellationToken ct);
-        Task<bool> SetLevel(Guid userId, string level, CancellationToken ct);
+        Task<int> SetLevel(Guid userId, string level, CancellationToken ct);
         Task<ProgressResponseDto> GetProgress(Guid userId, CancellationToken ct);
-        Task<bool> SaveProgress(Guid userId, ActivityProgressRequestDto request, CancellationToken ct);
+        Task<int> SaveProgress(Guid userId, ActivityProgressRequestDto request, CancellationToken ct);
     }
 }

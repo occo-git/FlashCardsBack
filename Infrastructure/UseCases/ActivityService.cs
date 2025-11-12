@@ -3,6 +3,7 @@ using Application.DTO.Words;
 using Application.Mapping;
 using Application.UseCases;
 using Domain.Constants;
+using Domain.Entities;
 using Infrastructure.DataContexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -34,16 +35,16 @@ namespace Infrastructure.UseCases
             _logger = logger;
         }
 
-        public async Task<QuizResponseDto> GetQuiz(ActivityRequestDto request, CancellationToken ct)
+        public async Task<QuizResponseDto> GetQuiz(ActivityRequestDto request, Guid userId, CancellationToken ct)
         {
-            var quizWords = await GetWords(request, ct);
+            var quizWords = await GetWords(request, userId, ct);
             return new QuizResponseDto(ActivityTypes.Quiz, quizWords!);
         }
 
-        public async Task<TypeWordResponseDto> GetTypeWord(ActivityRequestDto request, CancellationToken ct)
+        public async Task<TypeWordResponseDto> GetTypeWord(ActivityRequestDto request, Guid userId, CancellationToken ct)
         {
             await using var dbContext = _dbContextFactory.CreateDbContext();
-            var query = _wordQueryBuilder.BuildQuery(dbContext, request.Filter);
+            var query = _wordQueryBuilder.BuildQuery(dbContext, request.Filter, userId);
 
             // random word
             var word = await query
@@ -56,9 +57,9 @@ namespace Infrastructure.UseCases
             return new TypeWordResponseDto(ActivityTypes.TypeWord, word);
         }
 
-        public async Task<FillBlankResponseDto> GetFillBlank(ActivityRequestDto request, CancellationToken ct)
+        public async Task<FillBlankResponseDto> GetFillBlank(ActivityRequestDto request, Guid userId, CancellationToken ct)
         {
-            var words = await GetWords(request, ct);
+            var words = await GetWords(request, userId, ct);
 
             // random word
             var word = words
@@ -79,10 +80,10 @@ namespace Infrastructure.UseCases
 
             return new FillBlankResponseDto(ActivityTypes.FillBlank, blank, words!);
         }
-        private async Task<WordDto?[]> GetWords(ActivityRequestDto request, CancellationToken ct)
+        private async Task<WordDto?[]> GetWords(ActivityRequestDto request, Guid userId, CancellationToken ct)
         {
             await using var dbContext = _dbContextFactory.CreateDbContext();
-            var query = _wordQueryBuilder.BuildQuery(dbContext, request.Filter);
+            var query = _wordQueryBuilder.BuildQuery(dbContext, request.Filter, userId);
 
             // group by PartOfSpeech
             var posGroups = await query

@@ -18,27 +18,26 @@ namespace GatewayApi.Controllers
 {
     [ApiController]
     [Route("api/users")]
-    public class UsersController : ControllerBase
+    public class UsersController : UserControllerBase
     {
         private readonly int _accessTokenMinutesBeforeExpiration = 3;
         private readonly IUserService _userService;
         private readonly IAuthenticationService _authenticationService;
-        private readonly ILogger<UsersController> _logger;
 
         public UsersController(
-            IOptions<ApiTokenOptions> accessTokenOptions,
-            IAuthenticationService authenticationService,
             IUserService userService,
-            ILogger<UsersController> logger)
+            IAuthenticationService authenticationService,
+            IOptions<ApiTokenOptions> accessTokenOptions,
+            ILogger<UsersController> logger) : base(logger)
         {
+            ArgumentNullException.ThrowIfNull(userService, nameof(userService));
+            ArgumentNullException.ThrowIfNull(authenticationService, nameof(authenticationService));
             ArgumentNullException.ThrowIfNull(accessTokenOptions, nameof(accessTokenOptions));
             ArgumentNullException.ThrowIfNull(accessTokenOptions.Value, nameof(accessTokenOptions.Value));
 
-            _accessTokenMinutesBeforeExpiration = accessTokenOptions.Value.AccessTokenMinutesBeforeExpiration;
-
             _userService = userService;
             _authenticationService = authenticationService;
-            _logger = logger;
+            _accessTokenMinutesBeforeExpiration = accessTokenOptions.Value.AccessTokenMinutesBeforeExpiration;
         }
 
         /// <summary>        
@@ -166,26 +165,29 @@ namespace GatewayApi.Controllers
         /// <returns>The user information.</returns>
         [HttpGet("me")]
         [Authorize]
-        public async Task<ActionResult<UserInfoDto>> GetLoggedUser(CancellationToken token)
+        public async Task<ActionResult<UserInfoDto>> GetLoggedUser(CancellationToken ct)
         {
             _logger.LogInformation($"> UsersController.GetLoggedUser");
-            return await GetCurrentUser<UserInfoDto>(token, async (ct, userId) =>
+            var result = await GetCurrentUserAsync(async userId =>
             {
                 _logger.LogInformation("> UsersController.GetLoggedUser: Finding user: Id={id}", userId);
                 var user = await _userService.GetByIdAsync(userId, ct);
                 if (user == null)
                 {
                     _logger.LogWarning("> UsersController.GetLoggedUser: User not found: Id={id}", userId);
-                    return NotFound("User not found");
+                    return null;
                 }
                 else
                 {
                     _logger.LogInformation("> UsersController.GetLoggedUser: Found user: Id={id}, Username={username}", user.Id, user.Username);
-                    //_logger.LogInformation("Access token {accessToken}", accessToken);
-                    var dto = UserMapper.ToDto(user);
-                    return Ok(dto);
+                    return UserMapper.ToDto(user);
                 }
             });
+
+            if (result == null)
+                return NotFound("User not found");
+            return 
+                Ok(result);
         }
 
         /// <summary>
@@ -197,15 +199,18 @@ namespace GatewayApi.Controllers
         /// </remarks>
         [HttpPost("logout")]
         [Authorize]
-        public async Task<ActionResult<bool>> Logout(CancellationToken token)
+        public async Task<ActionResult<int>> Logout(CancellationToken ct)
         {
             _logger.LogInformation($"> UsersController.Logout");
-            return await GetCurrentUser<bool>(token, async (ct, userId) =>
+
+            var result = await GetCurrentUserAsync(async userId =>
             {
                 var sessionId = GetSessionIdFromHeader();
-                await _authenticationService.RevokeRefreshTokensAsync(userId, sessionId, ct);
-                return Ok(true);
+                ArgumentException.ThrowIfNullOrWhiteSpace(sessionId, nameof(sessionId));
+                return await _authenticationService.RevokeRefreshTokensAsync(userId, sessionId, ct);
             });
+
+            return Ok(result);
         }
 
         /// <summary>
@@ -217,18 +222,15 @@ namespace GatewayApi.Controllers
         /// </remarks>
         [HttpPost("level")]
         [Authorize]
-        public async Task<ActionResult<bool>> SetLevel(
-            [FromBody] LevelRequestDto request,
-            CancellationToken token)
+        public async Task<ActionResult<int>> SetLevel([FromBody] LevelRequestDto request, CancellationToken ct)
         {
             ArgumentNullException.ThrowIfNull(request, nameof(request));
             _logger.LogInformation($"> UsersController.SetLevel {request}");
 
-            return await GetCurrentUser<bool>(token, async (ct, userId) =>
-            {
-                var result = await _userService.SetLevel(userId, request.Level, ct);
-                return Ok(result);
-            });
+            var result = await GetCurrentUserAsync(async userId =>
+                await _userService.SetLevel(userId, request.Level, ct));
+
+            return Ok(result);
         }
 
         /// <summary>
@@ -240,14 +242,12 @@ namespace GatewayApi.Controllers
         /// </remarks>
         [HttpGet("progress")]
         [Authorize]
-        public async Task<ActionResult<ProgressResponseDto>> GetPorgress(CancellationToken token)
+        public async Task<ActionResult<ProgressResponseDto>> GetPorgress(CancellationToken ct)
         {
             _logger.LogInformation($"> UsersController.GetPorgress");
-            return await GetCurrentUser<ProgressResponseDto>(token, async (ct, userId) =>
-            {
-                var progress = await _userService.GetProgress(userId, ct);
-                return Ok(progress);
-            });
+            var result = await GetCurrentUserAsync(async userId =>
+                await _userService.GetProgress(userId, ct));             
+            return Ok(result);
         }
 
         /// <summary>
@@ -259,41 +259,15 @@ namespace GatewayApi.Controllers
         /// </remarks>
         [HttpPost("progress/save")]
         [Authorize]
-        public async Task<ActionResult<bool>> SaveProgress(
-            [FromBody] ActivityProgressRequestDto request,
-            CancellationToken token)
+        public async Task<ActionResult<bool>> SaveProgress([FromBody] ActivityProgressRequestDto request, CancellationToken ct)
         {
             ArgumentNullException.ThrowIfNull(request, nameof(request));
             _logger.LogInformation($"> UsersController.SaveProgress {request}");
 
-            return await GetCurrentUser<bool>(token, async (ct, userId) =>
-            {
-                var result = await _userService.SaveProgress(userId, request, ct);
-                return Ok(result);
-            });
-        }
+            var result = await GetCurrentUserAsync(async userId =>
+                await _userService.SaveProgress(userId, request, ct));
 
-        private async Task<ActionResult<T>> GetCurrentUser<T>(
-            CancellationToken ct,
-            Func<CancellationToken, Guid, Task<ActionResult<T>>> action)
-        {
-            var id = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(id))
-            {
-                _logger.LogWarning("> UsersController.GetCurrentUser: User ID claim not found");
-                throw new UnauthorizedAccessException("Unauthorized user");
-            }
-
-            if (Guid.TryParse(id, out var userId))
-            {
-                _logger.LogInformation($"> UsersController.GetCurrentUser UserId = {userId}");
-                return await action(ct, userId);
-            }
-            else
-            {
-                _logger.LogError("> UsersController.GetCurrentUser: Invalid user ID format: {Id}", id);
-                throw new FormatException($"Invalid user ID format: {id}");
-            }
+            return Ok(result);
         }
 
         private string GetSessionIdFromHeader() => Request.Headers[HeaderNames.SessionId].FirstOrDefault() ?? string.Empty;

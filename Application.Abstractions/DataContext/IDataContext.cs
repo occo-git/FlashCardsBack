@@ -19,6 +19,7 @@ namespace Application.Abstractions.DataContexts
         DbSet<Word> Words { get; set; }
         DbSet<WordTheme> WordThemes { get; set; }
         DbSet<WordFillBlank> FillBlanks { get; set; }
+        DbSet<UserBookmark> UserBookmarks { get; set; }
         DbSet<UserWordsProgress> UserWordsProgress { get; set; }
 
         Task<int> SaveChangesAsync(CancellationToken cancellationToken);

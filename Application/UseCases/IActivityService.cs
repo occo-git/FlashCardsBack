@@ -10,8 +10,8 @@ namespace Application.UseCases
 {
     public interface IActivityService
     {
-        Task<QuizResponseDto> GetQuiz(ActivityRequestDto request, CancellationToken ct);
-        Task<TypeWordResponseDto> GetTypeWord(ActivityRequestDto request, CancellationToken ct);
-        Task<FillBlankResponseDto> GetFillBlank(ActivityRequestDto request, CancellationToken ct);
+        Task<QuizResponseDto> GetQuiz(ActivityRequestDto request, Guid userId, CancellationToken ct);
+        Task<TypeWordResponseDto> GetTypeWord(ActivityRequestDto request, Guid userId, CancellationToken ct);
+        Task<FillBlankResponseDto> GetFillBlank(ActivityRequestDto request, Guid userId, CancellationToken ct);
     }
 }

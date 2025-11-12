@@ -11,6 +11,6 @@ namespace Application.UseCases
 {
     public interface IWordQueryBuilder
     {
-        IQueryable<Word> BuildQuery(IDataContext dbContext, DeckFilterDto filter);
+        IQueryable<Word> BuildQuery(IDataContext dbContext, DeckFilterDto filter, Guid userId);
     }
 }

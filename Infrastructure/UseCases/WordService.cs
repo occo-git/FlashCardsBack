@@ -1,6 +1,8 @@
-﻿using Application.DTO.Words;
+﻿using Application.Abstractions.Caching;
+using Application.DTO.Words;
 using Application.Mapping;
 using Application.UseCases;
+using Domain.Entities;
 using Domain.Entities.Words;
 using Infrastructure.DataContexts;
 using Microsoft.EntityFrameworkCore;
@@ -18,19 +20,23 @@ namespace Infrastructure.UseCases
     {
         private readonly IDbContextFactory<DataContext> _dbContextFactory;
         private readonly IWordQueryBuilder _wordQueryBuilder;
+        private readonly IWordCacheService _cacheService;
         private readonly ILogger _logger;
 
         public WordService(
             IDbContextFactory<DataContext> dbContextFactory,
             IWordQueryBuilder wordQueryBuilder,
+            IWordCacheService cacheService,
             ILogger<WordService> logger)
         {
             ArgumentNullException.ThrowIfNull(dbContextFactory, nameof(dbContextFactory));
             ArgumentNullException.ThrowIfNull(wordQueryBuilder, nameof(wordQueryBuilder));
+            ArgumentNullException.ThrowIfNull(cacheService, nameof(cacheService));
             ArgumentNullException.ThrowIfNull(logger, nameof(logger));
 
             _dbContextFactory = dbContextFactory;
             _wordQueryBuilder = wordQueryBuilder;
+            _cacheService = cacheService;
             _logger = logger;
         }
 
@@ -38,12 +44,21 @@ namespace Infrastructure.UseCases
         {
             _logger.LogInformation("GetWordById: WordId = {WordId}", wordId);
 
+            var cachedWord = await _cacheService.GetWordAsync(wordId);
+            if (cachedWord != null)
+                return cachedWord;
+
             await using var dbContext = _dbContextFactory.CreateDbContext();
             var word = await dbContext.Words
                 .AsNoTracking()
                 .FirstOrDefaultAsync(w => w.Id == wordId, ct);
 
-            return word.ToCardDto();
+            var dto = word.ToCardDto();
+            if (dto == null)
+                return null;           
+
+            await _cacheService.SetWordAsync(dto);
+            return dto;
         }
         public async IAsyncEnumerable<ThemeDto?> GetThemes(LevelFilterDto filter, [EnumeratorCancellation] CancellationToken ct)
         {
@@ -61,12 +76,12 @@ namespace Infrastructure.UseCases
             }
         }
 
-        public async Task<CardExtendedDto?> GetCardWithNeighbors(CardRequestDto request, CancellationToken ct)
+        public async Task<CardExtendedDto?> GetCardWithNeighbors(CardRequestDto request, Guid userId, CancellationToken ct)
         {
             _logger.LogInformation("GetCardWithNeighbors: {request}", request);
 
             await using var dbContext = _dbContextFactory.CreateDbContext();
-            var filtered = _wordQueryBuilder.BuildQuery(dbContext, request.Filter);
+            var filtered = _wordQueryBuilder.BuildQuery(dbContext, request.Filter, userId);
 
             Word? currentCard;
             if (request.WordId == 0)
@@ -122,12 +137,12 @@ namespace Infrastructure.UseCases
             return word.ToCardDto();
         }
 
-        public async IAsyncEnumerable<WordDto?> GetWords(CardsPageRequestDto request, [EnumeratorCancellation] CancellationToken ct)
+        public async IAsyncEnumerable<WordDto?> GetWords(CardsPageRequestDto request, Guid userId, [EnumeratorCancellation] CancellationToken ct)
         {
             _logger.LogInformation("GetWords: {request}", request);
 
             await using var dbContext = _dbContextFactory.CreateDbContext();
-            var words = GetWords(dbContext, request, ct);
+            var words = GetWords(dbContext, request, userId, ct);
             await foreach (var word in words.WithCancellation(ct))
             {
                 //Console.WriteLine(word);
@@ -135,9 +150,9 @@ namespace Infrastructure.UseCases
             }
         }
 
-        private async IAsyncEnumerable<Word?> GetWords(DataContext dbContext, CardsPageRequestDto request, [EnumeratorCancellation] CancellationToken ct)
+        private async IAsyncEnumerable<Word?> GetWords(DataContext dbContext, CardsPageRequestDto request, Guid userId, [EnumeratorCancellation] CancellationToken ct)
         {
-            var query = _wordQueryBuilder.BuildQuery(dbContext, request.Filter);
+            var query = _wordQueryBuilder.BuildQuery(dbContext, request.Filter, userId);
 
             if (request.isDirectionForward)
             {

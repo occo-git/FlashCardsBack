@@ -1,94 +1,62 @@
-﻿// Infrastructure/Caching/RedisWordCacheService.cs
-using Domain.Entities.Words;
-using Microsoft.EntityFrameworkCore.Storage;
+﻿using Application.Abstractions.Caching;
+using Application.DTO.Words;
+using Application.Mapping;
+using Infrastructure.DataContexts;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
+using StackExchange.Redis;
 using System;
 using System.Text.Json;
+using IDatabase = StackExchange.Redis.IDatabase;
 
-namespace Infrastructure.Caching;
+namespace Infrastructure.Caching
+{
+    public class RedisWordCacheService : IWordCacheService
+    {
+        private readonly IConnectionMultiplexer _mux;
+        private readonly TimeSpan _wordsTtl = TimeSpan.FromDays(7);
 
-//public class RedisWordCacheService : IWordCacheService
-//{
-//    private readonly IDistributedCache _distributedCache;
-//    private readonly IConnectionMultiplexer _mux;
-//    private readonly TimeSpan _wordTtl = TimeSpan.FromDays(7);
-//    private readonly TimeSpan _pageTtl = TimeSpan.FromDays(30);
+        public RedisWordCacheService(IConnectionMultiplexer mux)
+        {
+            ArgumentNullException.ThrowIfNull(mux, nameof(mux));
+            _mux = mux;
+        }
 
-//    private IDatabase Db => _mux.GetDatabase();
+        private IDatabase Db => _mux.GetDatabase();
 
-//    public RedisWordCacheService(
-//        IDistributedCache distributedCache,
-//        IConnectionMultiplexer mux)
-//    {
-//        _distributedCache = distributedCache;
-//        _mux = mux;
-//    }
+        public async Task<CardDto?> GetWordAsync(long wordId)
+        {
+            var json = await Db.HashGetAsync("words:all", $"word:{wordId}");
+            if (json.IsNull)
+                return null;
+            else
+                return JsonSerializer.Deserialize<CardDto>(json!);
+        }
 
-//    public async Task<CardDto?> GetCardAsync(long wordId)
-//    {
-//        var json = await Db.HashGetAsync("words:all", $"word:{wordId}");
-//        return json.IsNull ? null : JsonSerializer.Deserialize<CardDto>(json!);
-//    }
+        public async Task SetWordAsync(CardDto wordDto)
+        {
+            var json = JsonSerializer.Serialize(wordDto);
+            await Db.HashSetAsync("words:all", $"word:{wordDto.Id}", json);
+            await Db.KeyExpireAsync("words:all", _wordsTtl);
+        }
 
-//    public async Task<CardDto[]?> GetPageAsync(long setId, int page)
-//    {
-//        var key = $"set:{setId}:page:{page}";
-//        var json = await _distributedCache.GetStringAsync(key);
-//        return json is null ? null : JsonSerializer.Deserialize<CardDto[]>(json);
-//    }
+        //public async Task WarmupAllWordsAsync()
+        //{
+        //    await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
+        //    var words = await dbContext.Words.AsNoTracking().Select(w => w.ToCardDto()).ToListAsync();
+        //    var hashEntries = words.Select(w => new HashEntry($"word:{w.Id}", JsonSerializer.Serialize(w))).ToArray();
+        //    await Db.HashSetAsync("words:all", hashEntries);
+        //    await Db.KeyExpireAsync("words:all", _wordsTtl);
+        //}
 
-//    public async Task WarmupWordAsync(Word word)
-//    {
-//        var dto = word.ToCardDto(); // ваш маппер
-//        var json = JsonSerializer.Serialize(dto);
-
-//        await Db.HashSetAsync("words:all", $"word:{word.Id}", json);
-//        await Db.KeyExpireAsync("words:all", _wordTtl);
-//    }
-
-//    public async Task WarmupSetPageAsync(long setId, int page)
-//    {
-//        // Предполагаем, что у тебя есть способ получить слова для страницы
-//        var words = await GetWordsForPageFromDb(setId, page); // ваш метод
-//        var dtos = words.Select(w => w.ToCardDto()).ToArray();
-//        var json = JsonSerializer.Serialize(dtos);
-
-//        var key = $"set:{setId}:page:{page}";
-//        await _distributedCache.SetStringAsync(key, json, new DistributedCacheEntryOptions
-//        {
-//            AbsoluteExpirationRelativeToNow = _pageTtl
-//        });
-//    }
-
-//    public async Task InvalidateWordAsync(long wordId)
-//    {
-//        await Db.HashDeleteAsync("words:all", $"word:{wordId}");
-//        // Если нужно — можно дополнительно удалить страницы, где это слово
-//        // (можно хранить обратный индекс setId → pages)
-//    }
-
-//    public async Task InvalidateSetAsync(long setId)
-//    {
-//        var server = _mux.GetServer(_mux.GetEndPoints().First());
-//        var keys = server.Keys(pattern: $"set:{setId}:page:*").ToArray();
-//        if (keys.Length > 0)
-//            await Db.KeyDeleteAsync(keys);
-//    }
-
-//    // Вспомогательный метод — замените на свой репозиторий
-//    private async Task<Word[]> GetWordsForPageFromDb(long setId, int page, int pageSize = 20)
-//    {
-//        // Пример с EF Core
-//        using var scope = _distributedCache.CreateScope(); // если нужен DbContext
-//        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-
-//        return await db.WordSetItems
-//            .Where(wsi => wsi.WordSetId == setId)
-//            .OrderBy(wsi => wsi.Order)
-//            .Skip(page * pageSize)
-//            .Take(pageSize)
-//            .Include(wsi => wsi.Word)
-//            .Select(wsi => wsi.Word)
-//            .ToArrayAsync();
-//    }
-//}
+        public async Task InvalidateAllAsync()
+        {
+            var server = _mux.GetServer(_mux.GetEndPoints().First());
+            var keys = server.Keys(pattern: "words:*").Concat(server.Keys(pattern: "set:*")).ToArray();
+            if (keys.Any())
+            {
+                await Db.KeyDeleteAsync(keys);
+            }
+        }
+    }
+}

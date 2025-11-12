@@ -42,15 +42,11 @@ builder.Services.AddCors(options =>
 builder.Services.AddDataContext(builder.Configuration);
 #endregion
 
-#region Cache
-builder.Services.AddCache(builder.Configuration);
-#endregion
-
 #region Registration
 builder.Services.AddControllers();
 builder.Services.AddValidators(); // FluentValidation registration
-builder.Services.AddOptions(builder.Configuration); // Options registration
 builder.Services.AddInfrastructureServices(); // Infrastructure services registration
+builder.Services.AddCache(builder.Configuration); // Cache
 builder.Services.AddHostedServices(); // Hosted services registration
 builder.Services.AddJwtAuthenticationOptions(builder.Configuration); // JWT authentication options registration
 builder.Services.AddJwtAuthentication(builder.Configuration); // JWT authentication registration
