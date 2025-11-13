@@ -58,44 +58,60 @@ namespace Infrastructure.DataContexts
                 .OnDelete(DeleteBehavior.Cascade);
             #endregion
 
-            // WordThemes: составной первичный ключ
+            #region WordThemes
+            // combined primary key
             modelBuilder.Entity<WordTheme>()
                 .HasKey(wt => new { wt.WordId, wt.ThemeId });
+            #endregion
 
-            // Words: переименование Word в WordText и CHECK для PartOfSpeech
+            #region Words
+            // rename field Word to WordText
             modelBuilder.Entity<Word>()
                 .Property(w => w.WordText)
                 .HasColumnName("Word");
-
+            
+            // check for PartOfSpeech
             modelBuilder.Entity<Word>()
                 .Property(w => w.PartOfSpeech)
                 .HasColumnType("varchar(50)");
+            #endregion
 
-            // UserWordsProgress: связи с Word и FillBlank
+            #region UserWordsProgress
+            // relation with Word
             modelBuilder.Entity<UserWordsProgress>()
                 .HasOne(wp => wp.Word)
-                .WithMany(q => q.WordProgresses)
+                .WithMany(w => w.WordProgresses)
                 .HasForeignKey(wp => wp.WordId)
                 .IsRequired(false);
 
+            // relation with FillBlank
             modelBuilder.Entity<UserWordsProgress>()
                 .HasOne(wp => wp.FillBlank)
                 .WithMany(fb => fb.WordProgresses)
                 .HasForeignKey(wp => wp.FillBlankId)
                 .IsRequired(false);
 
-            // UserWordsProgress: CHECK для ActivityType
+            // check for ActivityType
             modelBuilder.Entity<UserWordsProgress>()
                 .Property(wp => wp.ActivityType)
                 .HasColumnType("varchar(20)");
+            #endregion
 
-            // Words: CHECK для Difficulty
-            modelBuilder.Entity<Word>()
-                .Property(w => w.Difficulty);
+            #region UserBookmarks
+            // ralation with Word
+            modelBuilder.Entity<UserBookmark>()
+                .HasOne(wp => wp.Word)
+                .WithMany(w => w.Bookmarks)
+                .HasForeignKey(wp => wp.WordId)
+                .IsRequired(false);
 
-            // FillBlank: CHECK для Difficulty
-            modelBuilder.Entity<WordFillBlank>()
-                .Property(fb => fb.Difficulty);
+            // ralation with User
+            modelBuilder.Entity<UserBookmark>()
+                .HasOne(wp => wp.User)
+                .WithMany(u => u.Bookmarks)
+                .HasForeignKey(wp => wp.UserId)
+                .IsRequired(false);
+            #endregion
         }
     }
 }

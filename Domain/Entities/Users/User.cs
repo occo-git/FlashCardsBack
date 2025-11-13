@@ -32,7 +32,7 @@ namespace Domain.Entities
 
         public DateTime LastActive { get; set; }
 
-
+        public List<UserBookmark> Bookmarks { get; set; } = new();
         public List<UserWordsProgress> WordProgresses { get; set; } = new();
         public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
     }

@@ -1,5 +1,7 @@
 ﻿using Application.DTO.Words;
+using Application.UseCases;
 using Domain.Constants;
+using Domain.Entities;
 using Domain.Entities.Words;
 using System;
 using System.Collections.Generic;
@@ -12,7 +14,28 @@ namespace Application.Mapping
 {
     public static class WordMapper
     {
-        public static CardDto? ToCardDto(this Word? word)
+        public static WordDto? ToWordDto(this (Word? Word, bool IsMarked) tuple)
+        {
+            if (tuple.Word == null) return null;
+            return tuple.Word.ToWordDto(tuple.IsMarked);
+        }
+        public static WordDto ToWordDto(this Word word, bool isMarked = false)
+        {
+            return new WordDto(
+                word.Id,
+                word.WordText,
+                word.PartOfSpeech,
+                LocalizationMapper.GetLocalizationDto(word.Translation),
+                isMarked
+            );
+        }
+        
+        public static CardInfo ToCardInfo(this Word word)
+        {
+            return new CardInfo(word.Id, word.WordText);
+        }
+
+        public static CardDto? ToCardDto(this Word? word, bool isMarked = false)
         {
             if (word == null) return null;
 
@@ -24,29 +47,9 @@ namespace Application.Mapping
                 LocalizationMapper.GetLocalizationDto(word.Translation),
                 word.Example ?? String.Empty,
                 word.Level,
-                word.Mark,
                 word.Difficulty,
+                isMarked,
                 ImageAttributesMapper.GetDto(word.ImageAttributes)
-            );
-        }
-
-        public static CardInfo? ToCardInfo(this Word? word)
-        {
-            if (word == null) return null;
-
-            return new CardInfo(word.Id, word.WordText);
-        }
-
-        public static WordDto? ToWordDto(this Word? word)
-        {
-            if (word == null) return null;
-
-            return new WordDto(
-                word.Id,
-                word.WordText,
-                word.PartOfSpeech,
-                LocalizationMapper.GetLocalizationDto(word.Translation),
-                word.Mark
             );
         }
     }

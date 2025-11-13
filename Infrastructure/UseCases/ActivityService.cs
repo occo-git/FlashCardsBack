@@ -44,17 +44,16 @@ namespace Infrastructure.UseCases
         public async Task<TypeWordResponseDto> GetTypeWord(ActivityRequestDto request, Guid userId, CancellationToken ct)
         {
             await using var dbContext = _dbContextFactory.CreateDbContext();
-            var query = _wordQueryBuilder.BuildQuery(dbContext, request.Filter, userId);
+            var filtered = _wordQueryBuilder.BuildQuery(dbContext, request.Filter, userId);
 
             // random word
-            var word = await query
-                .Select(w => w.ToWordDto())
+            var word = await filtered
                 .OrderBy(w => Guid.NewGuid())
                 .FirstOrDefaultAsync(ct);
             if (word == null)
                 throw new InvalidOperationException("Not enough words match the filter.");
-
-            return new TypeWordResponseDto(ActivityTypes.TypeWord, word);
+            else
+                return new TypeWordResponseDto(ActivityTypes.TypeWord, word.ToWordDto());
         }
 
         public async Task<FillBlankResponseDto> GetFillBlank(ActivityRequestDto request, Guid userId, CancellationToken ct)
@@ -80,13 +79,14 @@ namespace Infrastructure.UseCases
 
             return new FillBlankResponseDto(ActivityTypes.FillBlank, blank, words!);
         }
-        private async Task<WordDto?[]> GetWords(ActivityRequestDto request, Guid userId, CancellationToken ct)
+
+        private async Task<WordDto[]> GetWords(ActivityRequestDto request, Guid userId, CancellationToken ct)
         {
             await using var dbContext = _dbContextFactory.CreateDbContext();
-            var query = _wordQueryBuilder.BuildQuery(dbContext, request.Filter, userId);
+            var filtered = _wordQueryBuilder.BuildQuery(dbContext, request.Filter, userId);
 
             // group by PartOfSpeech
-            var posGroups = await query
+            var posGroups = await filtered
                 .GroupBy(w => w.PartOfSpeech)
                 .Select(g => new
                 {
@@ -105,11 +105,11 @@ namespace Infrastructure.UseCases
             var random = new Random();
             var selectedGroup = posGroups[random.Next(posGroups.Count)];
 
-            // 4 random words from group
+            // random words from group
             var selectedWords = selectedGroup.Words
-                .Select(w => w.ToWordDto())
                 .OrderBy(w => Guid.NewGuid())
                 .Take(request.Count)
+                .Select(w => w.ToWordDto())
                 .ToArray();
 
             return selectedWords;

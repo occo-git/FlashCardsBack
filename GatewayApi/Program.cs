@@ -134,7 +134,16 @@ if (args.Length > 0 && args[0].Equals(SharedConstants.Migrate, StringComparison.
                     ApplicationException _ => StatusCodes.Status409Conflict,
                     _ => StatusCodes.Status500InternalServerError
                 },
-                Detail = exception?.Message
+                Detail = exception switch
+                {
+                    ArgumentException ae => ae.Message,
+                    UnauthorizedAccessException ue => ue.Message,
+                    KeyNotFoundException knf => knf.Message,
+                    OperationCanceledException oce => oce.Message,
+                    ValidationException ve => ve.Message,
+                    ApplicationException ape => ape.Message,
+                    _ => "An unexpected error occurred. Please try again later."
+                }
             };
 
             // Exception logging

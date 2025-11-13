@@ -72,11 +72,10 @@ namespace GatewayApi.Controllers
             ArgumentNullException.ThrowIfNull(request, nameof(request));
             _logger.LogInformation($"ChangeMark {request}");
 
-            var card = await _wordService.ChangeMark(request.WordId, ct);
-            if (card == null)
-                return NotFound();
+            await GetCurrentUser(async userId => 
+                await _wordService.ChangeMark(request.WordId, userId, ct));
 
-            return Ok(card);
+            return Ok();
         }
 
         /// <summary>
