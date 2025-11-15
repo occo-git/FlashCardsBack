@@ -14,23 +14,20 @@
 
         .container {
             max-width: 600px;
+            min-height: 600px;
             margin: auto;
             padding: 20px;
             background: #f9f9f9;
         }
 
-        .username {
-            font-weight: bold;
-        }
-
         .button {
             height: 50px;
-            padding: 0px 24px;
+            padding: 16px 24px;
             justify-content: center;
             align-items: center;
             font-size: .8rem;
             text-decoration: none;
-            border: 1px solid gray;
+            border: 1px solid #cacaca;
             border-radius: 25px;
             cursor: pointer;
             user-select: none;
@@ -40,11 +37,19 @@
 <body>
     <div class="container">
         <h2>Confirm Your Email Address</h2>
-        <p>Thank you for registering, <div class="username">@Model.UserName</div>! Please click the button below to confirm your email:</p>
-        <a href="@Model.ConfirmationLink" class="button">Confirm Email</a>
-        <p></p>
-        <p>If the button does not work, copy and paste the link into your browser:</p>
         <p>
+            Thank you for registering, <b>@Model.UserName</b>!
+        </p>
+        <p>
+            Please click the button below to confirm your email:
+        </p>
+        <br />
+        <a href="@Model.ConfirmationLink" class="button">Confirm Email</a>
+        <br />
+        <br />
+        <p>
+            If the button does not work, copy and paste the link into your browser:
+            <br />
             <a href="@Model.ConfirmationLink">@Model.ConfirmationLink</a>
         </p>
         <p>If you did not register, please ignore this email.</p>

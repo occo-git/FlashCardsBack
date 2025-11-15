@@ -86,32 +86,40 @@ namespace Infrastructure.UseCases
             using var context = await _dbContextFactory.CreateDbContextAsync(ct);
             user.Id = Guid.NewGuid();
             user.CreatedAt = DateTime.UtcNow;
+            user.Active = true;
             context.Users.Add(user);
             await context.SaveChangesAsync(ct);
 
             return user;
         }
 
-        public async Task<string> GenerateEmailConfirmationLinkAsync(User user, string scheme, string host, CancellationToken ct)
+        public async Task<string> GenerateEmailConfirmationLinkAsync(Guid userId, string scheme, string host, CancellationToken ct)
         {
-            ArgumentNullException.ThrowIfNull(user, nameof(user));
+            using var context = await _dbContextFactory.CreateDbContextAsync(ct);
+            var existingUser = await context.Users.FindAsync(userId, ct);
+            if (existingUser == null)
+                throw new KeyNotFoundException("User not found");
 
-            var confirmationToken = _confirmationTokenGenerator.GenerateToken(user);
+            var confirmationToken = _confirmationTokenGenerator.GenerateToken(existingUser);
             ArgumentNullException.ThrowIfNullOrEmpty(confirmationToken.Token, nameof(confirmationToken.Token));
 
-            using var context = await _dbContextFactory.CreateDbContextAsync(ct);
-            user.SecureCode = confirmationToken.Token;
+            existingUser.SecureCode = confirmationToken.Token;
             await context.SaveChangesAsync(ct);
 
-            return $"{scheme}://{host}/api/users/confirm?userId={confirmationToken.UserId}&token={confirmationToken.Token}";
+            return $"{scheme}://{host}/api/users/confirm/{confirmationToken.UserId}/{confirmationToken.Token}";
         }
 
-        public async Task<bool> ConfirmEmailAsync(User user, string token, CancellationToken ct)
+        public async Task<bool> ConfirmEmailAsync(Guid userId, string token, CancellationToken ct)
         {
-            ArgumentNullException.ThrowIfNull(user, nameof(user));
-            
             using var context = await _dbContextFactory.CreateDbContextAsync(ct);
-            user.EmailConfirmed = true;
+            var existingUser = await context.Users.FindAsync(userId, ct);
+            if (existingUser == null)
+                throw new KeyNotFoundException("User not found");
+
+            if (existingUser.SecureCode != token)
+                throw new KeyNotFoundException("Confirmation token not found");
+
+            existingUser.EmailConfirmed = true;
             var saved = await context.SaveChangesAsync(ct) > 0;
 
             return saved;

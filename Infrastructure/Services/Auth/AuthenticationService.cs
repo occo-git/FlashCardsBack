@@ -92,7 +92,6 @@ namespace Infrastructure.Services.Auth
                 return new ConfirmEmailResponseDto(true, "Email already confirmed.");
 
             user.EmailConfirmed = true;
-            user.Active = true;
             var saved = await context.SaveChangesAsync() > 0;
 
             return new ConfirmEmailResponseDto(saved, saved ? "Email confirmed": "Failed to confirm email. Please try again or contact support.");

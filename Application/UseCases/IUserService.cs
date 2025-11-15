@@ -12,8 +12,8 @@ namespace Application.UseCases
         Task<IEnumerable<User>> GetAllAsync(CancellationToken ct);
         Task<IAsyncEnumerable<User>> GetAllAsyncEnumerable(CancellationToken ct);
         Task<User> CreateAsync(User user, CancellationToken ct);
-        Task<string> GenerateEmailConfirmationLinkAsync(User user, string scheme, string host, CancellationToken ct);
-        Task<bool> ConfirmEmailAsync(User user, string token, CancellationToken ct);
+        Task<string> GenerateEmailConfirmationLinkAsync(Guid userId, string scheme, string host, CancellationToken ct);
+        Task<bool> ConfirmEmailAsync(Guid userId, string token, CancellationToken ct);
         Task<User> UpdateAsync(User user, CancellationToken ct);
         Task<int> SetLevel(Guid userId, string level, CancellationToken ct);
         Task<ProgressResponseDto> GetProgress(Guid userId, CancellationToken ct);

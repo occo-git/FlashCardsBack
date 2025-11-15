@@ -110,14 +110,16 @@ namespace GatewayApi.Controllers
 
         private async Task SendEmailConfigmation(User user, CancellationToken ct)
         {
+            ArgumentNullException.ThrowIfNull(user, nameof(user));
             ArgumentNullException.ThrowIfNullOrEmpty(user.Email, nameof(user.Email));
-            
+            _logger.LogInformation($"> UsersController.SendEmailConfigmation Email = {user.Email}");
+
             var scheme = HttpContext.Request.Scheme;
             var host = HttpContext.Request.Host.Value;
             ArgumentNullException.ThrowIfNullOrEmpty(scheme, nameof(scheme));
             ArgumentNullException.ThrowIfNullOrEmpty(host, nameof(host));
 
-            var confirmationLink = await _userService.GenerateEmailConfirmationLinkAsync(user, scheme, host, ct);
+            var confirmationLink = await _userService.GenerateEmailConfirmationLinkAsync(user.Id, scheme, host, ct);
             ArgumentNullException.ThrowIfNullOrEmpty(confirmationLink, nameof(confirmationLink));
 
             var confirmEmailDto = new ConfirmEmailDto(user.UserName, confirmationLink);
@@ -125,15 +127,12 @@ namespace GatewayApi.Controllers
             await _emailSender.SendEmailAsync(user.Email, "[FlashCards] - Confirm your email, please", confirmEmailHtml);
         }
 
-        [HttpPost("confirm")]
+        [HttpGet("confirm/{userId:guid}/{*token}")]
         [AllowAnonymous]
         public async Task<ActionResult<bool>> ConfirmEmail(Guid userId, string token, CancellationToken ct)
         {
-            var user = await _userService.GetByIdAsync(userId, ct);
-            if (user == null)
-                return NotFound("User not found.");
-
-            return await _userService.ConfirmEmailAsync(user, token, ct);
+            _logger.LogInformation($"> UsersController.ConfirmEmail UserId = {userId}");
+            return await _userService.ConfirmEmailAsync(userId, token, ct);
         }
 
         /// <summary>
