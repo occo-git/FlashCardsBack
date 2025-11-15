@@ -79,24 +79,6 @@ namespace Infrastructure.Services.Auth
             return tokens;
         }
 
-        public async Task<ConfirmEmailResponseDto> ConfirmEmail(Guid userId, CancellationToken ct)
-        {
-            _logger.LogInformation("ConfirmEmail: {userId}", userId);
-
-            using var context = await _dbContextFactory.CreateDbContextAsync(ct);
-            var user = await context.Users.FirstOrDefaultAsync(u => u.Id == userId, ct);
-
-            if (user == null)
-                throw new KeyNotFoundException("User not found.");
-            else if (user.EmailConfirmed)
-                return new ConfirmEmailResponseDto(true, "Email already confirmed.");
-
-            user.EmailConfirmed = true;
-            var saved = await context.SaveChangesAsync() > 0;
-
-            return new ConfirmEmailResponseDto(saved, saved ? "Email confirmed": "Failed to confirm email. Please try again or contact support.");
-        }
-
         public async Task<TokenResponseDto> UpdateTokensAsync(string refreshToken, string sessionId, CancellationToken ct)
         {
             var oldRefreshToken = await _refreshTokenRepository.GetRefreshTokenAsync(refreshToken, ct);

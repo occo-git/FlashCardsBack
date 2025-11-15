@@ -1,0 +1,19 @@
+﻿@model Exception
+
+@{
+    ViewData["Title"] = "Error Occurred";
+}
+
+<h1>Oops! Something went wrong.</h1>
+
+<p>We are sorry, but an unexpected error has occurred.</p>
+
+@if (Model != null)
+{
+    <div>
+        <strong>Error Details:</strong>
+        <pre>@Model.Message</pre>
+    </div>
+}
+
+<p>Please try again later or contact support if the problem persists.</p>

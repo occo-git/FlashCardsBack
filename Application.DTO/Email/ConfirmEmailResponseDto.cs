@@ -6,5 +6,5 @@ using System.Threading.Tasks;
 
 namespace Application.DTO.Email
 {
-    public record ConfirmEmailResponseDto(bool Sussess, string? Message);
+    public record ConfirmEmailResponseDto(bool Success, string? Message, string? LoginUrl = null);
 }

@@ -47,8 +47,11 @@ services:
     #command: ["migrate"] # flag to start the migration process - JWT_SECRET_KEY = "test_secret_for_migrations"; Add-Migration Tokens -Project Infrastructure -StartupProject GatewayApi
     environment:
       - ASPNETCORE_ENVIRONMENT=Development 
-      - ConnectionStrings__FlashCardsConnectionString=${FLASHCARDS_DB_CONNECTION_STRING} # connection string from .env or secrets
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - ConnectionStrings__FlashCardsConnectionString=${FLASHCARDS_DB_CONNECTION_STRING} # connection string from .env or secrets
+      - API__OriginUrl=${API__OriginUrl}
+      - API__LoginUrl=${API__LoginUrl}
+      - API__ConfirmEmailUrl=${API__ConfirmEmailUrl}
       - REDIS__Host=${REDIS__Host}
       - REDIS__Port=${REDIS__Port}
       - REDIS__Password=${REDIS__Password}

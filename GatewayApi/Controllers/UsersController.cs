@@ -102,15 +102,19 @@ namespace GatewayApi.Controllers
             User newUser = UserMapper.ToDomain(request);
             var createdUser = await _userService.CreateAsync(newUser, ct);
 
-            await SendEmailConfigmation(createdUser, ct);
+            var send = await SendEmailConfirmation(createdUser, ct);
 
             var dto = UserMapper.ToDto(createdUser);
             return CreatedAtAction(nameof(GetById), new { id = dto.Id }, dto);
         }
 
-        private async Task SendEmailConfigmation(User user, CancellationToken ct)
+        private async Task<ActionResult> SendEmailConfirmation(User user, CancellationToken ct)
         {
             ArgumentNullException.ThrowIfNull(user, nameof(user));
+
+            if (user.EmailConfirmed)
+                return BadRequest("Email already confirmed.");
+
             ArgumentNullException.ThrowIfNullOrEmpty(user.Email, nameof(user.Email));
             _logger.LogInformation($"> UsersController.SendEmailConfigmation Email = {user.Email}");
 
@@ -125,14 +129,8 @@ namespace GatewayApi.Controllers
             var confirmEmailDto = new ConfirmEmailDto(user.UserName, confirmationLink);
             var confirmEmailHtml = await _razorRenderer.RenderViewToStringAsync(RenderTemplates.ConfirmEmail, confirmEmailDto);
             await _emailSender.SendEmailAsync(user.Email, "[FlashCards] - Confirm your email, please", confirmEmailHtml);
-        }
 
-        [HttpGet("confirm/{userId:guid}/{*token}")]
-        [AllowAnonymous]
-        public async Task<ActionResult<bool>> ConfirmEmail(Guid userId, string token, CancellationToken ct)
-        {
-            _logger.LogInformation($"> UsersController.ConfirmEmail UserId = {userId}");
-            return await _userService.ConfirmEmailAsync(userId, token, ct);
+            return Ok("Confirmation link has been sent.");
         }
 
         /// <summary>
@@ -228,7 +226,7 @@ namespace GatewayApi.Controllers
 
             if (result == null)
                 return NotFound("User not found");
-            return 
+            return
                 Ok(result);
         }
 
@@ -288,7 +286,7 @@ namespace GatewayApi.Controllers
         {
             _logger.LogInformation($"> UsersController.GetPorgress");
             var result = await GetCurrentUserAsync(async userId =>
-                await _userService.GetProgress(userId, ct));             
+                await _userService.GetProgress(userId, ct));
             return Ok(result);
         }
 

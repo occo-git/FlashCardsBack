@@ -10,6 +10,7 @@
         public const string JwtValidationOptions = "JwtValidationOptions";
 
         public const string EnvJwtSecret = "JWT_SECRET_KEY";
+        public const string EnvApiGroup = "API";
         public const string EnvRedisGroup = "REDIS";
         public const string EnvSmtpGroup = "SMTP";
         public const string EnvFileStoragePath = "FILE_STORAGE_PATH";

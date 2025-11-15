@@ -2,16 +2,16 @@
 using Application.Extentions;
 using FluentValidation;
 using GatewayApi.Extensions;
-using Infrastructure;
-using Infrastructure.Services.Migration;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using Shared;
 
 const string CONST_CorsPolicy = "CorsPolicy";
 
 var builder = WebApplication.CreateBuilder(args);
+var services = builder.Services;
+var configuration = builder.Configuration;
 
 #region Logging
 builder.Logging.ClearProviders();
@@ -25,12 +25,14 @@ builder.Logging.AddSimpleConsole(options =>
 });
 #endregion
 
-#region CORS
-builder.Services.AddCors(options =>
+#region CORS 
+
+var apiOptions = services.AddApiOptions(configuration); // api links
+services.AddCors(options =>
 {
     options.AddPolicy(CONST_CorsPolicy, policyBuilder =>
     {
-        policyBuilder.WithOrigins("http://localhost:4200") // Angular dev server
+        policyBuilder.WithOrigins(apiOptions.OriginUrl)
                      .AllowAnyMethod()
                      .AllowAnyHeader()
                      .AllowCredentials();
@@ -39,23 +41,23 @@ builder.Services.AddCors(options =>
 #endregion
 
 #region DataContext
-builder.Services.AddDataContext(builder.Configuration);
+services.AddDataContext(configuration);
 #endregion
 
 #region Registration
-builder.Services.AddControllers();
-builder.Services.AddValidators(); // FluentValidation registration
-builder.Services.AddRazorRenderer();
-builder.Services.AddEmailSender(builder.Configuration);
-builder.Services.AddCache(builder.Configuration); // Cache
-builder.Services.AddInfrastructureServices(); // Infrastructure services registration
-builder.Services.AddHostedServices(); // Hosted services registration
-builder.Services.AddJwtAuthenticationOptions(builder.Configuration); // JWT authentication options registration
-builder.Services.AddJwtAuthentication(builder.Configuration); // JWT authentication registration
+services.AddControllers();
+services.AddValidators(); // FluentValidation registration
+services.AddRazorRenderer(); // Renders pages into html
+services.AddEmailSender(configuration); // Sends emails
+services.AddCache(configuration); // Cache
+services.AddInfrastructureServices(); // Infrastructure services registration
+services.AddHostedServices(); // Hosted services registration
+services.AddJwtAuthenticationOptions(configuration); // JWT authentication options registration
+services.AddJwtAuthentication(configuration); // JWT authentication registration
 
-builder.Services.AddEndpointsApiExplorer(); // Swagger/OpenAPI
-builder.Services.AddSwaggerGen(); // SwaggerGen
-builder.Services.AddSwaggerGen(c =>
+services.AddEndpointsApiExplorer(); // Swagger/OpenAPI
+services.AddSwaggerGen(); // SwaggerGen
+services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc(SharedConstants.ApiVersion,
         new OpenApiInfo
@@ -67,7 +69,7 @@ builder.Services.AddSwaggerGen(c =>
 #endregion
 
 #region ⚠️ ProblemDetails (RFC 7807)
-builder.Services.AddProblemDetails(options =>
+services.AddProblemDetails(options =>
 {
     options.CustomizeProblemDetails = context =>
     {
@@ -182,11 +184,12 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 // ⚠️ middleware to return status code pages for HTTP errors - app.UseStatusCodePages();
-app.UseStatusCodePagesWithReExecute("/error/{0}");
+//app.UseExceptionHandler("/Error/GeneralError");
+//app.UseStatusCodePagesWithReExecute("/Error/{0}");
 #endregion
 
 // Route to process errors by status code
-app.MapGet("/error/{code}", (int code, HttpContext context) =>
+app.MapGet("/Error/{code}", (int code, HttpContext context) =>
 {
     var problemDetailsService = context.RequestServices.GetRequiredService<IProblemDetailsService>();
     var problem = new ProblemDetails

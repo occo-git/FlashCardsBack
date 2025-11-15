@@ -1,6 +1,7 @@
 ﻿using Application.Abstractions.DataContexts;
 using Application.Abstractions.Services;
 using Application.DTO.Activity;
+using Application.DTO.Email;
 using Application.DTO.Tokens;
 using Application.UseCases;
 using Domain.Constants;
@@ -9,6 +10,8 @@ using Domain.Entities.Users;
 using Infrastructure.DataContexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Shared.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,18 +25,23 @@ namespace Infrastructure.UseCases
         private readonly IDbContextFactory<DataContext> _dbContextFactory;
         private readonly ITokenGenerator<ConfirmationTokenDto> _confirmationTokenGenerator;
         private readonly ILogger<UserService> _logger;
+        private readonly ApiOptions _apiOptions;
 
         public UserService(
             IDbContextFactory<DataContext> dbContextFactory,
             ITokenGenerator<ConfirmationTokenDto> confirmationTokenGenerator,
+            IOptions<ApiOptions> apiOptions,
             ILogger<UserService> logger)
         {
             ArgumentNullException.ThrowIfNull(dbContextFactory, nameof(dbContextFactory));
             ArgumentNullException.ThrowIfNull(confirmationTokenGenerator, nameof(confirmationTokenGenerator));
+            ArgumentNullException.ThrowIfNull(apiOptions, nameof(apiOptions));
+            ArgumentNullException.ThrowIfNull(apiOptions.Value, nameof(apiOptions.Value));
             ArgumentNullException.ThrowIfNull(logger, nameof(logger));
 
             _dbContextFactory = dbContextFactory;
             _confirmationTokenGenerator = confirmationTokenGenerator;
+            _apiOptions = apiOptions.Value;
             _logger = logger;
         }
 
@@ -106,23 +114,28 @@ namespace Infrastructure.UseCases
             existingUser.SecureCode = confirmationToken.Token;
             await context.SaveChangesAsync(ct);
 
-            return $"{scheme}://{host}/api/users/confirm/{confirmationToken.UserId}/{confirmationToken.Token}";
+            return $"{scheme}://{host}/api/email/confirm/{confirmationToken.UserId}/{confirmationToken.Token}";
         }
 
-        public async Task<bool> ConfirmEmailAsync(Guid userId, string token, CancellationToken ct)
+        public async Task<ConfirmEmailResponseDto> ConfirmEmailAsync(Guid userId, string token, CancellationToken ct)
         {
             using var context = await _dbContextFactory.CreateDbContextAsync(ct);
             var existingUser = await context.Users.FindAsync(userId, ct);
             if (existingUser == null)
                 throw new KeyNotFoundException("User not found");
 
-            if (existingUser.SecureCode != token)
-                throw new KeyNotFoundException("Confirmation token not found");
+            if (existingUser.EmailConfirmed)
+                return new ConfirmEmailResponseDto(true, "Email already confirmed.", _apiOptions.LoginUrl);
+            else if (existingUser.SecureCode != token)
+                return new ConfirmEmailResponseDto(false, "Failed to confirm email. Confirmation token not found. Please try again or contact support.");
 
             existingUser.EmailConfirmed = true;
             var saved = await context.SaveChangesAsync(ct) > 0;
 
-            return saved;
+            if (saved)
+                return new ConfirmEmailResponseDto(true, "Thank you! Your email has been successfully confirmed.", _apiOptions.LoginUrl);
+            else
+                return new ConfirmEmailResponseDto(false, "Failed to confirm email. Please try again or contact support.");
         }
 
         public async Task<User> UpdateAsync(User user, CancellationToken ct)
