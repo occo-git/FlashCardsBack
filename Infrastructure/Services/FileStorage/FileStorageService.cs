@@ -1,5 +1,6 @@
 ﻿using Application.Abstractions.Services;
 using Microsoft.Extensions.Configuration;
+using Shared;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,7 +15,7 @@ namespace Infrastructure.Services.FileStorage
 
         public FileStorageService(IConfiguration config)
         {
-            _storagePath = config["FILE_STORAGE_PATH"] ?? Path.Combine("/storage", "images");
+            _storagePath = config[SharedConstants.EnvFileStoragePath] ?? Path.Combine("/storage", "images");
             Directory.CreateDirectory(_storagePath);
         }
 

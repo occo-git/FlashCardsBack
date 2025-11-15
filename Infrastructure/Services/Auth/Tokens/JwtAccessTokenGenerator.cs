@@ -15,16 +15,16 @@ namespace Infrastructure.Services.Auth.Tokens
     {
         private readonly int _accessTokenExpirationMinutes;
 
-        public JwtAccessTokenGenerator(SymmetricSecurityKey sKey, IOptions<ApiTokenOptions> accessTokenOptions)
+        public JwtAccessTokenGenerator(SymmetricSecurityKey sKey, IOptions<ApiTokenOptions> apiTokenOptions)
             : base(sKey)
         {
-            ArgumentNullException.ThrowIfNull(accessTokenOptions, nameof(accessTokenOptions));
-            ArgumentNullException.ThrowIfNull(accessTokenOptions.Value, nameof(accessTokenOptions.Value));
+            ArgumentNullException.ThrowIfNull(apiTokenOptions, nameof(apiTokenOptions));
+            ArgumentNullException.ThrowIfNull(apiTokenOptions.Value, nameof(apiTokenOptions.Value));
 
-            _accessTokenExpirationMinutes = accessTokenOptions.Value.AccessTokenExpiresMinutes;
+            _accessTokenExpirationMinutes = apiTokenOptions.Value.AccessTokenExpiresMinutes;
         }
 
-        public string GenerateToken(User user, string sessionId)
+        public string GenerateToken(User user, string? sessionId = null)
         {
             var expires = DateTime.UtcNow.AddMinutes(_accessTokenExpirationMinutes);
             var claims = GetClaims(user, expires, sessionId);

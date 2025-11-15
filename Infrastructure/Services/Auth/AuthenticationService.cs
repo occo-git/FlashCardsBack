@@ -1,5 +1,6 @@
 ﻿using Application.Abstractions.Repositories;
 using Application.Abstractions.Services;
+using Application.DTO.Email;
 using Application.DTO.Tokens;
 using Application.DTO.Users;
 using Application.Extensions;
@@ -58,16 +59,43 @@ namespace Infrastructure.Services.Auth
         public async Task<TokenResponseDto> AuthenticateAsync(LoginRequestDto loginUserDto, string sessionId, CancellationToken ct)
         {
             await _loginValidator.ValidationCheck(loginUserDto);
-            _logger.LogInformation("Authenticate user: {Username}", loginUserDto.Username);
+            _logger.LogInformation("Authenticate: Username = {Username}", loginUserDto.Username);
 
             using var context = await _dbContextFactory.CreateDbContextAsync(ct);
-            var user = await context.Users
-                .AsNoTracking()
-                .FirstOrDefaultAsync(u => u.Username == loginUserDto.Username || u.Email == loginUserDto.Username, ct);
+            var user = await context.Users.FirstOrDefaultAsync(u => u.UserName == loginUserDto.Username || u.Email == loginUserDto.Username, ct);
+
             if (user == null || !UserMapper.CheckPassword(user, loginUserDto))
                 throw new UnauthorizedAccessException("Incorrect username or password.");
+            else if (!user.EmailConfirmed)
+                throw new UnauthorizedAccessException("Account is not confirmed. Please confirm your email.");
+            else if (!user.Active)
+                throw new UnauthorizedAccessException("Account is currently inactive. Please contact support.");
 
-            return await GenerateTokens(user, sessionId, ct);
+            var tokens = await GenerateTokens(user, sessionId, ct);
+            
+            user.LastActive = DateTime.UtcNow;
+            await context.SaveChangesAsync();
+
+            return tokens;
+        }
+
+        public async Task<ConfirmEmailResponseDto> ConfirmEmail(Guid userId, CancellationToken ct)
+        {
+            _logger.LogInformation("ConfirmEmail: {userId}", userId);
+
+            using var context = await _dbContextFactory.CreateDbContextAsync(ct);
+            var user = await context.Users.FirstOrDefaultAsync(u => u.Id == userId, ct);
+
+            if (user == null)
+                throw new KeyNotFoundException("User not found.");
+            else if (user.EmailConfirmed)
+                return new ConfirmEmailResponseDto(true, "Email already confirmed.");
+
+            user.EmailConfirmed = true;
+            user.Active = true;
+            var saved = await context.SaveChangesAsync() > 0;
+
+            return new ConfirmEmailResponseDto(saved, saved ? "Email confirmed": "Failed to confirm email. Please try again or contact support.");
         }
 
         public async Task<TokenResponseDto> UpdateTokensAsync(string refreshToken, string sessionId, CancellationToken ct)
@@ -77,11 +105,12 @@ namespace Infrastructure.Services.Auth
                 throw new UnauthorizedAccessException("Invalid or expired refresh token.");
 
             using var context = await _dbContextFactory.CreateDbContextAsync(ct);
-            var user = await context.Users
-                .AsNoTracking()
-                .FirstOrDefaultAsync(u => u.Id == oldRefreshToken.UserId, ct);
+            var user = await context.Users.FirstOrDefaultAsync(u => u.Id == oldRefreshToken.UserId, ct);
+
             if (user == null)
                 throw new KeyNotFoundException("User not found.");
+            else if (!user.Active)
+                throw new UnauthorizedAccessException("Account is currently inactive. Please contact support.");
 
             return await UpdateTokens(user, oldRefreshToken, sessionId, ct);
         }
@@ -96,8 +125,8 @@ namespace Infrastructure.Services.Auth
         {
             _logger.LogInformation("Generating tokens for user: {UserId}", user.Id);
 
+            var newAccessToken = _accessTokenGenerator.GenerateToken(user);
             var newRefreshToken = _refreshTokenGenerator.GenerateToken(user, sessionId);
-            var newAccessToken = _accessTokenGenerator.GenerateToken(user, sessionId);
 
             await _refreshTokenRepository.AddRefreshTokenAsync(newRefreshToken, ct);
 
@@ -110,7 +139,7 @@ namespace Infrastructure.Services.Auth
         {
             _logger.LogInformation("Refreshing tokens for user: {UserId}", user.Id);
 
-            var newAccessToken = _accessTokenGenerator.GenerateToken(user, sessionId);
+            var newAccessToken = _accessTokenGenerator.GenerateToken(user);
             var newRefreshToken = _refreshTokenGenerator.GenerateToken(user, sessionId);
 
             await _refreshTokenRepository.UpdateRefreshTokenAsync(oldRefreshToken, newRefreshToken, ct);

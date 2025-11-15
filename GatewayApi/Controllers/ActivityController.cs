@@ -2,7 +2,6 @@
 using Application.DTO.Words;
 using Application.UseCases;
 using Domain.Entities;
-using Infrastructure.Migrations;
 using Infrastructure.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

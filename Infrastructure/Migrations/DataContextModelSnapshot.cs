@@ -85,6 +85,9 @@ namespace Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<bool>("Active")
+                        .HasColumnType("boolean");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -92,6 +95,9 @@ namespace Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
+
+                    b.Property<bool>("EmailConfirmed")
+                        .HasColumnType("boolean");
 
                     b.Property<DateTime>("LastActive")
                         .HasColumnType("timestamp with time zone");
@@ -105,7 +111,10 @@ namespace Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("Username")
+                    b.Property<string>("SecureCode")
+                        .HasColumnType("text");
+
+                    b.Property<string>("UserName")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
@@ -115,7 +124,7 @@ namespace Infrastructure.Migrations
                     b.HasIndex("Email")
                         .IsUnique();
 
-                    b.HasIndex("Username")
+                    b.HasIndex("UserName")
                         .IsUnique();
 
                     b.ToTable("Users");
@@ -219,9 +228,6 @@ namespace Infrastructure.Migrations
                         .HasMaxLength(10)
                         .HasColumnType("character varying(10)");
 
-                    b.Property<bool>("Mark")
-                        .HasColumnType("boolean");
-
                     b.Property<string>("PartOfSpeech")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -302,16 +308,12 @@ namespace Infrastructure.Migrations
             modelBuilder.Entity("Domain.Entities.Users.UserBookmark", b =>
                 {
                     b.HasOne("Domain.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .WithMany("Bookmarks")
+                        .HasForeignKey("UserId");
 
                     b.HasOne("Domain.Entities.Words.Word", "Word")
-                        .WithMany()
-                        .HasForeignKey("WordId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .WithMany("Bookmarks")
+                        .HasForeignKey("WordId");
 
                     b.Navigation("User");
 
@@ -378,6 +380,8 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Domain.Entities.User", b =>
                 {
+                    b.Navigation("Bookmarks");
+
                     b.Navigation("RefreshTokens");
 
                     b.Navigation("WordProgresses");
@@ -385,6 +389,8 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Domain.Entities.Words.Word", b =>
                 {
+                    b.Navigation("Bookmarks");
+
                     b.Navigation("FillBlanks");
 
                     b.Navigation("WordProgresses");

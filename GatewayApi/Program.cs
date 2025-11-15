@@ -45,8 +45,10 @@ builder.Services.AddDataContext(builder.Configuration);
 #region Registration
 builder.Services.AddControllers();
 builder.Services.AddValidators(); // FluentValidation registration
-builder.Services.AddInfrastructureServices(); // Infrastructure services registration
+builder.Services.AddRazorRenderer();
+builder.Services.AddEmailSender(builder.Configuration);
 builder.Services.AddCache(builder.Configuration); // Cache
+builder.Services.AddInfrastructureServices(); // Infrastructure services registration
 builder.Services.AddHostedServices(); // Hosted services registration
 builder.Services.AddJwtAuthenticationOptions(builder.Configuration); // JWT authentication options registration
 builder.Services.AddJwtAuthentication(builder.Configuration); // JWT authentication registration

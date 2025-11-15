@@ -7,16 +7,14 @@
 
         public const string ApiSettings = "ApiSettings";
         public const string ApiTokenOptions = "ApiTokenOptions";
-        public const string JwtSecretEnv = "JWT_SECRET_KEY";
-        public const string JwtValidationOptions = "JwtValidationOptions";        
+        public const string JwtValidationOptions = "JwtValidationOptions";
+
+        public const string EnvJwtSecret = "JWT_SECRET_KEY";
+        public const string EnvRedisGroup = "REDIS";
+        public const string EnvSmtpGroup = "SMTP";
+        public const string EnvFileStoragePath = "FILE_STORAGE_PATH";
 
         public const string FlashCardsConnectionString = "FlashCardsConnectionString";
         public const string Migrate = "migrate";
-
-        public const string Redis_Host = "REDIS_HOST";
-        public const string Redis_Port = "REDIS_PORT";
-        public const string Redis_Password = "REDIS_PASSWORD";
-        public const string Redis_Database = "REDIS_DB";
-        public const string Redis_InstanceName = "FlashCards_";
     }
 }

@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20251005173354_Words")]
-    partial class Words
+    [Migration("20251114045525_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -24,6 +24,42 @@ namespace Infrastructure.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+
+            modelBuilder.Entity("Domain.Entities.Auth.RefreshToken", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("Revoked")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("SessionId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Token")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("RefreshTokens");
+                });
 
             modelBuilder.Entity("Domain.Entities.Theme", b =>
                 {
@@ -52,6 +88,9 @@ namespace Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<bool>("Active")
+                        .HasColumnType("boolean");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -59,6 +98,9 @@ namespace Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
+
+                    b.Property<bool>("EmailConfirmed")
+                        .HasColumnType("boolean");
 
                     b.Property<DateTime>("LastActive")
                         .HasColumnType("timestamp with time zone");
@@ -72,7 +114,7 @@ namespace Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("Username")
+                    b.Property<string>("UserName")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
@@ -82,10 +124,33 @@ namespace Infrastructure.Migrations
                     b.HasIndex("Email")
                         .IsUnique();
 
-                    b.HasIndex("Username")
+                    b.HasIndex("UserName")
                         .IsUnique();
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Users.UserBookmark", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("WordId")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("WordId");
+
+                    b.ToTable("UserBookmarks");
                 });
 
             modelBuilder.Entity("Domain.Entities.Users.UserWordsProgress", b =>
@@ -154,13 +219,14 @@ namespace Infrastructure.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
 
+                    b.Property<string>("ImageAttributes")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("Level")
                         .IsRequired()
                         .HasMaxLength(10)
                         .HasColumnType("character varying(10)");
-
-                    b.Property<bool>("Mark")
-                        .HasColumnType("boolean");
 
                     b.Property<string>("PartOfSpeech")
                         .IsRequired()
@@ -228,6 +294,32 @@ namespace Infrastructure.Migrations
                     b.ToTable("WordThemes");
                 });
 
+            modelBuilder.Entity("Domain.Entities.Auth.RefreshToken", b =>
+                {
+                    b.HasOne("Domain.Entities.User", "User")
+                        .WithMany("RefreshTokens")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Users.UserBookmark", b =>
+                {
+                    b.HasOne("Domain.Entities.User", "User")
+                        .WithMany("Bookmarks")
+                        .HasForeignKey("UserId");
+
+                    b.HasOne("Domain.Entities.Words.Word", "Word")
+                        .WithMany("Bookmarks")
+                        .HasForeignKey("WordId");
+
+                    b.Navigation("User");
+
+                    b.Navigation("Word");
+                });
+
             modelBuilder.Entity("Domain.Entities.Users.UserWordsProgress", b =>
                 {
                     b.HasOne("Domain.Entities.Words.WordFillBlank", "FillBlank")
@@ -288,11 +380,17 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Domain.Entities.User", b =>
                 {
+                    b.Navigation("Bookmarks");
+
+                    b.Navigation("RefreshTokens");
+
                     b.Navigation("WordProgresses");
                 });
 
             modelBuilder.Entity("Domain.Entities.Words.Word", b =>
                 {
+                    b.Navigation("Bookmarks");
+
                     b.Navigation("FillBlanks");
 
                     b.Navigation("WordProgresses");

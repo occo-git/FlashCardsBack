@@ -16,7 +16,7 @@ namespace Domain.Entities
 
         [Required]
         [MaxLength(50)]
-        public required string Username { get; set; }
+        public required string UserName { get; set; }
 
         [Required]
         [MaxLength(256)]
@@ -25,12 +25,17 @@ namespace Domain.Entities
         [Required]
         public required string PasswordHash { get; set; }
 
+        public string? SecureCode { get; set; }
+
+        public bool EmailConfirmed { get; set; }
+
+
         [StringLength(10)]
         public string Level { get; set; } = null!; // e.g., A1, A2, B1, B2, C1, C2
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
         public DateTime LastActive { get; set; }
+        public bool Active { get; set; }
 
         public List<UserBookmark> Bookmarks { get; set; } = new();
         public List<UserWordsProgress> WordProgresses { get; set; } = new();

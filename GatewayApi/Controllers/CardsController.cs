@@ -4,7 +4,6 @@ using Application.DTO.Words;
 using Application.UseCases;
 using Domain.Constants;
 using Domain.Entities;
-using Infrastructure.Migrations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;

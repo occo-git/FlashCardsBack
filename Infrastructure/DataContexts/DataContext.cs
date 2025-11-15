@@ -15,15 +15,15 @@ namespace Infrastructure.DataContexts
 {
     public class DataContext : DbContext, IDataContext
     {
-        public DbSet<Theme> Themes { get; set; }
         public DbSet<User> Users { get; set; }
+
+        public DbSet<Theme> Themes { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
         public DbSet<Word> Words { get; set; }
         public DbSet<WordTheme> WordThemes { get; set; }
         public DbSet<WordFillBlank> FillBlanks { get; set; }
         public DbSet<UserBookmark> UserBookmarks{ get; set; }
         public DbSet<UserWordsProgress> UserWordsProgress { get; set; }
-
 
         public DataContext(DbContextOptions<DataContext> options)
             : base(options)
@@ -38,7 +38,7 @@ namespace Infrastructure.DataContexts
             modelBuilder.Entity<User>(entity =>
             {
                 // unique Username
-                entity.HasIndex(u => u.Username).IsUnique();
+                entity.HasIndex(u => u.UserName).IsUnique();
                 // unique Email
                 entity.HasIndex(u => u.Email).IsUnique();
             });

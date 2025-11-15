@@ -6,12 +6,12 @@ using System.Threading.Tasks;
 
 namespace Shared.Configuration
 {
-    public class RedisOptions
+    public class SmtpOptions
     {
-        public string Host { get; set; } = String.Empty;
+        public string Host {  get; set; } = String.Empty;
         public int Port { get; set; }
+        public string Account { get; set; } = String.Empty;
         public string Password { get; set; } = String.Empty;
-        public int Db { get; set; }
-        public string InstanceName { get; set; } = String.Empty;
+        public string From { get; set; } = string.Empty;
     }
 }

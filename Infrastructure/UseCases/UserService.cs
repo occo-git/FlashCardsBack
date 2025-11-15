@@ -1,5 +1,7 @@
 ﻿using Application.Abstractions.DataContexts;
+using Application.Abstractions.Services;
 using Application.DTO.Activity;
+using Application.DTO.Tokens;
 using Application.UseCases;
 using Domain.Constants;
 using Domain.Entities;
@@ -18,16 +20,20 @@ namespace Infrastructure.UseCases
     public class UserService : IUserService
     {
         private readonly IDbContextFactory<DataContext> _dbContextFactory;
+        private readonly ITokenGenerator<ConfirmationTokenDto> _confirmationTokenGenerator;
         private readonly ILogger<UserService> _logger;
 
         public UserService(
             IDbContextFactory<DataContext> dbContextFactory,
+            ITokenGenerator<ConfirmationTokenDto> confirmationTokenGenerator,
             ILogger<UserService> logger)
         {
             ArgumentNullException.ThrowIfNull(dbContextFactory, nameof(dbContextFactory));
+            ArgumentNullException.ThrowIfNull(confirmationTokenGenerator, nameof(confirmationTokenGenerator));
             ArgumentNullException.ThrowIfNull(logger, nameof(logger));
 
             _dbContextFactory = dbContextFactory;
+            _confirmationTokenGenerator = confirmationTokenGenerator;
             _logger = logger;
         }
 
@@ -38,14 +44,14 @@ namespace Infrastructure.UseCases
                 .FirstOrDefaultAsync(u => u.Id == id, ct);
         }
 
-        public async Task<User?> GetByUsernameAsync(string username, CancellationToken ct)
+        public async Task<User?> GetByUsernameAsync(string? username, CancellationToken ct)
         {
             using var context = await _dbContextFactory.CreateDbContextAsync(ct);
             return await context.Users
-                .FirstOrDefaultAsync(u => u.Username == username, ct);
+                .FirstOrDefaultAsync(u => u.UserName == username, ct);
         }
 
-        public async Task<User?> GetByEmailAsync(string email, CancellationToken ct)
+        public async Task<User?> GetByEmailAsync(string? email, CancellationToken ct)
         {
             using var context = await _dbContextFactory.CreateDbContextAsync(ct);
             return await context.Users
@@ -70,21 +76,45 @@ namespace Infrastructure.UseCases
         {
             ArgumentNullException.ThrowIfNull(user, nameof(user));
 
-            var existingUsername = await GetByUsernameAsync(user.Username, ct);
+            var existingUsername = await GetByUsernameAsync(user.UserName, ct);
             if (existingUsername != null)
                 throw new ApplicationException("User with the same username already exists");
             var existingEmail = await GetByEmailAsync(user.Email, ct);
             if (existingEmail != null)
                 throw new ApplicationException("User with the same email already exists");
 
+            using var context = await _dbContextFactory.CreateDbContextAsync(ct);
             user.Id = Guid.NewGuid();
             user.CreatedAt = DateTime.UtcNow;
-
-            using var context = await _dbContextFactory.CreateDbContextAsync(ct);
             context.Users.Add(user);
             await context.SaveChangesAsync(ct);
 
             return user;
+        }
+
+        public async Task<string> GenerateEmailConfirmationLinkAsync(User user, string scheme, string host, CancellationToken ct)
+        {
+            ArgumentNullException.ThrowIfNull(user, nameof(user));
+
+            var confirmationToken = _confirmationTokenGenerator.GenerateToken(user);
+            ArgumentNullException.ThrowIfNullOrEmpty(confirmationToken.Token, nameof(confirmationToken.Token));
+
+            using var context = await _dbContextFactory.CreateDbContextAsync(ct);
+            user.SecureCode = confirmationToken.Token;
+            await context.SaveChangesAsync(ct);
+
+            return $"{scheme}://{host}/api/users/confirm?userId={confirmationToken.UserId}&token={confirmationToken.Token}";
+        }
+
+        public async Task<bool> ConfirmEmailAsync(User user, string token, CancellationToken ct)
+        {
+            ArgumentNullException.ThrowIfNull(user, nameof(user));
+            
+            using var context = await _dbContextFactory.CreateDbContextAsync(ct);
+            user.EmailConfirmed = true;
+            var saved = await context.SaveChangesAsync(ct) > 0;
+
+            return saved;
         }
 
         public async Task<User> UpdateAsync(User user, CancellationToken ct)
@@ -97,7 +127,7 @@ namespace Infrastructure.UseCases
                 throw new KeyNotFoundException("User not found");
 
             // uпdate only the necessary fields
-            existingUser.Username = user.Username;
+            existingUser.UserName = user.UserName;
             existingUser.PasswordHash = user.PasswordHash;
 
             await context.SaveChangesAsync(ct);

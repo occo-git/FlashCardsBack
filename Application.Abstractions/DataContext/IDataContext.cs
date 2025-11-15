@@ -13,9 +13,10 @@ namespace Application.Abstractions.DataContexts
 {
     public interface IDataContext : IDisposable
     {
-        DbSet<Theme> Themes { get; set; }
         DbSet<User> Users { get; set; }
         DbSet<RefreshToken> RefreshTokens { get; set; }
+
+        DbSet<Theme> Themes { get; set; }
         DbSet<Word> Words { get; set; }
         DbSet<WordTheme> WordThemes { get; set; }
         DbSet<WordFillBlank> FillBlanks { get; set; }

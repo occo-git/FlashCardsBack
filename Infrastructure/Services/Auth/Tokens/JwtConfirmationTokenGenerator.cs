@@ -1,6 +1,6 @@
 ﻿using Application.Abstractions.Services;
+using Application.DTO.Tokens;
 using Domain.Entities;
-using Domain.Entities.Auth;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Shared.Configuration;
@@ -12,28 +12,26 @@ using System.Threading.Tasks;
 
 namespace Infrastructure.Services.Auth.Tokens
 {
-    public class JwtRefreshTokenGenerator : JwtTokenGeneratorBase, ITokenGenerator<RefreshToken>
+    public class JwtConfirmationTokenGenerator : JwtTokenGeneratorBase, ITokenGenerator<ConfirmationTokenDto>
     {
-        private readonly int _refreshTokenExpirationDays;
+        private readonly int _confirmationTokenExpirationMinutes;
 
-        public JwtRefreshTokenGenerator(SymmetricSecurityKey sKey, IOptions<ApiTokenOptions> apiTokenOptions)
+        public JwtConfirmationTokenGenerator(SymmetricSecurityKey sKey, IOptions<ApiTokenOptions> apiTokenOptions)
             : base(sKey)
         {
             ArgumentNullException.ThrowIfNull(apiTokenOptions, nameof(apiTokenOptions));
             ArgumentNullException.ThrowIfNull(apiTokenOptions.Value, nameof(apiTokenOptions.Value));
 
-            _refreshTokenExpirationDays = apiTokenOptions.Value.RefreshTokenExpiresDays;
+            _confirmationTokenExpirationMinutes = apiTokenOptions.Value.ConfirmationTokenExpiresMinutes;
         }
 
-        public RefreshToken GenerateToken(User user, string? sessionId = null)
+        public ConfirmationTokenDto GenerateToken(User user, string? sessionId = null)
         {
-            ArgumentNullException.ThrowIfNull(sessionId, nameof(sessionId));
-
-            var expires = DateTime.UtcNow.AddDays(_refreshTokenExpirationDays);
+            var expires = DateTime.UtcNow.AddMinutes(_confirmationTokenExpirationMinutes);
             var claims = GetClaims(user, expires, sessionId);
             var token = GenerateJwtToken(claims, expires);
 
-            return new RefreshToken(token, user.Id, expires, sessionId);
+            return new ConfirmationTokenDto(user.Id, token);
         }
     }
 }

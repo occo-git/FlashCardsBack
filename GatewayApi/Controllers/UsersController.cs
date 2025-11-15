@@ -1,5 +1,7 @@
 ﻿using Application.Abstractions.Services;
+using Application.DTO;
 using Application.DTO.Activity;
+using Application.DTO.Email;
 using Application.DTO.Tokens;
 using Application.DTO.Users;
 using Application.Extensions;
@@ -7,7 +9,9 @@ using Application.Mapping;
 using Application.UseCases;
 using Domain.Entities;
 using FluentValidation;
+using Infrastructure.Services.RazorRenderer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Shared;
@@ -22,20 +26,28 @@ namespace GatewayApi.Controllers
     {
         private readonly int _accessTokenMinutesBeforeExpiration = 3;
         private readonly IUserService _userService;
+        private readonly IRazorRenderer _razorRenderer;
+        private readonly IEmailSender _emailSender;
         private readonly IAuthenticationService _authenticationService;
 
         public UsersController(
             IUserService userService,
+            IRazorRenderer razorRenderer,
+            IEmailSender emailSender,
             IAuthenticationService authenticationService,
             IOptions<ApiTokenOptions> accessTokenOptions,
             ILogger<UsersController> logger) : base(logger)
         {
             ArgumentNullException.ThrowIfNull(userService, nameof(userService));
+            ArgumentNullException.ThrowIfNull(razorRenderer, nameof(razorRenderer));
+            ArgumentNullException.ThrowIfNull(emailSender, nameof(emailSender));
             ArgumentNullException.ThrowIfNull(authenticationService, nameof(authenticationService));
             ArgumentNullException.ThrowIfNull(accessTokenOptions, nameof(accessTokenOptions));
             ArgumentNullException.ThrowIfNull(accessTokenOptions.Value, nameof(accessTokenOptions.Value));
 
             _userService = userService;
+            _razorRenderer = razorRenderer;
+            _emailSender = emailSender;
             _authenticationService = authenticationService;
             _accessTokenMinutesBeforeExpiration = accessTokenOptions.Value.AccessTokenMinutesBeforeExpiration;
         }
@@ -86,11 +98,42 @@ namespace GatewayApi.Controllers
             _logger.LogInformation($"> UsersController.Register Username = {request.Username}");
 
             await validator.ValidationCheck(request);
+
             User newUser = UserMapper.ToDomain(request);
             var createdUser = await _userService.CreateAsync(newUser, ct);
-            var dto = UserMapper.ToDto(createdUser);
 
+            await SendEmailConfigmation(createdUser, ct);
+
+            var dto = UserMapper.ToDto(createdUser);
             return CreatedAtAction(nameof(GetById), new { id = dto.Id }, dto);
+        }
+
+        private async Task SendEmailConfigmation(User user, CancellationToken ct)
+        {
+            ArgumentNullException.ThrowIfNullOrEmpty(user.Email, nameof(user.Email));
+            
+            var scheme = HttpContext.Request.Scheme;
+            var host = HttpContext.Request.Host.Value;
+            ArgumentNullException.ThrowIfNullOrEmpty(scheme, nameof(scheme));
+            ArgumentNullException.ThrowIfNullOrEmpty(host, nameof(host));
+
+            var confirmationLink = await _userService.GenerateEmailConfirmationLinkAsync(user, scheme, host, ct);
+            ArgumentNullException.ThrowIfNullOrEmpty(confirmationLink, nameof(confirmationLink));
+
+            var confirmEmailDto = new ConfirmEmailDto(user.UserName, confirmationLink);
+            var confirmEmailHtml = await _razorRenderer.RenderViewToStringAsync(RenderTemplates.ConfirmEmail, confirmEmailDto);
+            await _emailSender.SendEmailAsync(user.Email, "[FlashCards] - Confirm your email, please", confirmEmailHtml);
+        }
+
+        [HttpPost("confirm")]
+        [AllowAnonymous]
+        public async Task<ActionResult<bool>> ConfirmEmail(Guid userId, string token, CancellationToken ct)
+        {
+            var user = await _userService.GetByIdAsync(userId, ct);
+            if (user == null)
+                return NotFound("User not found.");
+
+            return await _userService.ConfirmEmailAsync(user, token, ct);
         }
 
         /// <summary>
@@ -179,7 +222,7 @@ namespace GatewayApi.Controllers
                 }
                 else
                 {
-                    _logger.LogInformation("> UsersController.GetLoggedUser: Found user: Id={id}, Username={username}", user.Id, user.Username);
+                    _logger.LogInformation("> UsersController.GetLoggedUser: Found user: Id={id}, Username={username}", user.Id, user.UserName);
                     return UserMapper.ToDto(user);
                 }
             });

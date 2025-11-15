@@ -6,7 +6,6 @@ using Domain.Entities;
 using Domain.Entities.Users;
 using Domain.Entities.Words;
 using Infrastructure.DataContexts;
-using Infrastructure.Migrations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
@@ -46,9 +45,9 @@ namespace Infrastructure.UseCases
         {
             _logger.LogInformation("GetWordById: WordId = {WordId}", wordId);
 
-            var cachedWord = await _cacheService.GetWordAsync(wordId);
-            if (cachedWord != null)
-                return cachedWord;
+            //var cachedWord = await _cacheService.GetWordAsync(wordId);
+            //if (cachedWord != null)
+            //    return cachedWord;
 
             await using var dbContext = _dbContextFactory.CreateDbContext();
             var word = await dbContext.Words
@@ -59,7 +58,7 @@ namespace Infrastructure.UseCases
             if (dto == null)
                 return null;           
 
-            await _cacheService.SetWordAsync(dto);
+            //await _cacheService.SetWordAsync(dto);
             return dto;
         }
         public async IAsyncEnumerable<ThemeDto?> GetThemes(LevelFilterDto filter, [EnumeratorCancellation] CancellationToken ct)

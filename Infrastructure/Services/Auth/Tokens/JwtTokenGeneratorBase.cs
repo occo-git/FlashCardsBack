@@ -20,15 +20,15 @@ namespace Infrastructure.Services.Auth.Tokens
             _sKey = sKey;
         }
 
-        protected Claim[] GetClaims(User user, DateTime expires, string sessionId)
+        protected Claim[] GetClaims(User user, DateTime expires, string? sessionId = null)
         {
-            if (string.IsNullOrWhiteSpace(user.Username))
+            if (string.IsNullOrWhiteSpace(user.UserName))
                 throw new Exception("User's data is incomplete");
 
             return new[]
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Name, user.Username),
+                new Claim(ClaimTypes.Name, user.UserName),
                 new Claim(ClaimTypes.Expiration, expires.ToString("o")),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };

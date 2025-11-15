@@ -16,7 +16,7 @@ namespace Application.Mapping
             return new UserInfoDto
             {
                 Id = user.Id,
-                Username = user.Username,
+                Username = user.UserName,
                 Level = user.Level
             };
         }
@@ -25,7 +25,7 @@ namespace Application.Mapping
         {
             return new User
             {
-                Username = dto.Username,
+                UserName = dto.Username,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
                 Email = dto.Email,
                 Level = Levels.A1,

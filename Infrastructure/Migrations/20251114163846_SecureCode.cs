@@ -5,25 +5,24 @@
 namespace Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class WordAttr : Migration
+    public partial class SecureCode : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AddColumn<string>(
-                name: "ImageAttributes",
-                table: "Words",
+                name: "SecureCode",
+                table: "Users",
                 type: "text",
-                nullable: false,
-                defaultValue: "");
+                nullable: true);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
-                name: "ImageAttributes",
-                table: "Words");
+                name: "SecureCode",
+                table: "Users");
         }
     }
 }

@@ -20,7 +20,7 @@ namespace GatewayApi.Extensions
             services.AddScoped<CustomJwtBearerEvents>();
 
             // get the JWT signing key from the environment variable
-            var signingKeyString = configuration[SharedConstants.JwtSecretEnv];
+            var signingKeyString = configuration[SharedConstants.EnvJwtSecret];
             ArgumentException.ThrowIfNullOrWhiteSpace(signingKeyString, nameof(signingKeyString));
  
             // Symmetric key to validate the token
