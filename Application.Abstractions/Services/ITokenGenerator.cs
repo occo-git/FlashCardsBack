@@ -10,5 +10,6 @@ namespace Application.Abstractions.Services
     public interface ITokenGenerator<T>
     {
         T GenerateToken(User user, string? sessionId = null);
+        Guid GetUserId(string token);
     }
 }

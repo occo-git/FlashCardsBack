@@ -27,7 +27,7 @@ namespace Infrastructure.Services.Auth.Tokens
         public string GenerateToken(User user, string? sessionId = null)
         {
             var expires = DateTime.UtcNow.AddMinutes(_accessTokenExpirationMinutes);
-            var claims = GetClaims(user, expires, sessionId);
+            var claims = CreateClaims(user, expires, sessionId);
             return GenerateJwtToken(claims, expires);
         }
     }

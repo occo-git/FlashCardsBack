@@ -20,7 +20,7 @@ namespace Infrastructure.Services.Auth.Tokens
             _sKey = sKey;
         }
 
-        protected Claim[] GetClaims(User user, DateTime expires, string? sessionId = null)
+        protected Claim[] CreateClaims(User user, DateTime expires, string? sessionId = null)
         {
             if (string.IsNullOrWhiteSpace(user.UserName))
                 throw new Exception("User's data is incomplete");
@@ -32,6 +32,18 @@ namespace Infrastructure.Services.Auth.Tokens
                 new Claim(ClaimTypes.Expiration, expires.ToString("o")),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
+        }
+
+        public Guid GetUserId(string token)
+        {
+            var handler = new JwtSecurityTokenHandler();
+            var jwt = handler.ReadJwtToken(token);
+            var userIdStr = jwt.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+
+            if (String.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var userId))
+                throw new InvalidOperationException("Invalid or malformed confirmation token");
+
+            return userId;
         }
 
         protected string GenerateJwtToken(Claim[] claims, DateTime expires)

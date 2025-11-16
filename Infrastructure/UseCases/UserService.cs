@@ -48,8 +48,7 @@ namespace Infrastructure.UseCases
         public async Task<User?> GetByIdAsync(Guid id, CancellationToken ct)
         {
             using var context = await _dbContextFactory.CreateDbContextAsync(ct);
-            return await context.Users
-                .FirstOrDefaultAsync(u => u.Id == id, ct);
+            return  await context.Users.FindAsync(id, ct);
         }
 
         public async Task<User?> GetByUsernameAsync(string? username, CancellationToken ct)
@@ -101,43 +100,6 @@ namespace Infrastructure.UseCases
             return user;
         }
 
-        public async Task<string> GenerateEmailConfirmationLinkAsync(Guid userId, string scheme, string host, CancellationToken ct)
-        {
-            using var context = await _dbContextFactory.CreateDbContextAsync(ct);
-            var existingUser = await context.Users.FindAsync(userId, ct);
-            if (existingUser == null)
-                throw new KeyNotFoundException("User not found");
-
-            var confirmationToken = _confirmationTokenGenerator.GenerateToken(existingUser);
-            ArgumentNullException.ThrowIfNullOrEmpty(confirmationToken.Token, nameof(confirmationToken.Token));
-
-            existingUser.SecureCode = confirmationToken.Token;
-            await context.SaveChangesAsync(ct);
-
-            return $"{scheme}://{host}/api/email/confirm/{confirmationToken.UserId}/{confirmationToken.Token}";
-        }
-
-        public async Task<ConfirmEmailResponseDto> ConfirmEmailAsync(Guid userId, string token, CancellationToken ct)
-        {
-            using var context = await _dbContextFactory.CreateDbContextAsync(ct);
-            var existingUser = await context.Users.FindAsync(userId, ct);
-            if (existingUser == null)
-                throw new KeyNotFoundException("User not found");
-
-            if (existingUser.EmailConfirmed)
-                return new ConfirmEmailResponseDto(true, "Email already confirmed.", _apiOptions.LoginUrl);
-            else if (existingUser.SecureCode != token)
-                return new ConfirmEmailResponseDto(false, "Failed to confirm email. Confirmation token not found. Please try again or contact support.");
-
-            existingUser.EmailConfirmed = true;
-            var saved = await context.SaveChangesAsync(ct) > 0;
-
-            if (saved)
-                return new ConfirmEmailResponseDto(true, "Thank you! Your email has been successfully confirmed.", _apiOptions.LoginUrl);
-            else
-                return new ConfirmEmailResponseDto(false, "Failed to confirm email. Please try again or contact support.");
-        }
-
         public async Task<User> UpdateAsync(User user, CancellationToken ct)
         {
             ArgumentNullException.ThrowIfNull(user, nameof(user));
@@ -156,6 +118,7 @@ namespace Infrastructure.UseCases
             return existingUser;
         }
 
+        #region User Level
         public async Task<int> SetLevel(Guid userId, string level, CancellationToken ct)
         {
             using var context = await _dbContextFactory.CreateDbContextAsync();
@@ -166,7 +129,9 @@ namespace Infrastructure.UseCases
             existingUser.Level = level;
             return await context.SaveChangesAsync(ct);
         }
+        #endregion
 
+        #region User Progress
         public async Task<ProgressResponseDto> GetProgress(Guid userId, CancellationToken ct)
         {
             await using var context = _dbContextFactory.CreateDbContext();
@@ -272,5 +237,6 @@ namespace Infrastructure.UseCases
             }
             return await context.SaveChangesAsync(ct);
         }
+        #endregion
     }
 }

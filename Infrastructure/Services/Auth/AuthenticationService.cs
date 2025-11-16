@@ -86,7 +86,7 @@ namespace Infrastructure.Services.Auth
                 throw new UnauthorizedAccessException("Invalid or expired refresh token.");
 
             using var context = await _dbContextFactory.CreateDbContextAsync(ct);
-            var user = await context.Users.FirstOrDefaultAsync(u => u.Id == oldRefreshToken.UserId, ct);
+            var user = await context.Users.FindAsync(oldRefreshToken.UserId, ct);
 
             if (user == null)
                 throw new KeyNotFoundException("User not found.");

@@ -51,7 +51,7 @@ services:
       - ConnectionStrings__FlashCardsConnectionString=${FLASHCARDS_DB_CONNECTION_STRING} # connection string from .env or secrets
       - API__OriginUrl=${API__OriginUrl}
       - API__LoginUrl=${API__LoginUrl}
-      - API__ConfirmEmailUrl=${API__ConfirmEmailUrl}
+      - API__ConfirmEmailUrlTemplate=${API__ConfirmEmailUrlTemplate}
       - REDIS__Host=${REDIS__Host}
       - REDIS__Port=${REDIS__Port}
       - REDIS__Password=${REDIS__Password}

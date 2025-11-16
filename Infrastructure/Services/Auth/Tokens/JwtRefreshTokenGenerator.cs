@@ -30,7 +30,7 @@ namespace Infrastructure.Services.Auth.Tokens
             ArgumentNullException.ThrowIfNull(sessionId, nameof(sessionId));
 
             var expires = DateTime.UtcNow.AddDays(_refreshTokenExpirationDays);
-            var claims = GetClaims(user, expires, sessionId);
+            var claims = CreateClaims(user, expires, sessionId);
             var token = GenerateJwtToken(claims, expires);
 
             return new RefreshToken(token, user.Id, expires, sessionId);

@@ -96,6 +96,7 @@ namespace GatewayApi.Extensions
             services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 
             services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IUserEmailService, UserEmailService>();
             services.AddScoped<IAuthenticationService, AuthenticationService>();
             services.AddScoped<IWordQueryBuilder, WordQueryBuilder>();
             services.AddScoped<IWordService, WordService>();

@@ -28,7 +28,7 @@ namespace Infrastructure.Services.Auth.Tokens
         public ConfirmationTokenDto GenerateToken(User user, string? sessionId = null)
         {
             var expires = DateTime.UtcNow.AddMinutes(_confirmationTokenExpirationMinutes);
-            var claims = GetClaims(user, expires, sessionId);
+            var claims = CreateClaims(user, expires, sessionId);
             var token = GenerateJwtToken(claims, expires);
 
             return new ConfirmationTokenDto(user.Id, token);
