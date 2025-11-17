@@ -75,7 +75,7 @@ services.AddProblemDetails(options =>
 {
     options.CustomizeProblemDetails = context =>
     {
-        context.ProblemDetails.Detail ??= "An error occurred. Please try again.";
+        context.ProblemDetails.Detail ??= "An error occurred. Please try again later.";
         // IHostEnvironment from services
         var env = context.HttpContext.RequestServices.GetRequiredService<IHostEnvironment>();
         if (env.IsDevelopment())
