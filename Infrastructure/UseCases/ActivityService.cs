@@ -51,7 +51,7 @@ namespace Infrastructure.UseCases
                 .OrderBy(w => Guid.NewGuid())
                 .FirstOrDefaultAsync(ct);
             if (word == null)
-                throw new InvalidOperationException("Not enough words match the filter.");
+                throw new KeyNotFoundException("Not enough words match the filter.");
             else
                 return new TypeWordResponseDto(ActivityTypes.TypeWord, word.ToWordDto());
         }
@@ -65,7 +65,7 @@ namespace Infrastructure.UseCases
                 .OrderBy(w => Guid.NewGuid())
                 .FirstOrDefault();
             if (word == null)
-                throw new InvalidOperationException("Not enough words match the filter.");
+                throw new KeyNotFoundException("Not enough words match the filter.");
 
             // random fill blank for a word
             await using var dbContext = _dbContextFactory.CreateDbContext();
@@ -75,7 +75,7 @@ namespace Infrastructure.UseCases
                 .OrderBy(w => Guid.NewGuid())
                 .FirstOrDefaultAsync(ct);
             if (blank == null)
-                throw new InvalidOperationException("No fill blank for a word");
+                throw new KeyNotFoundException("No fill blank for a word");
 
             return new FillBlankResponseDto(ActivityTypes.FillBlank, blank, words!);
         }
@@ -99,7 +99,7 @@ namespace Infrastructure.UseCases
 
             // no suitable group - throw an error
             if (!posGroups.Any())
-                throw new InvalidOperationException("Not enough words match the filter.");
+                throw new KeyNotFoundException("Not enough words match the filter.");
 
             // random POS
             var random = new Random();

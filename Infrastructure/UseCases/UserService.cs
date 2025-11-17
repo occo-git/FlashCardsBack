@@ -3,6 +3,7 @@ using Application.Abstractions.Services;
 using Application.DTO.Activity;
 using Application.DTO.Email;
 using Application.DTO.Tokens;
+using Application.Exceptions;
 using Application.UseCases;
 using Domain.Constants;
 using Domain.Entities;
@@ -48,13 +49,16 @@ namespace Infrastructure.UseCases
         public async Task<User?> GetByIdAsync(Guid id, CancellationToken ct)
         {
             using var context = await _dbContextFactory.CreateDbContextAsync(ct);
-            return  await context.Users.FindAsync(id, ct);
+            return  await context.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Id == id);
         }
 
         public async Task<User?> GetByUsernameAsync(string? username, CancellationToken ct)
         {
             using var context = await _dbContextFactory.CreateDbContextAsync(ct);
             return await context.Users
+                .AsNoTracking()
                 .FirstOrDefaultAsync(u => u.UserName == username, ct);
         }
 
@@ -62,6 +66,7 @@ namespace Infrastructure.UseCases
         {
             using var context = await _dbContextFactory.CreateDbContextAsync(ct);
             return await context.Users
+                .AsNoTracking()
                 .FirstOrDefaultAsync(u => u.Email == email, ct);
         }
 
@@ -70,52 +75,51 @@ namespace Infrastructure.UseCases
             using var context = await _dbContextFactory.CreateDbContextAsync(ct);
             return await context.Users
                 .AsNoTracking()
-                .ToListAsync(ct);
+                .ToListAsync(ct); // all users in memory
         }
 
         public async Task<IAsyncEnumerable<User>> GetAllAsyncEnumerable(CancellationToken ct)
         {
             using var context = await _dbContextFactory.CreateDbContextAsync(ct);
-            return context.Users.AsAsyncEnumerable();
+            return context.Users
+                .AsNoTracking()
+                .AsAsyncEnumerable(); // users as async enumerable, available for streaming one by one
         }
 
-        public async Task<User> CreateAsync(User user, CancellationToken ct)
+        public async Task<User> CreateNewAsync(User user, CancellationToken ct)
         {
             ArgumentNullException.ThrowIfNull(user, nameof(user));
 
             var existingUsername = await GetByUsernameAsync(user.UserName, ct);
             if (existingUsername != null)
-                throw new ApplicationException("User with the same username already exists");
+                throw new UserAlreadyExistsException("User with the same username already exists");
             var existingEmail = await GetByEmailAsync(user.Email, ct);
             if (existingEmail != null)
-                throw new ApplicationException("User with the same email already exists");
+                throw new UserAlreadyExistsException("User with the same email already exists");
 
-            using var context = await _dbContextFactory.CreateDbContextAsync(ct);
             user.Id = Guid.NewGuid();
             user.CreatedAt = DateTime.UtcNow;
             user.Active = true;
+
+            return user;
+        }
+
+        public async Task<User> AddAsync(User user, CancellationToken ct)
+        {
+            ArgumentNullException.ThrowIfNull(user, nameof(user));
+            using var context = await _dbContextFactory.CreateDbContextAsync(ct);
             context.Users.Add(user);
             await context.SaveChangesAsync(ct);
-
             return user;
         }
 
         public async Task<User> UpdateAsync(User user, CancellationToken ct)
         {
             ArgumentNullException.ThrowIfNull(user, nameof(user));
-
             using var context = await _dbContextFactory.CreateDbContextAsync(ct);
-            var existingUser = await context.Users.FindAsync(user.Id, ct);
-            if (existingUser == null)
-                throw new KeyNotFoundException("User not found");
-
-            // uпdate only the necessary fields
-            existingUser.UserName = user.UserName;
-            existingUser.PasswordHash = user.PasswordHash;
-
+            context.Users.Update(user);
             await context.SaveChangesAsync(ct);
-
-            return existingUser;
+            return user;
         }
 
         #region User Level

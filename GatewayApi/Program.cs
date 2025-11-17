@@ -1,5 +1,7 @@
 ﻿using Application.Abstractions.Services;
+using Application.Exceptions;
 using Application.Extentions;
+using Application.Mapping;
 using FluentValidation;
 using GatewayApi.Extensions;
 using Microsoft.AspNetCore.Diagnostics;
@@ -131,24 +133,37 @@ if (args.Length > 0 && args[0].Equals(SharedConstants.Migrate, StringComparison.
                 Status = exception switch
                 {
                     ArgumentException _ => StatusCodes.Status400BadRequest,
+                    EmailNotConfirmedException => StatusCodes.Status400BadRequest,
+                    InvalidTokenFormatException => StatusCodes.Status400BadRequest,
+                    AccountNotActiveException _ => StatusCodes.Status403Forbidden,
                     UnauthorizedAccessException _ => StatusCodes.Status403Forbidden,
                     KeyNotFoundException _ => StatusCodes.Status404NotFound,
                     OperationCanceledException _ => StatusCodes.Status408RequestTimeout,
                     ValidationException _ => StatusCodes.Status422UnprocessableEntity,
-                    ApplicationException _ => StatusCodes.Status409Conflict,
+                    EmailAlreadyConfirmedException => StatusCodes.Status409Conflict,
+                    UserAlreadyExistsException _ => StatusCodes.Status409Conflict,
+                    FailSendConfirmationException => StatusCodes.Status503ServiceUnavailable,
+                    System.Net.Mail.SmtpException _ => StatusCodes.Status503ServiceUnavailable,
                     _ => StatusCodes.Status500InternalServerError
                 },
                 Detail = exception switch
                 {
                     ArgumentException ae => ae.Message,
+                    EmailNotConfirmedException enc => enc.Message,
+                    InvalidTokenFormatException itf => itf.Message,
+                    AccountNotActiveException ana => ana.Message,
                     UnauthorizedAccessException ue => ue.Message,
                     KeyNotFoundException knf => knf.Message,
                     OperationCanceledException oce => oce.Message,
                     ValidationException ve => ve.Message,
-                    ApplicationException ape => ape.Message,
+                    EmailAlreadyConfirmedException eac => eac.Message,
+                    UserAlreadyExistsException ape => ape.Message,
+                    FailSendConfirmationException fsc => fsc.Message,
+                    System.Net.Mail.SmtpException smtpe => smtpe.Message,
                     _ => "An unexpected error occurred. Please try again later."
                 }
             };
+            problem.Extensions[ErrorCodeMapper.ErrorCode] = ErrorCodeMapper.Map(exception);
 
             // Exception logging
             //if (exception != null)

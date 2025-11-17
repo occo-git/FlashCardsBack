@@ -3,6 +3,7 @@ using Application.Abstractions.Services;
 using Application.DTO.Email;
 using Application.DTO.Tokens;
 using Application.DTO.Users;
+using Application.Exceptions;
 using Application.Extensions;
 using Application.Mapping;
 using Domain.Entities;
@@ -67,9 +68,9 @@ namespace Infrastructure.Services.Auth
             if (user == null || !UserMapper.CheckPassword(user, loginUserDto))
                 throw new UnauthorizedAccessException("Incorrect username or password.");
             else if (!user.EmailConfirmed)
-                throw new UnauthorizedAccessException("Account is not confirmed. Please confirm your email.");
+                throw new EmailNotConfirmedException("Account is not confirmed. Please confirm your email.");
             else if (!user.Active)
-                throw new UnauthorizedAccessException("Account is currently inactive. Please contact support.");
+                throw new AccountNotActiveException("Account is currently inactive. Please contact support.");
 
             var tokens = await GenerateTokens(user, sessionId, ct);
             
@@ -91,7 +92,7 @@ namespace Infrastructure.Services.Auth
             if (user == null)
                 throw new KeyNotFoundException("User not found.");
             else if (!user.Active)
-                throw new UnauthorizedAccessException("Account is currently inactive. Please contact support.");
+                throw new AccountNotActiveException("Account is currently inactive. Please contact support.");
 
             return await UpdateTokens(user, oldRefreshToken, sessionId, ct);
         }

@@ -1,4 +1,5 @@
-﻿using Domain.Entities;
+﻿using Application.Exceptions;
+using Domain.Entities;
 using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
@@ -23,7 +24,7 @@ namespace Infrastructure.Services.Auth.Tokens
         protected Claim[] CreateClaims(User user, DateTime expires, string? sessionId = null)
         {
             if (string.IsNullOrWhiteSpace(user.UserName))
-                throw new Exception("User's data is incomplete");
+                throw new InvalidTokenFormatException("User's data is incomplete");
 
             return new[]
             {
@@ -36,12 +37,20 @@ namespace Infrastructure.Services.Auth.Tokens
 
         public Guid GetUserId(string token)
         {
-            var handler = new JwtSecurityTokenHandler();
-            var jwt = handler.ReadJwtToken(token);
-            var userIdStr = jwt.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+            string? userIdStr = null;
+            try
+            {
+                var handler = new JwtSecurityTokenHandler();
+                var jwt = handler.ReadJwtToken(token);
+                userIdStr = jwt.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidTokenFormatException("Invalid or malformed confirmation token");
+            }            
 
             if (String.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var userId))
-                throw new InvalidOperationException("Invalid or malformed confirmation token");
+                throw new InvalidTokenFormatException("Invalid or malformed confirmation token");
 
             return userId;
         }

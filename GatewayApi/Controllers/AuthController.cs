@@ -4,6 +4,7 @@ using Application.DTO.Activity;
 using Application.DTO.Email;
 using Application.DTO.Tokens;
 using Application.DTO.Users;
+using Application.Exceptions;
 using Application.Extensions;
 using Application.Mapping;
 using Application.UseCases;
@@ -13,6 +14,7 @@ using Infrastructure.Services.RazorRenderer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.Extensions.Options;
 using Shared;
 using Shared.Configuration;
@@ -67,12 +69,16 @@ namespace GatewayApi.Controllers
             await validator.ValidationCheck(request);
 
             User newUser = UserMapper.ToDomain(request);
-            var createdUser = await _userService.CreateAsync(newUser, ct);
-
+            var createdUser = await _userService.CreateNewAsync(newUser, ct);
             var send = await _userEmailService.SendEmailConfirmation(createdUser, ct);
-
-            var dto = UserMapper.ToDto(createdUser);
-            return dto;
+            if (send.Success)
+            {
+                await _userService.AddAsync(createdUser, ct);
+                var dto = UserMapper.ToDto(createdUser);
+                return dto;
+            }
+            else
+                throw new FailSendConfirmationException("Failed to send confirmation email.");
         }
 
         /// <summary>

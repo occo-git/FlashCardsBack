@@ -4,6 +4,7 @@ using Application.DTO;
 using Application.DTO.Activity;
 using Application.DTO.Email;
 using Application.DTO.Tokens;
+using Application.Exceptions;
 using Application.UseCases;
 using Domain.Constants;
 using Domain.Entities;
@@ -63,24 +64,32 @@ namespace Infrastructure.UseCases
             _logger = logger;
         }
 
-        public async Task<SendEmailConfirmationResponseDto> SendEmailConfirmation(string token, CancellationToken ct)
+        public async Task<SendEmailConfirmationResponseDto> ReSendEmailConfirmation(string email, CancellationToken ct)
         {
-            Guid userId = _confirmationTokenGenerator.GetUserId(token);
-            var user = await _userService.GetByIdAsync(userId, ct);
-            return await SendEmailConfirmation(user, ct);
+            var user = await _userService.GetByEmailAsync(email, ct);
+            ArgumentNullException.ThrowIfNull(user, nameof(user));
+
+            if (user.EmailConfirmed)
+                throw new EmailAlreadyConfirmedException("Email already confirmed.");
+
+            var result = await SendEmailConfirmation(user, ct);
+            await _userService.UpdateAsync(user, ct);
+
+            return result;
         }
 
         public async Task<SendEmailConfirmationResponseDto> SendEmailConfirmation(User? user, CancellationToken ct)
         {
-            ArgumentNullException.ThrowIfNull(user, nameof(user));
+            if (user == null)
+                throw new KeyNotFoundException("User not found");
 
             if (user.EmailConfirmed)
-                return new SendEmailConfirmationResponseDto(false, "Email already confirmed.");
+                return new SendEmailConfirmationResponseDto(true, "Email already confirmed.");
 
             ArgumentNullException.ThrowIfNullOrEmpty(user.Email, nameof(user.Email));
             _logger.LogInformation($"UserEmailService.SendEmailConfirmation Email = {user.Email}");
 
-            var confirmationLink = await GenerateEmailConfirmationLinkAsync(user.Id, ct);
+            var confirmationLink = GenerateEmailConfirmationLink(user, ct);
             ArgumentNullException.ThrowIfNullOrEmpty(confirmationLink, nameof(confirmationLink));
 
             var confirmEmailLetterDto = new ConfirmEmailLetterDto(user.UserName, confirmationLink);
@@ -90,18 +99,13 @@ namespace Infrastructure.UseCases
             return new SendEmailConfirmationResponseDto(true, "Confirmation link has been sent.");
         }
 
-        private async Task<string> GenerateEmailConfirmationLinkAsync(Guid userId, CancellationToken ct)
+        private string GenerateEmailConfirmationLink(User user, CancellationToken ct)
         {
-            using var context = await _dbContextFactory.CreateDbContextAsync(ct);
-            var existingUser = await context.Users.FindAsync(userId, ct);
-            if (existingUser == null)
-                throw new KeyNotFoundException("User not found");
-
-            var confirmationToken = _confirmationTokenGenerator.GenerateToken(existingUser);
+            var confirmationToken = _confirmationTokenGenerator.GenerateToken(user);
             ArgumentNullException.ThrowIfNullOrEmpty(confirmationToken.Token, nameof(confirmationToken.Token));
 
-            existingUser.SecureCode = confirmationToken.Token;
-            await context.SaveChangesAsync(ct);
+            user.SecureCode = confirmationToken.Token;
+            user.SecureCodeCreatedAt = DateTime.UtcNow;
 
             return String.Format(_apiOptions.ConfirmEmailUrlTemplate, confirmationToken.Token);
         }
@@ -112,7 +116,7 @@ namespace Infrastructure.UseCases
             return await ConfirmEmailAsync(userId, token, ct);
         }
 
-        public async Task<ConfirmEmailResponseDto> ConfirmEmailAsync(Guid userId, string token, CancellationToken ct)
+        private async Task<ConfirmEmailResponseDto> ConfirmEmailAsync(Guid userId, string token, CancellationToken ct)
         {
             using var context = await _dbContextFactory.CreateDbContextAsync(ct);
             var existingUser = await context.Users.FindAsync(userId, ct);
@@ -122,17 +126,18 @@ namespace Infrastructure.UseCases
             if (existingUser.EmailConfirmed)
                 return new ConfirmEmailResponseDto(true, "Email already confirmed.", _apiOptions.LoginUrl);
             else if (existingUser.SecureCode != token)
-                return new ConfirmEmailResponseDto(false, "Failed to confirm email. Confirmation token not found. Please try again or contact support.");
+                return new ConfirmEmailResponseDto(false, "Failed to confirm email.\r\nPlease try again or contact support."); // Invalid confirmation token
 
             //TODO: Check token expiration!
 
             existingUser.EmailConfirmed = true;
+            existingUser.SecureCode = null;
             var saved = await context.SaveChangesAsync(ct) > 0;
 
             if (saved)
-                return new ConfirmEmailResponseDto(true, "Thank you! Your email has been successfully confirmed.", _apiOptions.LoginUrl);
+                return new ConfirmEmailResponseDto(true, "Thank you!\r\nYour email has been successfully confirmed.", _apiOptions.LoginUrl);
             else
-                return new ConfirmEmailResponseDto(false, "Failed to confirm email. Please try again or contact support.");
+                return new ConfirmEmailResponseDto(false, "Failed to confirm email.\r\nPlease try again or contact support.");
         }
     }
 }

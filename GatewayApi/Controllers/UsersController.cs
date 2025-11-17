@@ -4,6 +4,7 @@ using Application.DTO.Activity;
 using Application.DTO.Email;
 using Application.DTO.Tokens;
 using Application.DTO.Users;
+using Application.Exceptions;
 using Application.Extensions;
 using Application.Mapping;
 using Application.UseCases;
@@ -74,18 +75,13 @@ namespace GatewayApi.Controllers
             _logger.LogInformation($"> UsersController.GetLoggedUser");
             var result = await GetCurrentUserAsync(async userId =>
             {
-                _logger.LogInformation("> UsersController.GetLoggedUser: Finding user: Id={id}", userId);
                 var user = await _userService.GetByIdAsync(userId, ct);
                 if (user == null)
-                {
-                    _logger.LogWarning("> UsersController.GetLoggedUser: User not found: Id={id}", userId);
                     return null;
-                }
+                else if (!user.Active)
+                    throw new AccountNotActiveException("Account is currently inactive. Please contact support.");
                 else
-                {
-                    _logger.LogInformation("> UsersController.GetLoggedUser: Found user: Id={id}, Username={username}", user.Id, user.UserName);
                     return UserMapper.ToDto(user);
-                }
             });
 
             if (result == null)

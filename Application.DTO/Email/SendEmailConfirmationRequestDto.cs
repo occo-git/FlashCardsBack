@@ -6,5 +6,5 @@ using System.Threading.Tasks;
 
 namespace Application.DTO.Email
 {
-    public record SendEmailConfirmationRequestDto(string Token);
+    public record SendEmailConfirmationRequestDto(string Email);
 }

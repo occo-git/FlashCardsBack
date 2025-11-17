@@ -71,10 +71,7 @@ namespace Infrastructure.UseCases
                 .Select(t => t.ToDto(t.WordThemes.Count(wt => wt.Word != null && wt.Word.Level == filter.Level)))
                 .ToListAsync(ct);
             foreach (var theme in themes)
-            {
-                //Console.WriteLine(theme);
                 yield return theme;
-            }
         }
 
         public async Task<CardExtendedDto?> GetCardWithNeighbors(CardRequestDto request, Guid userId, CancellationToken ct)

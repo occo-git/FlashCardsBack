@@ -43,7 +43,7 @@ namespace Infrastructure.Services.RazorRenderer
             var viewResult = _viewEngine.GetView(executingFilePath: null, viewPath: viewPath, isMainPage: true);
             if (!viewResult.Success)
             {
-                throw new InvalidOperationException($"View {renderTemplate} not found.");
+                throw new KeyNotFoundException($"View {renderTemplate} not found.");
             }
 
             var view = viewResult.View;

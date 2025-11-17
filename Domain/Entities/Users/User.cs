@@ -26,6 +26,7 @@ namespace Domain.Entities
         public required string PasswordHash { get; set; }
 
         public string? SecureCode { get; set; }
+        public DateTime? SecureCodeCreatedAt { get; set; }
 
         public bool EmailConfirmed { get; set; }
 

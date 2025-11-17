@@ -32,11 +32,11 @@ namespace GatewayApi.Middleware
 
                     context.Response.StatusCode = ex switch
                     {
-                        ApplicationException => StatusCodes.Status400BadRequest,
                         UnauthorizedAccessException => StatusCodes.Status401Unauthorized,
                         KeyNotFoundException => StatusCodes.Status404NotFound,
                         OperationCanceledException => StatusCodes.Status408RequestTimeout,
                         ValidationException => StatusCodes.Status422UnprocessableEntity,
+                        Exception => StatusCodes.Status400BadRequest,
                         _ => StatusCodes.Status500InternalServerError
                     };
 

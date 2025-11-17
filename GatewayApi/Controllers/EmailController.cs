@@ -44,7 +44,7 @@ namespace GatewayApi.Controllers
             CancellationToken ct)
         {
             _logger.LogInformation($"> EmailController.ReSendEmailConfirmation");
-            return await _userEmailService.SendEmailConfirmation(request.Token, ct);
+            return await _userEmailService.ReSendEmailConfirmation(request.Email, ct);
         }
 
         /// <summary>

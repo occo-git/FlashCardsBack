@@ -7,9 +7,8 @@ namespace Application.UseCases
 {
     public interface IUserEmailService
     {
-        Task<SendEmailConfirmationResponseDto> SendEmailConfirmation(string token, CancellationToken ct);
+        Task<SendEmailConfirmationResponseDto> ReSendEmailConfirmation(string token, CancellationToken ct);
         Task<SendEmailConfirmationResponseDto> SendEmailConfirmation(User? user, CancellationToken ct);
         Task<ConfirmEmailResponseDto> ConfirmEmailAsync(string token, CancellationToken ct);
-        Task<ConfirmEmailResponseDto> ConfirmEmailAsync(Guid userId, string token, CancellationToken ct);
     }
 }
