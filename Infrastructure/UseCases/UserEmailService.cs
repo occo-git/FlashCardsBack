@@ -1,29 +1,15 @@
-﻿using Application.Abstractions.DataContexts;
-using Application.Abstractions.Services;
+﻿using Application.Abstractions.Services;
 using Application.DTO;
-using Application.DTO.Activity;
 using Application.DTO.Email;
 using Application.DTO.Tokens;
 using Application.Exceptions;
 using Application.UseCases;
-using Domain.Constants;
 using Domain.Entities;
-using Domain.Entities.Users;
 using Infrastructure.DataContexts;
-using Infrastructure.Services.EmailSender;
-using Infrastructure.Services.RazorRenderer;
-using Microsoft.AspNetCore.Builder.Extensions;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Shared.Configuration;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Infrastructure.UseCases
 {
@@ -68,7 +54,7 @@ namespace Infrastructure.UseCases
         {
             var user = await _userService.GetByEmailAsync(email, ct);
             if (user == null)
-                throw new KeyNotFoundException("User not found");
+                throw new KeyNotFoundException("User not found.");
 
             if (user.SecureCode != null)
             {
@@ -84,10 +70,10 @@ namespace Infrastructure.UseCases
         public async Task<SendEmailConfirmationResponseDto> SendEmailConfirmation(User? user, CancellationToken ct)
         {
             if (user == null)
-                throw new KeyNotFoundException("User not found");
+                throw new KeyNotFoundException("User not found.");
 
             if (user.EmailConfirmed)
-                return new SendEmailConfirmationResponseDto("Email already confirmed.");
+                return new SendEmailConfirmationResponseDto("Email already confirmed.", true);
 
             ArgumentNullException.ThrowIfNullOrEmpty(user.Email, nameof(user.Email));
             _logger.LogInformation($"UserEmailService.SendEmailConfirmation Email = {user.Email}");
@@ -133,7 +119,7 @@ namespace Infrastructure.UseCases
             else
             {
                 if (_confirmationTokenGenerator.IsTokenExpired(user.SecureCode))
-                    throw new ConfirmationLinkMismatchException("Confirmation link has expired.\r\nPlease request a new confirmation email.");
+                    throw new ConfirmationLinkMismatchException("The link is no longer valid.");
             }
 
             user.EmailConfirmed = true;
@@ -141,9 +127,9 @@ namespace Infrastructure.UseCases
             var saved = await context.SaveChangesAsync(ct) > 0;
 
             if (saved)
-                return new ConfirmEmailResponseDto("Thank you!\r\nYour email has been successfully confirmed.");
+                return new ConfirmEmailResponseDto("Thank you! Your email has been successfully confirmed.");
             else
-                throw new ConfirmationFailedException("Failed to confirm email.\r\nPlease try again or contact support.");
+                throw new ConfirmationFailedException("Failed to confirm email. Please try again or contact support.");
         }
     }
 }

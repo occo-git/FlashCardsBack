@@ -24,7 +24,7 @@ namespace Infrastructure.Services.Auth.Tokens
         protected Claim[] CreateClaims(User user, DateTime expires, string? sessionId = null)
         {
             if (string.IsNullOrWhiteSpace(user.UserName))
-                throw new TokenInvalidFormatException("User's data is incomplete");
+                throw new TokenInvalidFormatException("User's data is incomplete.");
 
             return new[]
             {
@@ -44,7 +44,7 @@ namespace Infrastructure.Services.Auth.Tokens
             }
             catch (Exception)
             {
-                throw new TokenInvalidFormatException("Invalid or malformed confirmation token");
+                throw new TokenInvalidFormatException("Invalid or malformed confirmation token.");
             }
         }
 
@@ -54,7 +54,7 @@ namespace Infrastructure.Services.Auth.Tokens
             string? userIdStr = claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
             
             if (String.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var userId))
-                throw new TokenInvalidFormatException("Invalid or malformed confirmation token");
+                throw new TokenInvalidFormatException("Invalid or malformed confirmation token.");
 
             return userId;
         }
@@ -66,7 +66,7 @@ namespace Infrastructure.Services.Auth.Tokens
 
             if (String.IsNullOrEmpty(expirationStr) || 
                 !DateTime.TryParse(expirationStr, null, System.Globalization.DateTimeStyles.RoundtripKind, out var expiration)) // DateTimeStyles.RoundtripKind to parse "o" (ISO 8601)
-                throw new TokenInvalidFormatException("Invalid or malformed confirmation token");
+                throw new TokenInvalidFormatException("Invalid or malformed confirmation token.");
             
             return expiration.ToUniversalTime();
         }

@@ -13,12 +13,6 @@ using Infrastructure.DataContexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Infrastructure.Services.Auth
 {
@@ -27,7 +21,6 @@ namespace Infrastructure.Services.Auth
         private readonly IDbContextFactory<DataContext> _dbContextFactory;
         private readonly IRefreshTokenRepository _refreshTokenRepository;
         private readonly IValidator<LoginRequestDto> _loginValidator;
-        private readonly SymmetricSecurityKey _sKey;
         private readonly ITokenGenerator<string> _accessTokenGenerator;
         private readonly ITokenGenerator<RefreshToken> _refreshTokenGenerator;
         private readonly ILogger<AuthenticationService> _logger;
@@ -36,7 +29,6 @@ namespace Infrastructure.Services.Auth
             IDbContextFactory<DataContext> dbContextFactory,
             IRefreshTokenRepository refreshTokenRepository,
             IValidator<LoginRequestDto> loginValidator,
-            SymmetricSecurityKey sKey,
             ITokenGenerator<string> accessTokenGenerator,
             ITokenGenerator<RefreshToken> refreshTokenGenerator,
             ILogger<AuthenticationService> logger)
@@ -44,14 +36,12 @@ namespace Infrastructure.Services.Auth
             ArgumentNullException.ThrowIfNull(dbContextFactory, nameof(dbContextFactory));
             ArgumentNullException.ThrowIfNull(refreshTokenRepository, nameof(refreshTokenRepository));
             ArgumentNullException.ThrowIfNull(loginValidator, nameof(loginValidator));
-            ArgumentNullException.ThrowIfNull(sKey, nameof(sKey));
             ArgumentNullException.ThrowIfNull(accessTokenGenerator, nameof(accessTokenGenerator));
             ArgumentNullException.ThrowIfNull(logger, nameof(logger));
 
             _dbContextFactory = dbContextFactory;
             _refreshTokenRepository = refreshTokenRepository;
             _loginValidator = loginValidator;
-            _sKey = sKey;
             _accessTokenGenerator = accessTokenGenerator;
             _refreshTokenGenerator = refreshTokenGenerator;
             _logger = logger;
@@ -68,7 +58,7 @@ namespace Infrastructure.Services.Auth
             if (user == null || !UserMapper.CheckPassword(user, loginUserDto))
                 throw new UnauthorizedAccessException("Incorrect username or password.");
             else if (!user.EmailConfirmed)
-                throw new EmailNotConfirmedException("Account is not confirmed. Please confirm your email.");
+                throw new EmailNotConfirmedException("Account is not confirmed.");
             else if (!user.Active)
                 throw new AccountNotActiveException("Account is currently inactive. Please contact support.");
 

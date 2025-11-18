@@ -6,5 +6,5 @@ using System.Threading.Tasks;
 
 namespace Application.DTO.Email
 {
-    public record SendEmailConfirmationResponseDto(string Message);
+    public record SendEmailConfirmationResponseDto(string Message, bool IsAlreadyConfirmed = false);
 }

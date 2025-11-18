@@ -1,21 +1,13 @@
 ﻿using Application.Abstractions.Services;
-using Microsoft.Extensions.Configuration;
+using MailKit.Security;
+using MimeKit;
 using Microsoft.Extensions.Options;
-using Shared;
 using Shared.Configuration;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Net.Mail;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Infrastructure.Services.EmailSender
 {
     public class EmailSender : IEmailSender
     {
-        private readonly SmtpClient _client;
         private readonly SmtpOptions _smtpOptions;
 
         public EmailSender(IOptions<SmtpOptions> smtpOptions)
@@ -24,20 +16,35 @@ namespace Infrastructure.Services.EmailSender
             ArgumentNullException.ThrowIfNull(smtpOptions.Value, nameof(smtpOptions.Value));
 
             _smtpOptions = smtpOptions.Value;
-            _client = new SmtpClient(_smtpOptions.Host, _smtpOptions.Port)
-            {
-                Credentials = new NetworkCredential(_smtpOptions.Account, _smtpOptions.Password),
-                EnableSsl = true
-            };
+
         }
 
         public async Task SendEmailAsync(string toEmail, string subject, string htmlMessage)
         {
-            var mailMessage = new MailMessage(_smtpOptions.From, toEmail, subject, htmlMessage)
-            {
-                IsBodyHtml = true
-            };
-            await _client.SendMailAsync(mailMessage);
+            //using var client = new SmtpClient(_smtpOptions.Host, _smtpOptions.Port)
+            //{
+            //    Credentials = new NetworkCredential(_smtpOptions.Account, _smtpOptions.Password),
+            //    EnableSsl = true,
+            //    Timeout = 30000
+            //};
+            //var mailMessage = new MailMessage(_smtpOptions.From, toEmail, subject, htmlMessage)
+            //{
+            //    IsBodyHtml = true
+            //};
+            //await client.SendMailAsync(mailMessage);
+
+
+            var mimeMessage = new MimeMessage();
+            mimeMessage.From.Add(MailboxAddress.Parse(_smtpOptions.From));
+            mimeMessage.To.Add(MailboxAddress.Parse(toEmail));
+            mimeMessage.Subject = subject;
+            mimeMessage.Body = new TextPart("html") { Text = htmlMessage };
+
+            using var client = new MailKit.Net.Smtp.SmtpClient();
+            await client.ConnectAsync(_smtpOptions.Host, _smtpOptions.Port, SecureSocketOptions.StartTls);
+            await client.AuthenticateAsync(_smtpOptions.Account, _smtpOptions.Password);
+            await client.SendAsync(mimeMessage);
+            await client.DisconnectAsync(true);
         }
     }
 }
