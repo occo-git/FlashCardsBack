@@ -67,42 +67,5 @@ namespace GatewayApi.Controllers
             _logger.LogInformation($"> EmailController.ConfirmEmail");
             return await _userEmailService.ConfirmEmailAsync(request.Token, ct);
         }
-
-        /// <summary>
-        /// Confirms email of a user
-        /// </summary>
-        /// <remarks>
-        /// GET: api/email/confirm
-        /// This endpoint is open to anonymous users.
-        /// </remarks>
-        /// <param name="userId">Id of the user.</param>
-        /// <param name="token">Confirmation token.</param>
-        /// <returns>
-        /// The result of the email confirmation.
-        /// </returns>
-        //[HttpGet("confirm/{userId:guid}/{*token}")]
-        //[AllowAnonymous]
-        //public async Task<ActionResult<ConfirmEmailResponseDto>> ConfirmEmail(Guid userId, string token, CancellationToken ct)
-        //{
-        //    _logger.LogInformation($"> EmailController.ConfirmEmail UserId = {userId}");
-
-        //    try
-        //    {
-        //        var result = await _userEmailService.ConfirmEmailAsync(userId, token, ct);
-        //        if (IsHtmlRequest())
-        //            return View("ConfirmationResult", result);
-        //        else
-        //            return result;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        if (IsHtmlRequest())
-        //            return View("~/Views/Error/GeneralError.cshtml", ex);
-        //        else
-        //            throw;
-        //    }
-        //}
-
-        //private bool IsHtmlRequest() => Request.Headers["Accept"].Any(h => h!.Contains("text/html"));
     }
 }

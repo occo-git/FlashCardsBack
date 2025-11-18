@@ -134,7 +134,7 @@ if (args.Length > 0 && args[0].Equals(SharedConstants.Migrate, StringComparison.
                 {
                     ArgumentException _ => StatusCodes.Status400BadRequest,
                     EmailNotConfirmedException => StatusCodes.Status400BadRequest,
-                    InvalidTokenFormatException => StatusCodes.Status400BadRequest,
+                    TokenInvalidFormatException => StatusCodes.Status400BadRequest,
                     AccountNotActiveException _ => StatusCodes.Status403Forbidden,
                     UnauthorizedAccessException _ => StatusCodes.Status403Forbidden,
                     KeyNotFoundException _ => StatusCodes.Status404NotFound,
@@ -142,7 +142,9 @@ if (args.Length > 0 && args[0].Equals(SharedConstants.Migrate, StringComparison.
                     ValidationException _ => StatusCodes.Status422UnprocessableEntity,
                     EmailAlreadyConfirmedException => StatusCodes.Status409Conflict,
                     UserAlreadyExistsException _ => StatusCodes.Status409Conflict,
-                    FailSendConfirmationException => StatusCodes.Status503ServiceUnavailable,
+                    ConfirmationLinkMismatchException _ => StatusCodes.Status410Gone,
+                    ConfirmationFailedException _ => StatusCodes.Status500InternalServerError,
+                    ConfirmationSendFailException => StatusCodes.Status500InternalServerError,
                     System.Net.Mail.SmtpException _ => StatusCodes.Status503ServiceUnavailable,
                     _ => StatusCodes.Status500InternalServerError
                 },
@@ -150,15 +152,17 @@ if (args.Length > 0 && args[0].Equals(SharedConstants.Migrate, StringComparison.
                 {
                     ArgumentException ae => ae.Message,
                     EmailNotConfirmedException enc => enc.Message,
-                    InvalidTokenFormatException itf => itf.Message,
+                    TokenInvalidFormatException tif => tif.Message,
                     AccountNotActiveException ana => ana.Message,
-                    UnauthorizedAccessException ue => ue.Message,
+                    UnauthorizedAccessException u => u.Message,
                     KeyNotFoundException knf => knf.Message,
-                    OperationCanceledException oce => oce.Message,
-                    ValidationException ve => ve.Message,
+                    OperationCanceledException oc => oc.Message,
+                    ValidationException v => v.Message,
                     EmailAlreadyConfirmedException eac => eac.Message,
-                    UserAlreadyExistsException ape => ape.Message,
-                    FailSendConfirmationException fsc => fsc.Message,
+                    ConfirmationLinkMismatchException cl => cl.Message,
+                    UserAlreadyExistsException uae => uae.Message,
+                    ConfirmationFailedException cf => cf.Message,
+                    ConfirmationSendFailException csf => csf.Message,
                     System.Net.Mail.SmtpException smtpe => smtpe.Message,
                     _ => "An unexpected error occurred. Please try again later."
                 }
@@ -197,10 +201,6 @@ if (app.Environment.IsDevelopment())
 
 app.UseAuthentication();
 app.UseAuthorization();
-
-// ⚠️ middleware to return status code pages for HTTP errors - app.UseStatusCodePages();
-//app.UseExceptionHandler("/Error/GeneralError");
-//app.UseStatusCodePagesWithReExecute("/Error/{0}");
 #endregion
 
 // Route to process errors by status code

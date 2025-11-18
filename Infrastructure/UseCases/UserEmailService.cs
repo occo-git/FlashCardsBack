@@ -67,15 +67,18 @@ namespace Infrastructure.UseCases
         public async Task<SendEmailConfirmationResponseDto> ReSendEmailConfirmation(string email, CancellationToken ct)
         {
             var user = await _userService.GetByEmailAsync(email, ct);
-            ArgumentNullException.ThrowIfNull(user, nameof(user));
+            if (user == null)
+                throw new KeyNotFoundException("User not found");
 
-            if (user.EmailConfirmed)
-                throw new EmailAlreadyConfirmedException("Email already confirmed.");
+            if (user.SecureCode != null)
+            {
+                //TODO: check token creation date
+            }
 
-            var result = await SendEmailConfirmation(user, ct);
+            var send = await SendEmailConfirmation(user, ct);
             await _userService.UpdateAsync(user, ct);
 
-            return result;
+            return send;
         }
 
         public async Task<SendEmailConfirmationResponseDto> SendEmailConfirmation(User? user, CancellationToken ct)
@@ -84,7 +87,7 @@ namespace Infrastructure.UseCases
                 throw new KeyNotFoundException("User not found");
 
             if (user.EmailConfirmed)
-                return new SendEmailConfirmationResponseDto(true, "Email already confirmed.");
+                return new SendEmailConfirmationResponseDto("Email already confirmed.");
 
             ArgumentNullException.ThrowIfNullOrEmpty(user.Email, nameof(user.Email));
             _logger.LogInformation($"UserEmailService.SendEmailConfirmation Email = {user.Email}");
@@ -96,7 +99,7 @@ namespace Infrastructure.UseCases
             var confirmEmailHtml = await _razorRenderer.RenderViewToStringAsync(RenderTemplates.ConfirmEmail, confirmEmailLetterDto);
             await _emailSender.SendEmailAsync(user.Email, "[FlashCards] - Confirm your email, please", confirmEmailHtml);
 
-            return new SendEmailConfirmationResponseDto(true, "Confirmation link has been sent.");
+            return new SendEmailConfirmationResponseDto("Confirmation link has been sent.");
         }
 
         private string GenerateEmailConfirmationLink(User user, CancellationToken ct)
@@ -119,25 +122,28 @@ namespace Infrastructure.UseCases
         private async Task<ConfirmEmailResponseDto> ConfirmEmailAsync(Guid userId, string token, CancellationToken ct)
         {
             using var context = await _dbContextFactory.CreateDbContextAsync(ct);
-            var existingUser = await context.Users.FindAsync(userId, ct);
-            if (existingUser == null)
+            var user = await context.Users.FindAsync(userId, ct);
+            if (user == null)
                 throw new KeyNotFoundException("User not found");
 
-            if (existingUser.EmailConfirmed)
-                return new ConfirmEmailResponseDto(true, "Email already confirmed.", _apiOptions.LoginUrl);
-            else if (existingUser.SecureCode != token)
-                return new ConfirmEmailResponseDto(false, "Failed to confirm email.\r\nPlease try again or contact support."); // Invalid confirmation token
+            if (user.EmailConfirmed)
+                return new ConfirmEmailResponseDto("Email already confirmed.");
+            else if (user.SecureCode != token)
+                throw new ConfirmationLinkMismatchException("Confirmation link is invalid or has expired.");
+            else
+            {
+                if (_confirmationTokenGenerator.IsTokenExpired(user.SecureCode))
+                    throw new ConfirmationLinkMismatchException("Confirmation link has expired.\r\nPlease request a new confirmation email.");
+            }
 
-            //TODO: Check token expiration!
-
-            existingUser.EmailConfirmed = true;
-            existingUser.SecureCode = null;
+            user.EmailConfirmed = true;
+            user.SecureCode = null;
             var saved = await context.SaveChangesAsync(ct) > 0;
 
             if (saved)
-                return new ConfirmEmailResponseDto(true, "Thank you!\r\nYour email has been successfully confirmed.", _apiOptions.LoginUrl);
+                return new ConfirmEmailResponseDto("Thank you!\r\nYour email has been successfully confirmed.");
             else
-                return new ConfirmEmailResponseDto(false, "Failed to confirm email.\r\nPlease try again or contact support.");
+                throw new ConfirmationFailedException("Failed to confirm email.\r\nPlease try again or contact support.");
         }
     }
 }

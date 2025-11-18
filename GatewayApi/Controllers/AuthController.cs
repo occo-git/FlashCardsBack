@@ -70,15 +70,11 @@ namespace GatewayApi.Controllers
 
             User newUser = UserMapper.ToDomain(request);
             var createdUser = await _userService.CreateNewAsync(newUser, ct);
-            var send = await _userEmailService.SendEmailConfirmation(createdUser, ct);
-            if (send.Success)
-            {
-                await _userService.AddAsync(createdUser, ct);
-                var dto = UserMapper.ToDto(createdUser);
-                return dto;
-            }
-            else
-                throw new FailSendConfirmationException("Failed to send confirmation email.");
+            await _userEmailService.SendEmailConfirmation(createdUser, ct);
+
+            await _userService.AddAsync(createdUser, ct);
+            var dto = UserMapper.ToDto(createdUser);
+            return dto;
         }
 
         /// <summary>

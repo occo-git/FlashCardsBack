@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 
 namespace Application.Exceptions
 {
-    public class InvalidTokenFormatException : Exception
+    public class ConfirmationSendFailException : Exception
     {
-        public InvalidTokenFormatException(string message) : base(message) { }
+        public ConfirmationSendFailException(string message) : base(message) { }
     }
 }
