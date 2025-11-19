@@ -16,24 +16,10 @@ namespace Infrastructure.Services.EmailSender
             ArgumentNullException.ThrowIfNull(smtpOptions.Value, nameof(smtpOptions.Value));
 
             _smtpOptions = smtpOptions.Value;
-
         }
 
         public async Task SendEmailAsync(string toEmail, string subject, string htmlMessage)
         {
-            //using var client = new SmtpClient(_smtpOptions.Host, _smtpOptions.Port)
-            //{
-            //    Credentials = new NetworkCredential(_smtpOptions.Account, _smtpOptions.Password),
-            //    EnableSsl = true,
-            //    Timeout = 30000
-            //};
-            //var mailMessage = new MailMessage(_smtpOptions.From, toEmail, subject, htmlMessage)
-            //{
-            //    IsBodyHtml = true
-            //};
-            //await client.SendMailAsync(mailMessage);
-
-
             var mimeMessage = new MimeMessage();
             mimeMessage.From.Add(MailboxAddress.Parse(_smtpOptions.From));
             mimeMessage.To.Add(MailboxAddress.Parse(toEmail));

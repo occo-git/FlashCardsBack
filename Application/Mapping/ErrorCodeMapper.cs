@@ -10,20 +10,22 @@ namespace Application.Mapping
     public static class ErrorCodeMapper 
     {
         public const string ErrorCode = "ErrorCode";
-        public const string ErrAccountNotActive = "ERR_ACCOUNT_NOT_ACTIVE";
-        public const string ErrConfirmationFailed = "ERR_CONFIRMATION_FAILED";
-        public const string ErrConfirmationLinkMismatch = "ERR_CONFIRMATION_LINK_MISMATCH";
-        public const string ErrConfirmationSendFail = "ERR_CONFIRMATION_SEND_FAIL";
-        public const string ErrEmailAlreadyConfirmed = "ERR_EMAIL_ALREADY_CONFIRMED";
-        public const string ErrEmailNotConfirmed = "ERR_EMAIL_NOT_CONFIRMED";
-        public const string ErrTokenInvalidFormat = "ERR_TOKEN_INVALID_FORMAT";
-        public const string GenericError = "ERR_ERROR";
+        private const string ErrAccountNotActive = "ERR_ACCOUNT_NOT_ACTIVE";
+        private const string ErrConfirmationFailed = "ERR_CONFIRMATION_FAILED";
+        private const string ErrConfirmationLinkMismatch = "ERR_CONFIRMATION_LINK_MISMATCH";
+        private const string ErrConfirmationLinkRateLimit = "ERR_CONFIRMATION_LINK_RATE_LIMIT";
+        private const string ErrConfirmationSendFail = "ERR_CONFIRMATION_SEND_FAIL";
+        private const string ErrEmailAlreadyConfirmed = "ERR_EMAIL_ALREADY_CONFIRMED";
+        private const string ErrEmailNotConfirmed = "ERR_EMAIL_NOT_CONFIRMED";
+        private const string ErrTokenInvalidFormat = "ERR_TOKEN_INVALID_FORMAT";
+        private const string GenericError = "ERR_ERROR";
 
         public static string Map(Exception? ex) => ex switch
         {
             null => String.Empty,
             AccountNotActiveException => ErrAccountNotActive,
             ConfirmationFailedException => ErrConfirmationFailed,
+            ConfirmationLinkRateLimitException => ErrConfirmationLinkRateLimit,
             ConfirmationLinkMismatchException => ErrConfirmationLinkMismatch,
             ConfirmationSendFailException => ErrConfirmationSendFail,
             EmailAlreadyConfirmedException => ErrEmailAlreadyConfirmed,

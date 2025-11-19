@@ -56,24 +56,27 @@ namespace Infrastructure.UseCases
             if (user == null)
                 throw new KeyNotFoundException("User not found.");
 
-            if (user.SecureCode != null)
-            {
-                //TODO: check token creation date
-            }
-
             var send = await SendEmailConfirmation(user, ct);
             await _userService.UpdateAsync(user, ct);
 
             return send;
         }
 
-        public async Task<SendEmailConfirmationResponseDto> SendEmailConfirmation(User? user, CancellationToken ct)
+        public async Task<SendEmailConfirmationResponseDto> SendEmailConfirmation(User user, CancellationToken ct)
         {
-            if (user == null)
-                throw new KeyNotFoundException("User not found.");
-
             if (user.EmailConfirmed)
                 return new SendEmailConfirmationResponseDto("Email already confirmed.", true);
+
+            if (user.SecureCode != null && user.SecureCodeCreatedAt != null)
+            {
+                var delta = DateTime.UtcNow - user.SecureCodeCreatedAt;
+                _logger.LogInformation($"UserEmailService.SendEmailConfirmation delta: {delta.Value.TotalSeconds} sec");
+                if (delta.Value.TotalSeconds < _apiOptions.ReSendConfirmationTimeoutSeconds)
+                {
+                    var time = TimeSpan.FromSeconds(_apiOptions.ReSendConfirmationTimeoutSeconds) - delta.Value;
+                    throw new ConfirmationLinkRateLimitException($"Try again in {FormatTimeSpan(time)}.");
+                }
+            }
 
             ArgumentNullException.ThrowIfNullOrEmpty(user.Email, nameof(user.Email));
             _logger.LogInformation($"UserEmailService.SendEmailConfirmation Email = {user.Email}");
@@ -83,7 +86,7 @@ namespace Infrastructure.UseCases
 
             var confirmEmailLetterDto = new ConfirmEmailLetterDto(user.UserName, confirmationLink);
             var confirmEmailHtml = await _razorRenderer.RenderViewToStringAsync(RenderTemplates.ConfirmEmail, confirmEmailLetterDto);
-            await _emailSender.SendEmailAsync(user.Email, "[FlashCards] - Confirm your email, please", confirmEmailHtml);
+            await _emailSender.SendEmailAsync(user.Email, "FlashCards: Confirm your email, please", confirmEmailHtml);
 
             return new SendEmailConfirmationResponseDto("Confirmation link has been sent.");
         }
@@ -130,6 +133,17 @@ namespace Infrastructure.UseCases
                 return new ConfirmEmailResponseDto("Thank you! Your email has been successfully confirmed.");
             else
                 throw new ConfirmationFailedException("Failed to confirm email. Please try again or contact support.");
+        }
+
+        private string FormatTimeSpan(TimeSpan t)
+        {
+            if (t <= TimeSpan.Zero) return "0 sec";
+
+            var minutes = (int)t.TotalMinutes;
+
+            if (minutes == 0) return $"{t.Seconds} sec";
+
+            return $"{minutes} min {t.Seconds:D2} sec";
         }
     }
 }
