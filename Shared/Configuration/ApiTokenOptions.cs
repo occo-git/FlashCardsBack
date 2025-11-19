@@ -8,10 +8,10 @@ namespace Shared.Configuration
 {
     public class ApiTokenOptions
     {
-        public int ConfirmationTokenExpiresMinutes { get; set; } = 60; // default 60 minutes
-        public int AccessTokenExpiresMinutes { get; set; } = 15; // default 15 minutes
-        public int AccessTokenMinutesBeforeExpiration { get; set; } = 3; // default 3 minutes before expiration
-        public int RefreshTokenExpiresDays { get; set; } = 7; // default 7 days
-        public int RefreshTokenCleanupIntervalMinutes { get; set; } = 10; // default 10 minutes
+        public int ConfirmationTokenExpiresMinutes { get; set; } = 30; // 30 minutes
+        public int AccessTokenExpiresMinutes { get; set; } = 15; // 15 minutes
+        public int AccessTokenBeforeExpirationMinutes { get; set; } = 3; // 3 minutes before expiration
+        public int RefreshTokenExpiresDays { get; set; } = 7; // 7 days
+        public int RefreshTokenCleanupIntervalMinutes { get; set; } = 10; // 10 minutes
     }
 }

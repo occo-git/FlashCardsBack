@@ -57,9 +57,9 @@ namespace Infrastructure.Services.Auth
 
             if (user == null || !UserMapper.CheckPassword(user, loginUserDto))
                 throw new UnauthorizedAccessException("Incorrect username or password.");
-            else if (!user.EmailConfirmed)
+            if (!user.EmailConfirmed)
                 throw new EmailNotConfirmedException("Account is not confirmed.");
-            else if (!user.Active)
+            if (!user.Active)
                 throw new AccountNotActiveException("Account is currently inactive. Please contact support.");
 
             var tokens = await GenerateTokens(user, sessionId, ct);
@@ -81,7 +81,7 @@ namespace Infrastructure.Services.Auth
 
             if (user == null)
                 throw new KeyNotFoundException("User not found.");
-            else if (!user.Active)
+            if (!user.Active)
                 throw new AccountNotActiveException("Account is currently inactive. Please contact support.");
 
             return await UpdateTokens(user, oldRefreshToken, sessionId, ct);

@@ -67,14 +67,27 @@ namespace Infrastructure.UseCases
             if (user.EmailConfirmed)
                 return new SendEmailConfirmationResponseDto("Email already confirmed.", true);
 
+            if (!user.Active)
+                throw new AccountNotActiveException("Account is currently inactive. Please contact support.");
+
+            if (user.SecureCodeAttempts >= _apiOptions.ReSendConfirmationAttemptsMax)
+            {
+                user.Active = false;
+                await _userService.UpdateAsync(user, ct);
+                throw new ConfirmationLinkRateLimitException("User deactivated due to too many attempts.");
+            }
             if (user.SecureCode != null && user.SecureCodeCreatedAt != null)
             {
-                var delta = DateTime.UtcNow - user.SecureCodeCreatedAt;
-                _logger.LogInformation($"UserEmailService.SendEmailConfirmation delta: {delta.Value.TotalSeconds} sec");
-                if (delta.Value.TotalSeconds < _apiOptions.ReSendConfirmationTimeoutSeconds)
+                var delta = DateTime.UtcNow - user.SecureCodeCreatedAt.Value;
+                if (delta.TotalSeconds < _apiOptions.ReSendConfirmationTimeoutSeconds)
                 {
-                    var time = TimeSpan.FromSeconds(_apiOptions.ReSendConfirmationTimeoutSeconds) - delta.Value;
-                    throw new ConfirmationLinkRateLimitException($"Try again in {FormatTimeSpan(time)}.");
+                    _logger.LogInformation($"UserEmailService.SendEmailConfirmation: delta={delta.TotalSeconds}sec, attempts={user.SecureCodeAttempts}");
+                    var time = TimeSpan.FromSeconds(_apiOptions.ReSendConfirmationTimeoutSeconds) - delta;
+                    if (time > TimeSpan.Zero)
+                    {
+                        var attemptsLeft = _apiOptions.ReSendConfirmationAttemptsMax - user.SecureCodeAttempts;
+                        throw new ConfirmationLinkRateLimitException($"Try again in {FormatTimeSpan(time)}. Attempts left: {attemptsLeft}");
+                    }
                 }
             }
 
@@ -98,6 +111,7 @@ namespace Infrastructure.UseCases
 
             user.SecureCode = confirmationToken.Token;
             user.SecureCodeCreatedAt = DateTime.UtcNow;
+            user.SecureCodeAttempts += 1;
 
             return String.Format(_apiOptions.ConfirmEmailUrlTemplate, confirmationToken.Token);
         }
@@ -127,6 +141,7 @@ namespace Infrastructure.UseCases
 
             user.EmailConfirmed = true;
             user.SecureCode = null;
+            user.SecureCodeCreatedAt = null;
             var saved = await context.SaveChangesAsync(ct) > 0;
 
             if (saved)
