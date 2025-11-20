@@ -6,10 +6,5 @@ using System.Threading.Tasks;
 
 namespace Application.DTO.Users
 {
-    public record RegisterRequestDto
-    {
-        public string Username { get; set; } = string.Empty;
-        public string Email { get; set; } = string.Empty;
-        public string Password { get; set; } = string.Empty;
-    }
+    public record RegisterRequestDto(string Username, string Email, string Password);
 }

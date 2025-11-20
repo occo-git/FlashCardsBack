@@ -58,7 +58,7 @@ namespace GatewayApi.Controllers
         /// </returns>
         [HttpPost("register")]
         [AllowAnonymous]
-        public async Task<UserInfoDto> Register(
+        public async Task<ActionResult<UserInfoDto>> Register(
             [FromBody] RegisterRequestDto request,
             [FromServices] IValidator<RegisterRequestDto> validator,
             CancellationToken ct)
@@ -74,7 +74,12 @@ namespace GatewayApi.Controllers
 
             await _userService.AddAsync(createdUser, ct);
             var dto = UserMapper.ToDto(createdUser);
-            return dto;
+
+            return CreatedAtAction(
+                 actionName: nameof(UsersController.GetById),
+                 controllerName: "Users",
+                 routeValues: new { id = dto.Id },
+                 value: dto);
         }
 
         /// <summary>

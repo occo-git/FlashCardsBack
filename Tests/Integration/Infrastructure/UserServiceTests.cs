@@ -1,28 +1,17 @@
 ﻿using Application.DTO.Activity;
-using Application.DTO.Users;
 using Application.Exceptions;
-using Application.Mapping;
 using Application.UseCases;
 using Domain.Constants;
 using Domain.Entities;
-using Domain.Entities.Words;
-using Infrastructure.UseCases;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Internal;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Tests.Integration;
 using Xunit;
-using Xunit.Abstractions;
 
-namespace Tests.Integration
+namespace Tests.Integration.Infrastructure
 {
-    public class UserEndpointTests : BaseIntegrationTest<IUserService>
+    public class UserServiceTests : BaseIntegrationTest<IUserService>
     {
-        public UserEndpointTests(IntegrationTestWebAppFactory factory)
+        public UserServiceTests(IntegrationTestWebAppFactory factory)
             : base(factory)
         { }
 
@@ -160,6 +149,25 @@ namespace Tests.Integration
         }
 
         [Fact]
+        public async Task CreateNewAndAddAsync_ReturnsAddedUser()
+        {
+            // Arrange
+            var user = GetUser("userA", "same@test.com");
+
+            // Act & Assert
+            var createdUser = await Service.CreateNewAsync(user, CancellationToken.None);
+            var addedUser = await Service.AddAsync(createdUser, CancellationToken.None);
+            Assert.NotNull(addedUser);
+
+            var userById = await Service.GetByIdAsync(addedUser.Id, CancellationToken.None);
+            var userByName = await Service.GetByUsernameAsync("userA", CancellationToken.None);
+            var userByEmail = await Service.GetByEmailAsync("same@test.com", CancellationToken.None);
+            Assert.Equal(addedUser.Id, userById!.Id);
+            Assert.Equal(addedUser.Id, userByName!.Id);
+            Assert.Equal(addedUser.Id, userByEmail!.Id);
+        }
+
+        [Fact]
         public async Task UpdateAsync_UpdatesUserProperties()
         {
             // Arrange
@@ -292,41 +300,5 @@ namespace Tests.Integration
             Assert.Equal(1, total.CorrectCount);
             Assert.Equal(2, total.TotalAttempts);
         }
-
-        #region Helpers
-        private async Task<User> CreateTestUserAsync(string username, string email)
-        {
-            var user = GetUser(username, email);
-            var created = await Service.CreateNewAsync(user, CancellationToken.None);
-            return await Service.AddAsync(created, CancellationToken.None);
-        }
-
-        private User GetUser(string username, string email)
-        {
-            var request = new RegisterRequestDto
-            {
-                Username = username,
-                Email = email,
-                Password = "pass123"
-            };
-            return UserMapper.ToDomain(request);
-        }
-
-        private async Task<Word> CreateTestWordAsync()
-        {
-            var word = new Word
-            {
-                WordText = "wordtext",
-                PartOfSpeech = PartOfSpeech.Noun,
-                Transcription = "transcription",
-                Translation = "translation",
-                Level = Levels.A1
-            };
-
-            DbContext.Words.Add(word);
-            await DbContext.SaveChangesAsync();
-            return word;
-        }
-        #endregion
     }
 }

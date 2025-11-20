@@ -16,7 +16,7 @@ using System.Threading.Tasks;
 using Testcontainers.PostgreSql;
 using Xunit;
 
-namespace Tests.Integration
+namespace Tests
 {
     public class IntegrationTestWebAppFactory
         : WebApplicationFactory<Program>,
@@ -32,6 +32,7 @@ namespace Tests.Integration
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
             builder.UseSetting(SharedConstants.EnvJwtSecret, "test-super-secret-jwt-key-that-is-at-least-32-chars!!");
+            builder.UseEnvironment("Development");
 
             builder.ConfigureTestServices(services =>
             {

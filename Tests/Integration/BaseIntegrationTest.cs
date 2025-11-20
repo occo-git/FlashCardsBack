@@ -1,15 +1,11 @@
-﻿using Docker.DotNet.Models;
+﻿using Application.DTO.Users;
+using Application.Mapping;
+using Domain.Constants;
+using Domain.Entities;
+using Domain.Entities.Words;
 using Infrastructure.DataContexts;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Tests.Integration
 {
@@ -38,7 +34,12 @@ namespace Tests.Integration
         private async Task ResetDatabaseAsync()
         {
             Console.WriteLine("--> Resetting database");
+            DbContext.UserBookmarks.RemoveRange(DbContext.UserBookmarks);
+            DbContext.UserWordsProgress.RemoveRange(DbContext.UserWordsProgress);
+            DbContext.WordThemes.RemoveRange(DbContext.WordThemes);
+            DbContext.Themes.RemoveRange(DbContext.Themes);
             DbContext.Words.RemoveRange(DbContext.Words);
+            DbContext.FillBlanks.RemoveRange(DbContext.FillBlanks);
             DbContext.RefreshTokens.RemoveRange(DbContext.RefreshTokens);
             DbContext.Users.RemoveRange(DbContext.Users);
             await DbContext.SaveChangesAsync();
@@ -59,6 +60,38 @@ namespace Tests.Integration
                 Console.WriteLine("<-- InTransactionAsync");
             }
         }
+
+        #region Helpers
+        protected async Task<User> CreateTestUserAsync(string username, string email, string password = "strongpassword123!!")
+        {
+            var user = GetUser(username, email, password);
+            DbContext.Users.Add(user);
+            await DbContext.SaveChangesAsync();
+            return user;
+        }
+
+        protected User GetUser(string username, string email, string password = "strongpassword123!!")
+        {
+            var request = new RegisterRequestDto(username, email, password);
+            return UserMapper.ToDomain(request);
+        }
+
+        protected async Task<Word> CreateTestWordAsync()
+        {
+            var word = new Word
+            {
+                WordText = "wordtext",
+                PartOfSpeech = PartOfSpeech.Noun,
+                Transcription = "transcription",
+                Translation = "translation",
+                Level = Levels.A1
+            };
+
+            DbContext.Words.Add(word);
+            await DbContext.SaveChangesAsync();
+            return word;
+        }
+        #endregion
 
         public async Task DisposeAsync()
         {
