@@ -2,6 +2,7 @@
 using Application.DTO.Email;
 using Application.DTO.Tokens;
 using Domain.Entities;
+using System.Runtime.CompilerServices;
 
 namespace Application.UseCases
 {
@@ -11,7 +12,7 @@ namespace Application.UseCases
         Task<User?> GetByUsernameAsync(string username, CancellationToken ct);
         Task<User?> GetByEmailAsync(string email, CancellationToken ct);
         Task<IEnumerable<User>> GetAllAsync(CancellationToken ct);
-        Task<IAsyncEnumerable<User>> GetAllAsyncEnumerable(CancellationToken ct);
+        IAsyncEnumerable<User?> GetAllAsyncEnumerable(CancellationToken ct);
         Task<User> CreateNewAsync(User user, CancellationToken ct);
         Task<User> AddAsync(User user, CancellationToken ct);
         Task<User> UpdateAsync(User user, CancellationToken ct);

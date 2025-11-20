@@ -8,6 +8,7 @@ using Application.UseCases;
 using Domain.Constants;
 using Domain.Entities;
 using Domain.Entities.Users;
+using Domain.Entities.Words;
 using Infrastructure.DataContexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -16,6 +17,7 @@ using Shared.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -49,7 +51,7 @@ namespace Infrastructure.UseCases
         public async Task<User?> GetByIdAsync(Guid id, CancellationToken ct)
         {
             using var context = await _dbContextFactory.CreateDbContextAsync(ct);
-            return  await context.Users
+            return await context.Users
                 .AsNoTracking()
                 .FirstOrDefaultAsync(u => u.Id == id);
         }
@@ -78,12 +80,15 @@ namespace Infrastructure.UseCases
                 .ToListAsync(ct); // all users in memory
         }
 
-        public async Task<IAsyncEnumerable<User>> GetAllAsyncEnumerable(CancellationToken ct)
+        public async IAsyncEnumerable<User?> GetAllAsyncEnumerable([EnumeratorCancellation] CancellationToken ct)
         {
             using var context = await _dbContextFactory.CreateDbContextAsync(ct);
-            return context.Users
+            var users = context.Users
                 .AsNoTracking()
-                .AsAsyncEnumerable(); // users as async enumerable, available for streaming one by one
+                .AsAsyncEnumerable();
+
+            await foreach (var user in users.WithCancellation(ct)) // users as async enumerable, available for streaming one by one
+                yield return user;
         }
 
         public async Task<User> CreateNewAsync(User user, CancellationToken ct)
@@ -160,7 +165,7 @@ namespace Infrastructure.UseCases
                         Key: "Total",
                         CorrectCount: progressList.Sum(p => p.CorrectCount),
                         TotalAttempts: progressList.Sum(p => p.TotalAttempts)
-                    ) 
+                    )
                 };
 
             // Summarize by Activity Type

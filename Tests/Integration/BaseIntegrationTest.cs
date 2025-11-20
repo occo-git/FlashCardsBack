@@ -31,17 +31,18 @@ namespace Tests.Integration
 
         public async Task InitializeAsync()
         {
-            Console.WriteLine("--> InitializeAsync");
+            //Console.WriteLine("--> InitializeAsync");
             await ResetDatabaseAsync();
         }
 
         private async Task ResetDatabaseAsync()
         {
             Console.WriteLine("--> Resetting database");
+            DbContext.Words.RemoveRange(DbContext.Words);
             DbContext.RefreshTokens.RemoveRange(DbContext.RefreshTokens);
             DbContext.Users.RemoveRange(DbContext.Users);
             await DbContext.SaveChangesAsync();
-            Console.WriteLine("<-- Resetting database");
+            //Console.WriteLine("<-- Resetting database");
         }
 
         public async Task InTransactionAsync(Func<DataContext, Task> testLogic)
@@ -61,7 +62,7 @@ namespace Tests.Integration
 
         public async Task DisposeAsync()
         {
-            Console.WriteLine("<-- DisposeAsync");
+            //Console.WriteLine("<-- DisposeAsync");
             if (DbContext != null) 
                 await DbContext.DisposeAsync();
             _scope?.Dispose();
