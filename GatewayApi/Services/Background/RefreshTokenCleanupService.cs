@@ -31,6 +31,7 @@ namespace GatewayApi.Services.Background
         {
             while (!ct.IsCancellationRequested)
             {
+                await Task.Delay(_cleanupInterval, ct);
                 try
                 {
                     await CleanUpTokensAsync(ct);
@@ -38,9 +39,7 @@ namespace GatewayApi.Services.Background
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Error occurred during token cleanup");
-                }
-
-                await Task.Delay(_cleanupInterval, ct);
+                }                
             }
         }
 
