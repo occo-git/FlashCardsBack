@@ -12,7 +12,7 @@ namespace Application.Mapping
 {
     public static class LocalizationMapper
     {
-        public static TranslationDto GetLocalizationDto(string? val)
+        public static TranslationDto GetDto(string? val)
         {
             if (string.IsNullOrEmpty(val)) return TranslationDto.Empty;
 

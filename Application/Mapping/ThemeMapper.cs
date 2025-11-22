@@ -18,7 +18,7 @@ namespace Application.Mapping
             return new ThemeDto(
                 theme.Id, 
                 theme.Level, 
-                LocalizationMapper.GetLocalizationDto(theme.Name),
+                LocalizationMapper.GetDto(theme.Name),
                 wordsCount
             );
         }

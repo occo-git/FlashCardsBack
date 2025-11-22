@@ -32,7 +32,7 @@ namespace GatewayApi.Controllers
         /// <returns></returns>
         [HttpGet("{id:long}")]
         [Authorize]
-        public async Task<IActionResult> GetCardById([FromRoute] long id, CancellationToken ct)
+        public async Task<ActionResult<CardDto?>> GetCardById([FromRoute] long id, CancellationToken ct)
         {
             var card = await _wordService.GetCardById(id, ct);
             if (card == null)

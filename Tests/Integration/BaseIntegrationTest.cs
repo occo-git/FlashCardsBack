@@ -5,18 +5,44 @@ using Domain.Entities;
 using Domain.Entities.Words;
 using Infrastructure.DataContexts;
 using Microsoft.Extensions.DependencyInjection;
+using System.Collections.Generic;
 using Xunit;
 
 namespace Tests.Integration
 {
-    public abstract class BaseIntegrationTest<TService> : 
-        IClassFixture<IntegrationTestWebAppFactory>, 
+    public abstract class BaseIntegrationTest<TService> :
+        IClassFixture<IntegrationTestWebAppFactory>,
         IAsyncLifetime
         where TService : notnull
     {
-        private readonly IServiceScope _scope; 
+        private readonly IServiceScope _scope;
         protected readonly DataContext DbContext;
         protected readonly TService Service;
+
+        private readonly Word TestWord = new Word
+        {
+            WordText = "red",
+            PartOfSpeech = PartOfSpeech.Adjective,
+            Transcription = "/rɛd/",
+            Translation = "{\"en\": \"The color of blood or a tomato.\", \"ru\": \"красный\"}",
+            Example = "The apple is red.",
+            Level = Levels.A1,
+            ImageAttributes = "{\"By\":\"MontyLov\",\"Link\":\"https://unsplash.com/photos/red-textile-HyBXy5PHQR8\",\"Source\":\"Unsplash\"}"
+        };
+        public readonly List<Word> TestWordsA1 = new()
+        {
+            new Word { WordText = "apple", PartOfSpeech = PartOfSpeech.Noun, Level = Levels.A1, Transcription = "/æpl/", Translation = "{\"en\": \"A round, juicy fruit that grows on trees, commonly red or green.\", \"ru\": \"яблоко\"}" },
+            new Word { WordText = "eat", PartOfSpeech = PartOfSpeech.Verb, Level = Levels.A1, Transcription = "/iːt/", Translation = "{\"en\": \"To put food in your mouth and swallow it.\", \"ru\": \"есть\"}" },
+            new Word { WordText = "run", PartOfSpeech = PartOfSpeech.Verb, Level = Levels.A1, Transcription = "/rʌn/", Translation = "{\"en\": \"To move quickly on foot.\", \"ru\": \"бежать\"}" },
+            new Word { WordText = "and", PartOfSpeech = PartOfSpeech.Conjunction, Level = Levels.A1, Transcription = "/ænd/", Translation = "{\"en\": \"Used to connect words or sentences.\", \"ru\": \"и\"}" },
+            new Word { WordText = "in", PartOfSpeech = PartOfSpeech.Preposition, Level = Levels.A1, Transcription = "/ɪn/", Translation = "{\"en\": \"Inside a place or time.\", \"ru\": \"в\"}" }
+        };
+        public readonly List<Word> TestWordsA2 = new()
+        {
+            new Word { WordText = "fantastic", PartOfSpeech = PartOfSpeech.Adjective, Level = Levels.A2, Transcription = "/fænˈtæstɪk/", Translation = "{\"en\": \"Very good or exciting.\", \"ru\": \"фантастический\"}" },
+            new Word { WordText = "beautiful", PartOfSpeech = PartOfSpeech.Adjective, Level = Levels.A2, Transcription = "/ˈbjuːtɪf(ə)l/", Translation = "{\"en\": \"Very attractive or pleasing.\", \"ru\": \"красивый\"}" },
+            new Word { WordText = "quickly", PartOfSpeech = PartOfSpeech.Adverb, Level = Levels.A2, Transcription = "/ˈkwɪklɪ/", Translation = "{\"en\": \"In a fast way.\", \"ru\": \"быстро\"}" }
+        };
 
         protected BaseIntegrationTest(IntegrationTestWebAppFactory factory)
         {
@@ -62,7 +88,7 @@ namespace Tests.Integration
         }
 
         #region Helpers
-        protected async Task<User> CreateTestUserAsync(string username, string email, string password = "strongpassword123!!")
+        protected async Task<User> AddTestUserAsync(string username, string email, string password = "strongpassword123!!")
         {
             var user = GetUser(username, email, password);
             DbContext.Users.Add(user);
@@ -76,16 +102,10 @@ namespace Tests.Integration
             return UserMapper.ToDomain(request);
         }
 
-        protected async Task<Word> CreateTestWordAsync()
+        protected async Task<Word> AddTestWordAsync(Word? word = null)
         {
-            var word = new Word
-            {
-                WordText = "wordtext",
-                PartOfSpeech = PartOfSpeech.Noun,
-                Transcription = "transcription",
-                Translation = "translation",
-                Level = Levels.A1
-            };
+            if (word == null)
+                word = TestWord;
 
             DbContext.Words.Add(word);
             await DbContext.SaveChangesAsync();
@@ -96,7 +116,7 @@ namespace Tests.Integration
         public async Task DisposeAsync()
         {
             //Console.WriteLine("<-- DisposeAsync");
-            if (DbContext != null) 
+            if (DbContext != null)
                 await DbContext.DisposeAsync();
             _scope?.Dispose();
         }

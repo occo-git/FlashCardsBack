@@ -171,7 +171,8 @@ public class Program
                             ConfirmationFailedException cf => cf.Message,
                             ConfirmationSendFailException csf => csf.Message,
                             System.Net.Mail.SmtpException smtpe => smtpe.Message,
-                            Exception ex => app.Environment.IsDevelopment() ? ex.Message : "An unexpected error occurred. Please try again later."
+                            Exception ex => app.Environment.IsDevelopment() ? ex.Message : "An unexpected error occurred. Please try again later.",
+                            _ => "An unexpected error occurred. Please try again later."
                         }
                     };
                     problem.Extensions[ErrorCodeMapper.ErrorCode] = ErrorCodeMapper.Map(exception);

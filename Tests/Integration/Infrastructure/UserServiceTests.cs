@@ -19,7 +19,7 @@ namespace Tests.Integration.Infrastructure
         public async Task GetByIdAsync_ExistingUser_ReturnsUser()
         {
             // Arrange
-            var user = await CreateTestUserAsync("user1", "user1@test.com");
+            var user = await AddTestUserAsync("user1", "user1@test.com");
 
             // Act
             var result = await Service.GetByIdAsync(user.Id, CancellationToken.None);
@@ -44,7 +44,7 @@ namespace Tests.Integration.Infrastructure
         public async Task GetByUsernameAsync_ExistingUsername_ReturnsUser()
         {
             // Arrange
-            await CreateTestUserAsync("uniqueuser", "email@test.com");
+            await AddTestUserAsync("uniqueuser", "email@test.com");
 
             // Act
             var result = await Service.GetByUsernameAsync("uniqueuser", CancellationToken.None);
@@ -68,7 +68,7 @@ namespace Tests.Integration.Infrastructure
         public async Task GetByEmailAsync_ExistingEmail_ReturnsUser()
         {
             // Arrange
-            await CreateTestUserAsync("user", "unique@test.com");
+            await AddTestUserAsync("user", "unique@test.com");
 
             // Act
             var result = await Service.GetByEmailAsync("unique@test.com", CancellationToken.None);
@@ -92,9 +92,9 @@ namespace Tests.Integration.Infrastructure
         public async Task GetAllAsync_ReturnsAllUsers()
         {
             // Arrange
-            await CreateTestUserAsync("user1", "u1@test.com");
-            await CreateTestUserAsync("user2", "u2@test.com");
-            await CreateTestUserAsync("user3", "u3@test.com");
+            await AddTestUserAsync("user1", "u1@test.com");
+            await AddTestUserAsync("user2", "u2@test.com");
+            await AddTestUserAsync("user3", "u3@test.com");
 
             // Act
             var result = await Service.GetAllAsync(CancellationToken.None);
@@ -107,8 +107,8 @@ namespace Tests.Integration.Infrastructure
         public async Task GetAllAsyncEnumerable_ReturnsAsyncEnumerable()
         {
             // Arrange
-            await CreateTestUserAsync("stream1", "s1@test.com");
-            await CreateTestUserAsync("stream2", "s2@test.com");
+            await AddTestUserAsync("stream1", "s1@test.com");
+            await AddTestUserAsync("stream2", "s2@test.com");
 
             // Act
             var users = new List<User?>();
@@ -124,7 +124,7 @@ namespace Tests.Integration.Infrastructure
         public async Task CreateNewAsync_DuplicateUsername_ThrowsUserAlreadyExistsException()
         {
             // Arrange
-            await CreateTestUserAsync("duplicate", "diff1@test.com");
+            await AddTestUserAsync("duplicate", "diff1@test.com");
             var duplicateUser = GetUser("duplicate", "diff2@test.com");
 
             // Act & Assert
@@ -138,7 +138,7 @@ namespace Tests.Integration.Infrastructure
         public async Task CreateNewAsync_DuplicateEmail_ThrowsUserAlreadyExistsException()
         {
             // Arrange
-            await CreateTestUserAsync("userA", "same@test.com");
+            await AddTestUserAsync("userA", "same@test.com");
             var duplicateUser = GetUser("userB", "same@test.com");
 
             // Act & Assert
@@ -171,7 +171,7 @@ namespace Tests.Integration.Infrastructure
         public async Task UpdateAsync_UpdatesUserProperties()
         {
             // Arrange
-            var user = await CreateTestUserAsync("updatable", "up@test.com");
+            var user = await AddTestUserAsync("updatable", "up@test.com");
 
             user.UserName = "updatedname";
             user.Email = "updated@test.com";
@@ -191,7 +191,7 @@ namespace Tests.Integration.Infrastructure
         public async Task SetLevel_ChangesUserLevel()
         {
             // Arrange
-            var user = await CreateTestUserAsync("leveluser", "level@test.com");
+            var user = await AddTestUserAsync("leveluser", "level@test.com");
 
             // Act
             var affected = await Service.SetLevel(user.Id, Levels.C1, CancellationToken.None);
@@ -214,8 +214,8 @@ namespace Tests.Integration.Infrastructure
         public async Task SaveProgress_CreatesNewProgressEntry()
         {
             // Arrange
-            var word = CreateTestWordAsync();
-            var user = await CreateTestUserAsync("progressuser", "p@test.com");
+            var word = AddTestWordAsync();
+            var user = await AddTestUserAsync("progressuser", "p@test.com");
             var request = new ActivityProgressRequestDto(
                 ActivityType: ActivityTypes.Quiz, 
                 WordId: word.Id,
@@ -239,11 +239,11 @@ namespace Tests.Integration.Infrastructure
         public async Task SaveProgress_UpdatesExistingProgress()
         {
             // Arrange
-            var word1 = CreateTestWordAsync();
-            var user = await CreateTestUserAsync("progress2", "p2@test.com");
+            var word = AddTestWordAsync();
+            var user = await AddTestUserAsync("progress2", "p2@test.com");
             var request1 = new ActivityProgressRequestDto(
                 ActivityType: ActivityTypes.Quiz,
-                WordId: word1.Id,
+                WordId: word.Id,
                 FillBlankId: null,
                 IsSuccess: true
             );
@@ -252,7 +252,7 @@ namespace Tests.Integration.Infrastructure
             // Act
             var request2 = new ActivityProgressRequestDto(
                 ActivityType: ActivityTypes.Quiz,
-                WordId: word1.Id,
+                WordId: word.Id,
                 FillBlankId: null,
                 IsSuccess: false
             );
@@ -260,7 +260,7 @@ namespace Tests.Integration.Infrastructure
 
             // Assert
             var progress = await DbContext.UserWordsProgress
-                .FirstOrDefaultAsync(p => p.UserId == user.Id && p.WordId == word1.Id);
+                .FirstOrDefaultAsync(p => p.UserId == user.Id && p.WordId == word.Id);
             Assert.NotNull(progress);
             Assert.Equal(1, progress.CorrectCount);
             Assert.Equal(2, progress.TotalAttempts);
@@ -271,8 +271,8 @@ namespace Tests.Integration.Infrastructure
         public async Task GetProgress_ReturnsCorrectSummary()
         {
             // Arrange
-            var word1 = CreateTestWordAsync();
-            var user = await CreateTestUserAsync("statsuser", "s@test.com");
+            var word1 = AddTestWordAsync(TestWordsA1[0]);
+            var user = await AddTestUserAsync("statsuser", "s@test.com");
             var request1 = new ActivityProgressRequestDto(
                 ActivityType: ActivityTypes.Quiz,
                 WordId: word1.Id,
@@ -281,7 +281,7 @@ namespace Tests.Integration.Infrastructure
             );
             await Service.SaveProgress(user.Id, request1, CancellationToken.None);
 
-            var word2 = CreateTestWordAsync();
+            var word2 = AddTestWordAsync(TestWordsA1[1]);
             var request2 = new ActivityProgressRequestDto(
                 ActivityType: ActivityTypes.Quiz,
                 WordId: word2.Id,

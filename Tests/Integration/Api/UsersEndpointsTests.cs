@@ -13,16 +13,10 @@ using Xunit;
 
 namespace Tests.Integration.Api;
 
-public class UsersEndpointsTests : BaseIntegrationTest<IUserService>
+public class UsersEndpointsTests : BaseEndpointsTests
 {
-    private readonly HttpClient _client;
-    private readonly IntegrationTestWebAppFactory _factory;
-
     public UsersEndpointsTests(IntegrationTestWebAppFactory factory) : base(factory)
-    {
-        _factory = factory;
-        _client = factory.CreateClient(); // https://localhost/
-    }
+    { }
 
     [Fact]
     public async Task GetMe_AuthenticatedUser_ReturnsUserInfo()
@@ -80,7 +74,7 @@ public class UsersEndpointsTests : BaseIntegrationTest<IUserService>
     public async Task SaveProgress_ValidRequest_SavesAndReturnsAffectedRows()
     {
         // Arrange
-        var word = await CreateTestWordAsync();
+        var word = await AddTestWordAsync();
         await AuthorizeAsync();
         var request = new ActivityProgressRequestDto(ActivityType: ActivityTypes.Quiz, WordId: word.Id, FillBlankId: null, IsSuccess: true);
 
@@ -98,7 +92,7 @@ public class UsersEndpointsTests : BaseIntegrationTest<IUserService>
     public async Task GetProgress_AfterSaveProgress_ReturnsCorrectStats()
     {
         // Arrange
-        var word = await CreateTestWordAsync();
+        var word = await AddTestWordAsync();
         await AuthorizeAsync();
         var request = new ActivityProgressRequestDto(ActivityType: ActivityTypes.Quiz, WordId: word.Id, FillBlankId: null, IsSuccess: true);
         var saveRsponse = await _client.PostAsJsonAsync("/api/users/progress/save", request);
@@ -133,67 +127,5 @@ public class UsersEndpointsTests : BaseIntegrationTest<IUserService>
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var user = await response.Content.ReadFromJsonAsync<UserInfoDto>();
         user!.Id.Should().Be(me.Id);
-    }
-
-    private async Task<TokenResponseDto> AuthorizeAsync(string username = "testuser", string email = "test@test.com", string password = "strongpass123!")
-    {
-        await CreateConfirmedUserAsync(username, email, password);
-        var tokenResponse = await LoginAsync(username, password);
-        _client.DefaultRequestHeaders.Authorization = new("Bearer", tokenResponse.AccessToken);
-
-        return tokenResponse;
-    }
-
-    private async Task<User> CreateConfirmedUserAsync(string username, string email, string password)
-    {
-        var request = new RegisterRequestDto(username, email, password);
-        var user = UserMapper.ToDomain(request);
-        user.EmailConfirmed = true;
-        user.Active = true;
-
-        DbContext.Users.Add(user);
-        await DbContext.SaveChangesAsync();
-        return user;
-    }
-
-    private async Task<UserInfoDto> RegisterAsync(string username, string email, string password)
-    {
-        var request = new RegisterRequestDto(username, email, password);
-        var response = await _client.PostAsJsonAsync("/api/auth/register", request);
-        await CheckResponseAsync(response);
-        response.StatusCode.Should().Be(HttpStatusCode.Created);
-
-        var userInfo = await response.Content.ReadFromJsonAsync<UserInfoDto>();
-        userInfo!.Username.Should().Be(username);
-
-        return userInfo;
-    }
-
-    private async Task<TokenResponseDto> LoginAsync(string username, string password)
-    {
-        var sessionId = Guid.NewGuid();
-        _client.DefaultRequestHeaders.Add(HeaderNames.SessionId, sessionId.ToString());
-
-        var request = new LoginRequestDto(username, password);
-        var response = await _client.PostAsJsonAsync("/api/auth/login", request);
-        await CheckResponseAsync(response);
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-
-        var tokenResponse = await response.Content.ReadFromJsonAsync<TokenResponseDto>();
-        tokenResponse!.AccessToken.Should().NotBeNull();
-        tokenResponse!.RefreshToken.Should().NotBeNull();
-        tokenResponse!.SessionId.Should().NotBeNull();
-
-        return tokenResponse;
-    }
-
-    private async Task CheckResponseAsync(HttpResponseMessage response)
-    {
-        if (!response.IsSuccessStatusCode)
-        {
-            var content = await response.Content.ReadAsStringAsync();
-            var body = string.IsNullOrWhiteSpace(content) ? "[empty]" : content;
-            throw new Exception($"HTTP {response.StatusCode}: {body}");
-        }
     }
 }

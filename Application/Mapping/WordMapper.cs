@@ -25,7 +25,7 @@ namespace Application.Mapping
                 word.Id,
                 word.WordText,
                 word.PartOfSpeech,
-                LocalizationMapper.GetLocalizationDto(word.Translation),
+                LocalizationMapper.GetDto(word.Translation),
                 isMarked
             );
         }
@@ -44,7 +44,7 @@ namespace Application.Mapping
                 word.WordText,
                 word.Transcription,
                 word.PartOfSpeech,
-                LocalizationMapper.GetLocalizationDto(word.Translation),
+                LocalizationMapper.GetDto(word.Translation),
                 word.Example ?? String.Empty,
                 word.Level,
                 word.Difficulty,

@@ -6,5 +6,5 @@ using System.Threading.Tasks;
 
 namespace Application.DTO.Words
 {
-    public record DeckFilterDto(string Level, int IsMarked, int ThemeId, int Difficulty);
+    public record DeckFilterDto(string Level, int IsMarked = 0, int ThemeId = 0, int Difficulty = 0);
 }

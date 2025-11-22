@@ -21,23 +21,23 @@ namespace Infrastructure.UseCases
     {
         private readonly IDbContextFactory<DataContext> _dbContextFactory;
         private readonly IWordQueryBuilder _wordQueryBuilder;
-        private readonly IWordCacheService _cacheService;
+        //private readonly IWordCacheService _cacheService;
         private readonly ILogger _logger;
 
         public WordService(
             IDbContextFactory<DataContext> dbContextFactory,
             IWordQueryBuilder wordQueryBuilder,
-            IWordCacheService cacheService,
+            //IWordCacheService cacheService,
             ILogger<WordService> logger)
         {
             ArgumentNullException.ThrowIfNull(dbContextFactory, nameof(dbContextFactory));
             ArgumentNullException.ThrowIfNull(wordQueryBuilder, nameof(wordQueryBuilder));
-            ArgumentNullException.ThrowIfNull(cacheService, nameof(cacheService));
+            //ArgumentNullException.ThrowIfNull(cacheService, nameof(cacheService));
             ArgumentNullException.ThrowIfNull(logger, nameof(logger));
 
             _dbContextFactory = dbContextFactory;
             _wordQueryBuilder = wordQueryBuilder;
-            _cacheService = cacheService;
+            //_cacheService = cacheService;
             _logger = logger;
         }
 
