@@ -4,10 +4,9 @@ using Application.UseCases;
 using Domain.Constants;
 using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
-using Tests.Integration;
 using Xunit;
 
-namespace Tests.Integration.Infrastructure
+namespace Tests.IntegrationTests.Infrastructure
 {
     public class UserServiceTests : BaseIntegrationTest<IUserService>
     {

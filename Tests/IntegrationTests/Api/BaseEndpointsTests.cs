@@ -4,17 +4,13 @@ using Application.Mapping;
 using Application.UseCases;
 using Domain.Entities;
 using FluentAssertions;
-using Microsoft.EntityFrameworkCore;
 using Shared;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http.Json;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Tests.Integration.Api
+namespace Tests.IntegrationTests.Api
 {
     public class BaseEndpointsTests : BaseIntegrationTest<IUserService>
     {

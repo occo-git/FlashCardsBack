@@ -1,11 +1,7 @@
 ﻿using Infrastructure.DataContexts;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Storage;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Shared;
 using System;
@@ -18,13 +14,13 @@ using Xunit;
 
 namespace Tests
 {
-    public class IntegrationTestWebAppFactory
+    public abstract class BaseTestWebAppFactory
         : WebApplicationFactory<Program>,
           IAsyncLifetime
     {
-        private readonly PostgreSqlContainer _dbContainer = new PostgreSqlBuilder()
+        protected readonly PostgreSqlContainer _dbContainer = new PostgreSqlBuilder()
             .WithImage("postgres:latest")
-            .WithDatabase("flashcards_test_db")
+            .WithDatabase("flashcards_db")
             .WithUsername("postgres")
             .WithPassword("postgres")
             .Build();
@@ -33,18 +29,19 @@ namespace Tests
         {
             builder.UseSetting(SharedConstants.EnvJwtSecret, "test-super-secret-jwt-key-that-is-at-least-32-chars!!");
             builder.UseEnvironment("Development");
+            builder.ConfigureServices(ConfigureTestServices);
+        }
 
-            builder.ConfigureTestServices(services =>
-            {
-                var descriptor = services.SingleOrDefault(
-                    s => s.ServiceType == typeof(DbContextOptions<DataContext>));
+        protected virtual void ConfigureTestServices(IServiceCollection services)
+        {
+            var descriptor = services.SingleOrDefault(
+                s => s.ServiceType == typeof(DbContextOptions<DataContext>));
 
-                if (descriptor != null)
-                    services.Remove(descriptor);
+            if (descriptor != null)
+                services.Remove(descriptor);
 
-                services.AddDbContextFactory<DataContext>(options =>
-                    options.UseNpgsql(_dbContainer.GetConnectionString()));
-            });
+            services.AddDbContextFactory<DataContext>(options =>
+                options.UseNpgsql(_dbContainer.GetConnectionString()));
         }
 
         public async Task InitializeAsync()
@@ -65,6 +62,7 @@ namespace Tests
             await dbContext.Database.MigrateAsync();
             Console.WriteLine("<-- Migration");
         }
+
         public new Task DisposeAsync() => _dbContainer.StopAsync();
     }
 }

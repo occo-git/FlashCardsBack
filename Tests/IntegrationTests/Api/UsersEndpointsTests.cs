@@ -1,17 +1,12 @@
 ﻿using Application.DTO.Activity;
-using Application.DTO.Tokens;
 using Application.DTO.Users;
-using Application.Mapping;
-using Application.UseCases;
 using Domain.Constants;
-using Domain.Entities;
 using FluentAssertions;
-using Shared;
 using System.Net;
 using System.Net.Http.Json;
 using Xunit;
 
-namespace Tests.Integration.Api;
+namespace Tests.IntegrationTests.Api;
 
 public class UsersEndpointsTests : BaseEndpointsTests
 {

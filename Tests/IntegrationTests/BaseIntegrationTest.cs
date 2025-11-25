@@ -5,10 +5,9 @@ using Domain.Entities;
 using Domain.Entities.Words;
 using Infrastructure.DataContexts;
 using Microsoft.Extensions.DependencyInjection;
-using System.Collections.Generic;
 using Xunit;
 
-namespace Tests.Integration
+namespace Tests.IntegrationTests
 {
     public abstract class BaseIntegrationTest<TService> :
         IClassFixture<IntegrationTestWebAppFactory>,
@@ -19,6 +18,7 @@ namespace Tests.Integration
         protected readonly DataContext DbContext;
         protected readonly TService Service;
 
+        #region Test Data
         private readonly Word TestWord = new Word
         {
             WordText = "red",
@@ -43,7 +43,8 @@ namespace Tests.Integration
             new Word { WordText = "beautiful", PartOfSpeech = PartOfSpeech.Adjective, Level = Levels.A2, Transcription = "/ˈbjuːtɪf(ə)l/", Translation = "{\"en\": \"Very attractive or pleasing.\", \"ru\": \"красивый\"}" },
             new Word { WordText = "quickly", PartOfSpeech = PartOfSpeech.Adverb, Level = Levels.A2, Transcription = "/ˈkwɪklɪ/", Translation = "{\"en\": \"In a fast way.\", \"ru\": \"быстро\"}" }
         };
-
+        #endregion
+        
         protected BaseIntegrationTest(IntegrationTestWebAppFactory factory)
         {
             _scope = factory.Services.CreateScope();

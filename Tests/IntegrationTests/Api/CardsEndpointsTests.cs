@@ -1,20 +1,14 @@
-﻿// Файл: Tests/Integration/Api/CardsEndpointsTests.cs
-
-using Application.DTO.Activity;
-using Application.DTO.Users;
+﻿using Application.DTO.Users;
 using Application.DTO.Words;
 using Application.Mapping;
 using Domain.Constants;
-using Domain.Entities;
 using Domain.Entities.Words;
 using FluentAssertions;
-using Infrastructure.Migrations;
 using System.Net;
 using System.Net.Http.Json;
 using Xunit;
-using static System.Net.Mime.MediaTypeNames;
 
-namespace Tests.Integration.Api;
+namespace Tests.IntegrationTests.Api;
 
 public class CardsEndpointsTests : BaseEndpointsTests
 {

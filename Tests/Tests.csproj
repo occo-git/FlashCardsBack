@@ -12,6 +12,8 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.9" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
+    <PackageReference Include="PactNet" Version="5.0.1" />
+    <PackageReference Include="PactNet.Output.Xunit" Version="1.0.0" />
     <PackageReference Include="Testcontainers.PostgreSql" Version="4.8.1" />
     <PackageReference Include="xunit" Version="2.9.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
@@ -23,6 +25,23 @@
   <ItemGroup>
     <ProjectReference Include="..\GatewayApi\GatewayApi.csproj" />
     <ProjectReference Include="..\Infrastructure\Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\flashcards-front\pacts\**\*.*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>Pacts\%(RecursiveDir)%(Filename)%(Extension)</Link>
+    </None>
+  </ItemGroup>
+    
+  <ItemGroup>
+    <Folder Include="Pacts\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Pacts\pact-users-api.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>
