@@ -18,7 +18,7 @@ namespace Tests
 
         public HttpHelper(HttpClient client) 
         {
-            Console.WriteLine("--------------------------> HttpHelper");
+            Console.WriteLine("==========> HttpHelper");
             _client = client;
         }
 
@@ -26,7 +26,7 @@ namespace Tests
 
         public async Task<TokenResponseDto> LoginAsync(string username, string password)
         {
-            Console.WriteLine("--------------------------> LoginAsync");
+            Console.WriteLine($"--------------------------> LoginAsync: {username}");
             var sessionId = Guid.NewGuid();
             _client.DefaultRequestHeaders.Add(HeaderNames.SessionId, sessionId.ToString());
 

@@ -1,4 +1,5 @@
-﻿using PactNet;
+﻿using Microsoft.AspNetCore.Hosting.Server.Features;
+using PactNet;
 using PactNet.Output.Xunit;
 using PactNet.Verifier;
 using Xunit;
@@ -9,7 +10,7 @@ namespace Tests.ContractTests;
 [Trait("Category", "Contract")]
 public class UsersApiPactTests : BaseApiPactTests
 {
-    public UsersApiPactTests(PactTestWebAppFactory factory, ITestOutputHelper output) 
+    public UsersApiPactTests(PactTestWebAppFactory factory, ITestOutputHelper output)
         : base(factory, output)
     { }
 
@@ -26,17 +27,20 @@ public class UsersApiPactTests : BaseApiPactTests
         if (!File.Exists(pactFile))
             throw new FileNotFoundException("Pact file not found");
 
-        var baseUri = _factory.Server.BaseAddress;// _httpHelper.Client.BaseAddress;
-        var porviderStatesUri = new Uri(new Uri(ProviderStates.BaseUrl), ProviderStates.ProviderStatesApi);
+        var addresses = _factory.Server.Features.Get<IServerAddressesFeature>()?.Addresses;
+        _output.WriteLine($"------------------------------> Server Addresses: {string.Join(", ", addresses ?? new[] { "none" })}");
+
+        var baseUri = _factory.Server.BaseAddress; // TestHttpHelper.Client.BaseAddress; // new Uri(ProviderStates.BaseUrl);// _factory.Server.BaseAddress;
+        var providerStatesUri = new Uri(new Uri(ProviderStates.BaseUrl), ProviderStates.ProviderStatesApi);
 
         _output.WriteLine($"-------------------------------> VerifyUsersMeContract baseUri={baseUri}");
-        _output.WriteLine($"-------------------------------> VerifyUsersMeContract porviderStatesUri={porviderStatesUri}");
+        _output.WriteLine($"-------------------------------> VerifyUsersMeContract providerStatesUri={providerStatesUri}");
 
         var verifier = new PactVerifier("UsersAPI", config);
         verifier
             .WithHttpEndpoint(baseUri)
             .WithFileSource(new FileInfo(pactFile))
-            .WithProviderStateUrl(porviderStatesUri)
+            .WithProviderStateUrl(providerStatesUri)
             .Verify();
     }
 }

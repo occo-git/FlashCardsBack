@@ -18,6 +18,7 @@ namespace Tests
         : WebApplicationFactory<Program>,
           IAsyncLifetime
     {
+
         protected readonly PostgreSqlContainer _dbContainer = new PostgreSqlBuilder()
             .WithImage("postgres:latest")
             .WithDatabase("flashcards_db")

@@ -9,18 +9,21 @@ using System;
 using System.Linq;
 using System.Net;
 using System.Net.Http.Json;
+using Xunit;
 
 namespace Tests.IntegrationTests.Api
 {
+    [Trait("Category", "Api")]
     public class BaseEndpointsTests : BaseIntegrationTest<IUserService>
     {
         protected readonly HttpClient _client;
 
-        public enum HttpMethods { Get , Post, Put, Delete, Patch }
+        //public enum HttpMethods { Get , Post, Put, Delete, Patch }
 
         public BaseEndpointsTests(IntegrationTestWebAppFactory factory) : base(factory)
         { 
             _client = factory.CreateClient();
+            Console.WriteLine($"--> BaseEndpointsTests: BaseAddress={_client.BaseAddress}");
         }
 
         protected async Task<TokenResponseDto> AuthorizeAsync(string username = "testuser", string email = "test@test.com", string password = "strongpass123!")
@@ -30,18 +33,6 @@ namespace Tests.IntegrationTests.Api
             _client.DefaultRequestHeaders.Authorization = new("Bearer", tokenResponse.AccessToken);
 
             return tokenResponse;
-        }
-
-        private async Task<User> AddConfirmedUserAsync(string username, string email, string password)
-        {
-            var request = new RegisterRequestDto(username, email, password);
-            var user = UserMapper.ToDomain(request);
-            user.EmailConfirmed = true;
-            user.Active = true;
-
-            DbContext.Users.Add(user);
-            await DbContext.SaveChangesAsync();
-            return user;
         }
 
         private async Task<UserInfoDto> RegisterAsync(string username, string email, string password)

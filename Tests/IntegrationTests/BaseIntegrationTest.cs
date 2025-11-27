@@ -5,6 +5,7 @@ using Domain.Entities;
 using Domain.Entities.Words;
 using Infrastructure.DataContexts;
 using Microsoft.Extensions.DependencyInjection;
+using System.Net;
 using Xunit;
 
 namespace Tests.IntegrationTests
@@ -89,6 +90,18 @@ namespace Tests.IntegrationTests
         }
 
         #region Helpers
+        protected async Task<User> AddConfirmedUserAsync(string username, string email, string password)
+        {
+            var request = new RegisterRequestDto(username, email, password);
+            var user = UserMapper.ToDomain(request);
+            user.EmailConfirmed = true;
+            user.Active = true;
+
+            DbContext.Users.Add(user);
+            await DbContext.SaveChangesAsync();
+            return user;
+        }
+
         protected async Task<User> AddTestUserAsync(string username, string email, string password = "strongpassword123!!")
         {
             var user = GetUser(username, email, password);

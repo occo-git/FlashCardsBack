@@ -4,6 +4,7 @@ using Application.Mapping;
 using Domain.Constants;
 using Domain.Entities.Words;
 using FluentAssertions;
+using Microsoft.AspNetCore.Http;
 using System.Net;
 using System.Net.Http.Json;
 using Xunit;
@@ -191,7 +192,7 @@ public class CardsEndpointsTests : BaseEndpointsTests
     [Fact]
     public async Task UnauthorizedAccess_ToAnyEndpoint_Returns401()
     {
-        var endpoints = new List<(HttpMethods, string)> 
+        var endpoints = new List<(string, string)> 
         {
             (HttpMethods.Get, "/api/cards/1"),
             (HttpMethods.Post, "/api/cards/card-from-deck"),

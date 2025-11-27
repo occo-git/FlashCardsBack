@@ -30,15 +30,13 @@ namespace Tests.ContractTests.ProviderState
 
         public async Task HandleProviderStateAsync(string state)
         {
-            Console.WriteLine("---------------------> HandleProviderStateAsync");
             switch (state)
             {
                 case ProviderStates.UserIsAuthenticated:
-                    Console.WriteLine("---------------------> Setting provider state: User is authenticated");
                     await AuthorizeAsync();
                     break;
                 default:
-                    throw new InvalidOperationException($"⚠️ Unknown provider state: {state}");
+                    throw new InvalidOperationException($"⚠️ ProviderStateHandler.Unknown provider state: {state}");
             }
         }
 

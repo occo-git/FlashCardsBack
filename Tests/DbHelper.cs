@@ -48,6 +48,7 @@ namespace Tests
 
         public DbHelper(DataContext dbContext)
         {
+            Console.WriteLine("==========> DbHelper");
             DbContext = dbContext;
         }
 
@@ -71,7 +72,7 @@ namespace Tests
         #region Users
         public async Task<User> AddConfirmedUserAsync(string username, string email, string password)
         {
-            Console.WriteLine("--------------------------> AddConfirmedUserAsync");
+            Console.WriteLine($"--------------------------> AddConfirmedUserAsync {username} {email} {password}");
             var user = GetUser(username, email, password);
             user.EmailConfirmed = true;
             user.Active = true;

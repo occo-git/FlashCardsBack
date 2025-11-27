@@ -26,17 +26,15 @@ namespace Tests.ContractTests
     {
         protected readonly PactTestWebAppFactory _factory;
         protected readonly ITestOutputHelper _output;
-        protected readonly HttpHelper _httpHelper;
+
+        private readonly HttpClient _client;
+        public HttpClient PactHttpClient => _client;
 
         public BaseApiPactTests(PactTestWebAppFactory factory, ITestOutputHelper output)
         {
             _factory = factory;
+            _client = factory.CreatePactClient();
             _output = output;
-
-            _output.WriteLine("---------------------> Creating HttpHelper in BaseApiPactTests");
-            var client = _factory.CreateClient();
-            _httpHelper = new HttpHelper(client);
-            _output.WriteLine($"---------------------> HttpCllient.BaseAddress={_httpHelper.Client.BaseAddress}");
         }
 
         public Task InitializeAsync()
