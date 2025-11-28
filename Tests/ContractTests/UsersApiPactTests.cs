@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Hosting.Server.Features;
+using Microsoft.Extensions.Logging;
 using PactNet;
 using PactNet.Output.Xunit;
 using PactNet.Verifier;
@@ -24,8 +25,10 @@ public class UsersApiPactTests : BaseApiPactTests
         };
 
         var pactFile = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ApiPacts.PactsPath, ApiPacts.PactUsersApiJsonFile));
-        if (!File.Exists(pactFile))
-            throw new FileNotFoundException("Pact file not found");
+        if (File.Exists(pactFile))
+            _output.WriteLine($"------------------------------> Pact File: {pactFile}");
+        else
+                    throw new FileNotFoundException("Pact file not found");
 
         var addresses = _factory.Server.Features.Get<IServerAddressesFeature>()?.Addresses;
         _output.WriteLine($"------------------------------> Server Addresses: {string.Join(", ", addresses ?? new[] { "none" })}");

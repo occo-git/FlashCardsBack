@@ -30,18 +30,12 @@
   <ItemGroup>
     <None Include="..\..\flashcards-front\pacts\**\*.*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>Pacts\%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <Link>ContractTests\Pacts\%(RecursiveDir)%(Filename)%(Extension)</Link>
     </None>
   </ItemGroup>
     
   <ItemGroup>
-    <Folder Include="Pacts\" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="Pacts\pact-users-api.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    <Folder Include="ContractTests\Pacts\" />
   </ItemGroup>
 
 </Project>
