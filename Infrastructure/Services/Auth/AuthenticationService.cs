@@ -13,6 +13,7 @@ using Infrastructure.DataContexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
+using System.Diagnostics;
 
 namespace Infrastructure.Services.Auth
 {
@@ -55,15 +56,21 @@ namespace Infrastructure.Services.Auth
             using var context = await _dbContextFactory.CreateDbContextAsync(ct);
             var user = await context.Users.FirstOrDefaultAsync(u => u.UserName == loginUserDto.Username || u.Email == loginUserDto.Username, ct);
 
+            var sw3 = Stopwatch.StartNew();
             if (user == null || !UserMapper.CheckPassword(user, loginUserDto))
                 throw new UnauthorizedAccessException("Incorrect username or password.");
             if (!user.EmailConfirmed)
                 throw new EmailNotConfirmedException("Account is not confirmed.");
             if (!user.Active)
                 throw new AccountNotActiveException("Account is currently inactive. Please contact support.");
+            sw3.Stop();
+            _logger.LogInformation($"---> AuthenticateAsync.CheckPassword: {sw3.ElapsedMilliseconds} ms");
 
+            var sw4 = Stopwatch.StartNew();
             var tokens = await GenerateTokens(user, sessionId, ct);
-            
+            sw4.Stop();
+            _logger.LogInformation($"---> AuthenticateAsync.GenerateTokens: {sw4.ElapsedMilliseconds} ms");
+
             user.LastActive = DateTime.UtcNow;
             await context.SaveChangesAsync();
 

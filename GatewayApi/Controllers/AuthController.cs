@@ -18,6 +18,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.Extensions.Options;
 using Shared;
 using Shared.Configuration;
+using System.Diagnostics;
 using System.Security.Claims;
 
 namespace GatewayApi.Controllers
@@ -102,17 +103,17 @@ namespace GatewayApi.Controllers
         {
             ArgumentNullException.ThrowIfNull(request, nameof(request));
             _logger.LogInformation($"> AuthController.Login Username = {request.Username}");
-
+            
             var sessionId = GetSessionIdFromHeader();
             ArgumentException.ThrowIfNullOrWhiteSpace(sessionId, nameof(sessionId));
-            _logger.LogInformation($"> AuthController.Login: sessionId = {sessionId}");
+            //_logger.LogInformation($"> AuthController.Login: sessionId = {sessionId}");
 
             await validator.ValidationCheck(request);
 
-            _logger.LogInformation($"> AuthController.Login: Authenticate UserName = {request.Username}");
+            //_logger.LogInformation($"> AuthController.Login: Authenticate UserName = {request.Username}");
             var tokenResponse = await _authenticationService.AuthenticateAsync(request, sessionId, ct);
 
-            _logger.LogInformation($"> AuthController.Login: Authenticated Username={request.Username}");
+            //_logger.LogInformation($"> AuthController.Login: Authenticated Username={request.Username}");
             return Ok(tokenResponse);
         }
 

@@ -26,7 +26,7 @@ namespace Application.Mapping
             return new User
             {
                 UserName = dto.Username,
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password), // workFactor = 11 - by default
                 Email = dto.Email,
                 Level = Levels.A1,
                 LastActive = DateTime.UtcNow,

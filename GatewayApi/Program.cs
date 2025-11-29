@@ -32,8 +32,7 @@ public class Program
         });
         #endregion
 
-        #region CORS 
-
+        #region CORS             
         var apiOptions = services.AddApiOptions(configuration); // api links
         services.AddCors(options =>
         {
@@ -44,6 +43,13 @@ public class Program
                              .AllowAnyHeader()
                              .AllowCredentials();
             });
+        });
+        #endregion
+
+        #region Kestrel
+        builder.WebHost.ConfigureKestrel(options =>
+        {
+            options.Limits.MaxConcurrentConnections = 300;
         });
         #endregion
 

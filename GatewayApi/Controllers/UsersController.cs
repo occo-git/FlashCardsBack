@@ -119,9 +119,9 @@ namespace GatewayApi.Controllers
         /// </remarks>
         [HttpGet("progress")]
         [Authorize]
-        public async Task<ActionResult<ProgressResponseDto>> GetPorgress(CancellationToken ct)
+        public async Task<ActionResult<ProgressResponseDto>> GetProgress(CancellationToken ct)
         {
-            _logger.LogInformation($"> UsersController.GetPorgress");
+            _logger.LogInformation($"> UsersController.GetProgress");
             var result = await GetCurrentUserAsync(async userId =>
                 await _userService.GetProgress(userId, ct));
             return Ok(result);
@@ -136,7 +136,7 @@ namespace GatewayApi.Controllers
         /// </remarks>
         [HttpPost("progress/save")]
         [Authorize]
-        public async Task<ActionResult<bool>> SaveProgress([FromBody] ActivityProgressRequestDto request, CancellationToken ct)
+        public async Task<ActionResult<int>> SaveProgress([FromBody] ActivityProgressRequestDto request, CancellationToken ct)
         {
             ArgumentNullException.ThrowIfNull(request, nameof(request));
             _logger.LogInformation($"> UsersController.SaveProgress {request}");
