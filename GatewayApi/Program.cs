@@ -47,10 +47,12 @@ public class Program
         #endregion
 
         #region Kestrel
-        builder.WebHost.ConfigureKestrel(options =>
-        {
-            options.Limits.MaxConcurrentConnections = 300;
-        });
+        //builder.WebHost.ConfigureKestrel(options =>
+        //{
+        //    // defatults
+        //    options.Limits.MaxConcurrentConnections = null; // unlimited 
+        //    options.ThreadCount = null;  // CPU auto
+        //});
         #endregion
 
         #region DataContext

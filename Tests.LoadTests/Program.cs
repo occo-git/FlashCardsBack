@@ -4,20 +4,19 @@ using Application.DTO.Users;
 using Application.DTO.Words;
 using Domain.Constants;
 using NBomber.Contracts;
-using NBomber.Contracts.Metrics;
 using NBomber.Contracts.Stats;
 using NBomber.CSharp;
+using NBomber.Http;
 using NBomber.Http.CSharp;
 using Shared;
-using System.Diagnostics.Metrics;
 using System.Net.Http.Json;
 using Tests.LoadTests;
 
 
 const int CONST_WordId = 1284;
 var httpClient = Http.CreateDefaultClient();
-var myCounter = Metric.CreateCounter("my-counter", unitOfMeasure: "number");
-var myGuage = Metric.CreateGauge("my-guage", unitOfMeasure: "time");
+var myCounter = Metric.CreateCounter("my-counter", unitOfMeasure: "MB");
+var myGuage = Metric.CreateGauge("my-guage", unitOfMeasure: "KB");
 var random = new Random();
 
 #region Login tokens
@@ -45,69 +44,85 @@ async Task<Response<TokenResponseDto>> LoginStep()
         ? Response.Fail<TokenResponseDto>(message: "No JWT token available")
         : Response.Ok(payload: tokens);
 }
-async Task<Response<UserInfoDto>> MeStep()
+async Task<Response<UserInfoDto>> MeStep(IScenarioContext context)
 {
     var request = Get(ApiRequests.UsersMe);
     var response = await Http.Send(httpClient, request);
-    var userInfo = await response.Payload.Value.Content.ReadFromJsonAsync<UserInfoDto>();
+    var userInfo = await response.Payload.Value.Content.ReadFromJsonAsync<UserInfoDto>(context.ScenarioCancellationToken);
 
     return userInfo is null
         ? Response.Fail<UserInfoDto>(message: "User undefined")
         : Response.Ok(payload: userInfo);
 }
-async Task<Response<int>> LevelStep(string level)
+async Task<Response<int>> LevelStep(IScenarioContext context, string level)
 {
     LevelRequestDto requestDto = new LevelRequestDto(level);
     var request = Post(ApiRequests.UsersLevel, requestDto);
     var response = await Http.Send(httpClient, request);
-    var result = await response.Payload.Value.Content.ReadFromJsonAsync<int>();
+    var result = await response.Payload.Value.Content.ReadFromJsonAsync<int>(context.ScenarioCancellationToken);
 
     return result > 0
         ? Response.Ok(payload: result)
-        : Response.Fail<int>(message: "Set level incomplete");
+        : Response.Fail<int>(message: "LevelStep incomplete");
 }
-async Task<Response<ProgressResponseDto>> ProgressStep()
+async Task<Response<ProgressResponseDto>> ProgressStep(IScenarioContext context)
 {
     var request = Get(ApiRequests.UsersProgress);
     var response = await Http.Send(httpClient, request);
-    var result = await response.Payload.Value.Content.ReadFromJsonAsync<ProgressResponseDto>();
+    var result = await response.Payload.Value.Content.ReadFromJsonAsync<ProgressResponseDto>(context.ScenarioCancellationToken);
 
     return result is null
-        ? Response.Fail<ProgressResponseDto>(message: "Get progress incomplete")
+        ? Response.Fail<ProgressResponseDto>(message: "ProgressStep incomplete")
         : Response.Ok(payload: result);
 }
-async Task<Response<int>> ProgressSaveStep()
+async Task<Response<int>> ProgressSaveStep(IScenarioContext context)
 {
     ActivityProgressRequestDto requestDto = new ActivityProgressRequestDto(ActivityTypes.Quiz, WordId: CONST_WordId, null, true);
     var request = Post(ApiRequests.UsersProgressSave, requestDto);
     var response = await Http.Send(httpClient, request);
-    var result = await response.Payload.Value.Content.ReadFromJsonAsync<int>();
+    var result = await response.Payload.Value.Content.ReadFromJsonAsync<int>(context.ScenarioCancellationToken);
 
     return result == 0
-        ? Response.Fail<int>(message: "Set progress incomplete")
+        ? Response.Fail<int>(message: "ProgressSaveStep incomplete")
         : Response.Ok(payload: result);
 }
-async Task<Response<CardExtendedDto>> CardFromDeckStep()
+async Task<Response<CardExtendedDto>> CardFromDeckStep(IScenarioContext context)
 {
     DeckFilterDto filter = new DeckFilterDto(Levels.A1);
     CardsPageRequestDto requestDto = new CardsPageRequestDto(WordId: CONST_WordId, Filter: filter, isDirectionForward: true, PageSize: 10);
     var request = Post(ApiRequests.CardsCardFromDeck, requestDto);
     var response = await Http.Send(httpClient, request);
-    var result = await response.Payload.Value.Content.ReadFromJsonAsync<CardExtendedDto>();
+    var result = await response.Payload.Value.Content.ReadFromJsonAsync<CardExtendedDto>(context.ScenarioCancellationToken);
 
     return result is null
-        ? Response.Fail<CardExtendedDto>(message: "Set progress incomplete")
+        ? Response.Fail<CardExtendedDto>(message: "CardFromDeckStep incomplete")
         : Response.Ok(payload: result);
 }
-
-async Task<Response<int>> TestMetricsStep()
+async Task<Response<IAsyncEnumerable<WordDto>>> CardsListStep(IScenarioContext context)
 {
+    DeckFilterDto filter = new DeckFilterDto(Levels.A1);
+    CardsPageRequestDto requestDto = new CardsPageRequestDto(WordId: CONST_WordId, Filter: filter, isDirectionForward: true, PageSize: 10);
+    var request = Post(ApiRequests.CardsList, requestDto);
+    var response = await Http.Send(httpClient, request);
+    var result = await response.Payload.Value.Content.ReadFromJsonAsync<IAsyncEnumerable<WordDto>>(context.ScenarioCancellationToken);
+
+    //int count = 0;
+    //await foreach (var word in result)
+    //    count++;
+
+    return result is null
+        ? Response.Fail<IAsyncEnumerable<WordDto>>(message: "CardsListStep incomplete")
+        : Response.Ok(payload: result);
+}
+async Task<Response<object>> TestMetricsStep(IScenarioContext context)
+{
+    await Task.Delay(100);
+
     var val = random.Next(100);
     myCounter.Add(val);
     myGuage.Set(val);
 
-    await Task.Delay(100);
-    return Response.Ok(payload: val);
+    return Response.Ok();
 }
 #endregion
 
@@ -122,16 +137,19 @@ var loginScenario = Scenario.Create("user_login_scenario",
     .WithWarmUpDuration(TimeSpan.FromSeconds(1))
     .WithLoadSimulations(GetSimulationSet(10, 1, 30));
 
-var meScenario = GetScenario("users_me_scenario", MeStep(), GetSimulationSet());
-var progressScenario = GetScenario("users_progress_scenario", ProgressStep(), GetSimulationSet());
-var saveProgressScenario = GetScenario("users_progress_save_scenario", ProgressSaveStep(), GetSimulationSet());
-var cardFromDeckScenario = GetScenario("cards_card_from_deck_scenario", CardFromDeckStep(), GetSimulationSet());
+var rate = 320;
+var meScenario = GetScenario("users_me_scenario", MeStep, GetSimulationSet());
+var progressScenario = GetScenario("users_progress_scenario", ProgressStep, GetSimulationSet(rate));
+var progressSaveScenario = GetScenario("users_progress_save_scenario", ProgressSaveStep, GetSimulationSet(rate));
+var cardFromDeckScenario = GetScenario("cards_card_from_deck_scenario", CardFromDeckStep, GetSimulationSet(rate));
+var cardsListScenario = GetScenario("cards_list_scenario", CardsListStep, GetSimulationSet(rate));
 
-var testMetricsScenario = GetScenario("test_metrics_scenario", TestMetricsStep(), GetSimulationSet())
+var testMetricsScenario = GetScenario("test_metrics_scenario", TestMetricsStep, GetSimulationSet())
     .WithInit(ctx =>
     {
         ctx.RegisterMetric(myCounter);
         ctx.RegisterMetric(myGuage);
+
         return Task.CompletedTask;
     })
     .WithThresholds(
@@ -154,9 +172,9 @@ HttpRequestMessage Post<T>(string url, T requestDto)
         .WithHeader(HeaderNames.SessionId, LoginTokens.SessionId)
         .WithJsonBody(requestDto);
 }
-ScenarioProps GetScenario<T>(string name, Task<Response<T>> step, LoadSimulation[] simulationSet)
+ScenarioProps GetScenario<T>(string name, Func<IScenarioContext, Task<Response<T>>> run, LoadSimulation[] simulationSet)
 {
-    return Scenario.Create(name, async context => await step)
+    return Scenario.Create(name, async c => await run(c))
         .WithWarmUpDuration(TimeSpan.FromSeconds(1)) 
         .WithLoadSimulations(simulationSet);
 }
@@ -179,8 +197,10 @@ LoadSimulation[] GetSimulationSet(int rate = 1000, int intervalSec = 5, int dura
 #endregion
 
 var stats = NBomberRunner
-    .RegisterScenarios(testMetricsScenario)
+    .RegisterScenarios(meScenario, progressScenario, progressSaveScenario, cardFromDeckScenario, cardsListScenario)
     .WithReportFormats(ReportFormat.Html)
     .WithReportFileName("users_tests")
     .Run();
 
+//var counterValue = stats.Metrics.Counters.Find("my-counter").Value;
+//var gaugeValue = stats.Metrics.Gauges.Find("my-gauge").Value;

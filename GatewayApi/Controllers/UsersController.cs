@@ -72,7 +72,7 @@ namespace GatewayApi.Controllers
         [Authorize]
         public async Task<ActionResult<UserInfoDto>> GetLoggedUser(CancellationToken ct)
         {
-            _logger.LogInformation($"> UsersController.GetLoggedUser");
+            //_logger.LogInformation($"> UsersController.GetLoggedUser");
             var result = await GetCurrentUserAsync(async userId =>
             {
                 var user = await _userService.GetByIdAsync(userId, ct);

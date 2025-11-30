@@ -21,13 +21,13 @@ namespace GatewayApi.Controllers
             var id = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(id))
             {
-                _logger.LogWarning("> GetCurrentUser: User ID claim not found");
+                //_logger.LogWarning("> GetCurrentUser: User ID claim not found");
                 throw new UnauthorizedAccessException("Unauthorized user");
             }
 
             if (Guid.TryParse(id, out var userId))
             {
-                _logger.LogInformation($"> GetCurrentUser UserId = {userId}");
+                //_logger.LogInformation($"> GetCurrentUser UserId = {userId}");
                 return await action(userId);
             }
             else
@@ -42,13 +42,13 @@ namespace GatewayApi.Controllers
             var id = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(id))
             {
-                _logger.LogWarning("> GetCurrentUser: User ID claim not found");
+                //_logger.LogWarning("> GetCurrentUser: User ID claim not found");
                 throw new UnauthorizedAccessException("Unauthorized user");
             }
 
             if (Guid.TryParse(id, out var userId))
             {
-                _logger.LogInformation($"> GetCurrentUser UserId = {userId}");
+                //_logger.LogInformation($"> GetCurrentUser UserId = {userId}");
                 return action(userId);
             }
             else
