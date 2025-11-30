@@ -2,27 +2,28 @@
 using Application.DTO.Tokens;
 using Application.DTO.Users;
 using Domain.Constants;
-using Microsoft.VisualBasic;
-using NATS.Client.Internals;
 using NBomber.Contracts;
 using NBomber.Contracts.Stats;
 using NBomber.CSharp;
 using NBomber.Http.CSharp;
 using Shared;
+using System.Diagnostics.Metrics;
 using System.Net.Http.Json;
-using System.Text.Json;
-using System.Threading.Tasks;
 using Tests.LoadTests;
 
-const int CONST_WordId = 1284;
 
+const int CONST_WordId = 1284;
 var httpClient = Http.CreateDefaultClient();
+var counter = Metric.CreateCounter("my-counter", unitOfMeasure: "times");
+
+#region Login tokens
 var LoginTokens = await Login();
 async Task<TokenResponseDto> Login()
 {
     var response = await LoginStep();
     return response.Payload.Value;
 }
+#endregion
 
 #region Steps
 async Task<Response<TokenResponseDto>> LoginStep()
@@ -78,6 +79,8 @@ async Task<Response<int>> ProgressSaveStep()
     var response = await Http.Send(httpClient, request);
     var result = await response.Payload.Value.Content.ReadFromJsonAsync<int>();
 
+    counter.Add(1);
+
     return result == 0
         ? Response.Fail<int>(message: "Set progress incomplete")
         : Response.Ok(payload: result);
@@ -97,7 +100,15 @@ var loginScenario = Scenario.Create("user_login_scenario",
 
 var meScenario = GetScenario("users_me_scenario", MeStep(), GetSimulationSet());
 var progressScenario = GetScenario("users_progress_scenario", ProgressStep(), GetSimulationSet());
-var saveProgressScenario = GetScenario("users_progress_save_scenario", ProgressSaveStep(), GetSimulationSet());
+var saveProgressScenario = GetScenario("users_progress_save_scenario", ProgressSaveStep(), GetSimulationSet())
+    .WithInit(ctx =>
+    {
+        ctx.RegisterMetric(counter);
+        return Task.CompletedTask;
+    })
+    .WithThresholds(
+        Threshold.Create(metric => metric.Counters.Get("my-counter").Value < 1000)
+    );
 #endregion
 
 #region Helpers
@@ -143,3 +154,4 @@ var stats = NBomberRunner
     .WithReportFormats(ReportFormat.Html)
     .WithReportFileName("users_tests")
     .Run();
+
