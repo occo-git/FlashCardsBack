@@ -1,8 +1,10 @@
 ﻿using Application.DTO.Activity;
 using Application.DTO.Tokens;
 using Application.DTO.Users;
+using Application.DTO.Words;
 using Domain.Constants;
 using NBomber.Contracts;
+using NBomber.Contracts.Metrics;
 using NBomber.Contracts.Stats;
 using NBomber.CSharp;
 using NBomber.Http.CSharp;
@@ -14,7 +16,9 @@ using Tests.LoadTests;
 
 const int CONST_WordId = 1284;
 var httpClient = Http.CreateDefaultClient();
-var counter = Metric.CreateCounter("my-counter", unitOfMeasure: "times");
+var myCounter = Metric.CreateCounter("my-counter", unitOfMeasure: "number");
+var myGuage = Metric.CreateGauge("my-guage", unitOfMeasure: "time");
+var random = new Random();
 
 #region Login tokens
 var LoginTokens = await Login();
@@ -79,11 +83,31 @@ async Task<Response<int>> ProgressSaveStep()
     var response = await Http.Send(httpClient, request);
     var result = await response.Payload.Value.Content.ReadFromJsonAsync<int>();
 
-    counter.Add(1);
-
     return result == 0
         ? Response.Fail<int>(message: "Set progress incomplete")
         : Response.Ok(payload: result);
+}
+async Task<Response<CardExtendedDto>> CardFromDeckStep()
+{
+    DeckFilterDto filter = new DeckFilterDto(Levels.A1);
+    CardsPageRequestDto requestDto = new CardsPageRequestDto(WordId: CONST_WordId, Filter: filter, isDirectionForward: true, PageSize: 10);
+    var request = Post(ApiRequests.CardsCardFromDeck, requestDto);
+    var response = await Http.Send(httpClient, request);
+    var result = await response.Payload.Value.Content.ReadFromJsonAsync<CardExtendedDto>();
+
+    return result is null
+        ? Response.Fail<CardExtendedDto>(message: "Set progress incomplete")
+        : Response.Ok(payload: result);
+}
+
+async Task<Response<int>> TestMetricsStep()
+{
+    var val = random.Next(100);
+    myCounter.Add(val);
+    myGuage.Set(val);
+
+    await Task.Delay(100);
+    return Response.Ok(payload: val);
 }
 #endregion
 
@@ -100,14 +124,19 @@ var loginScenario = Scenario.Create("user_login_scenario",
 
 var meScenario = GetScenario("users_me_scenario", MeStep(), GetSimulationSet());
 var progressScenario = GetScenario("users_progress_scenario", ProgressStep(), GetSimulationSet());
-var saveProgressScenario = GetScenario("users_progress_save_scenario", ProgressSaveStep(), GetSimulationSet())
+var saveProgressScenario = GetScenario("users_progress_save_scenario", ProgressSaveStep(), GetSimulationSet());
+var cardFromDeckScenario = GetScenario("cards_card_from_deck_scenario", CardFromDeckStep(), GetSimulationSet());
+
+var testMetricsScenario = GetScenario("test_metrics_scenario", TestMetricsStep(), GetSimulationSet())
     .WithInit(ctx =>
     {
-        ctx.RegisterMetric(counter);
+        ctx.RegisterMetric(myCounter);
+        ctx.RegisterMetric(myGuage);
         return Task.CompletedTask;
     })
     .WithThresholds(
-        Threshold.Create(metric => metric.Counters.Get("my-counter").Value < 1000)
+        Threshold.Create(metric => metric.Counters.Get("my-counter").Value < 1000),
+        Threshold.Create(metric => metric.Gauges.Get("my-gauge").Value >= 200)
     );
 #endregion
 
@@ -150,7 +179,7 @@ LoadSimulation[] GetSimulationSet(int rate = 1000, int intervalSec = 5, int dura
 #endregion
 
 var stats = NBomberRunner
-    .RegisterScenarios(saveProgressScenario)
+    .RegisterScenarios(testMetricsScenario)
     .WithReportFormats(ReportFormat.Html)
     .WithReportFileName("users_tests")
     .Run();
