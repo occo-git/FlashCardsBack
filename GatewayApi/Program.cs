@@ -51,7 +51,6 @@ public class Program
         //{
         //    // defatults
         //    options.Limits.MaxConcurrentConnections = null; // unlimited 
-        //    options.ThreadCount = null;  // CPU auto
         //});
         #endregion
 
