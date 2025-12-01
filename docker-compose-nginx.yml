@@ -40,13 +40,14 @@ services:
     build:
       context: .
       dockerfile: GatewayApi/Dockerfile
-    ports:
-      - "8080:8080"
+    #ports:
+    #  - "8080:8080"
     networks:
       - net1
     #command: ["migrate"] # flag to start the migration process - JWT_SECRET_KEY = "test_secret_for_migrations"; Add-Migration Tokens -Project Infrastructure -StartupProject GatewayApi
     environment:
       - ASPNETCORE_ENVIRONMENT=${ASP_ENV} 
+      - ASPNETCORE_URLS=http://+:8080 # one port
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
       - ConnectionStrings__FlashCardsConnectionString=${FLASHCARDS_DB_CONNECTION_STRING} # connection string from .env or secrets
       - API__OriginUrl=${API__OriginUrl}
@@ -63,13 +64,27 @@ services:
       - SMTP__Password=${SMTP__Password}
       - SMTP__From=${SMTP__From}
       - FILE_STORAGE_PATH=/storage/images
+    deploy:
+      replicas: 4
     volumes:
       - ./Infrastructure/Storage/Images:/storage/images
     depends_on:
       db: 
         condition: service_healthy
       redis:
-        condition: service_healthy
+        condition: service_healthy    
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "8080:80"  # one port for all
+    networks:
+      - net1
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - gatewayapi
+    command: nginx -g "daemon off;"
 
 networks:
   net1:

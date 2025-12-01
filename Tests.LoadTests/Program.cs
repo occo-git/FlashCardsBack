@@ -137,8 +137,8 @@ var loginScenario = Scenario.Create("user_login_scenario",
     .WithWarmUpDuration(TimeSpan.FromSeconds(1))
     .WithLoadSimulations(GetSimulationSet(10, 1, 30));
 
-var rate = 220;
-var meScenario = GetScenario("users_me_scenario", MeStep, GetSimulationSet());
+var rate = 500;
+var meScenario = GetScenario("users_me_scenario", MeStep, GetSimulationSet(2000));
 var progressScenario = GetScenario("users_progress_scenario", ProgressStep, GetSimulationSet(rate));
 var progressSaveScenario = GetScenario("users_progress_save_scenario", ProgressSaveStep, GetSimulationSet(rate));
 var cardFromDeckScenario = GetScenario("cards_card_from_deck_scenario", CardFromDeckStep, GetSimulationSet(rate));
@@ -197,7 +197,7 @@ LoadSimulation[] GetSimulationSet(int rate = 1000, int intervalSec = 5, int dura
 #endregion
 
 var stats = NBomberRunner
-    .RegisterScenarios(meScenario, progressScenario, progressSaveScenario, cardFromDeckScenario, cardsListScenario)
+    .RegisterScenarios(meScenario)//, progressScenario, progressSaveScenario, cardFromDeckScenario, cardsListScenario)
     .WithReportFormats(ReportFormat.Html)
     .WithReportFileName("users_tests")
     .Run();
