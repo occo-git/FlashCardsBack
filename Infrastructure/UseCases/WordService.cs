@@ -176,12 +176,13 @@ namespace Infrastructure.UseCases
             }
             else
             {
-                // next one
-                var next = await filtered
-                    .Where(w => w.Id > request.WordId)
-                    .OrderBy(w => w.Id)
+                // previous one
+                var prev = await filtered
+                    .Where(w => w.Id < request.WordId)
+                    .OrderByDescending(w => w.Id)
+                    .Skip(request.PageSize)
                     .FirstOrDefaultAsync(ct);
-                yield return (next, false);
+                yield return (prev, false);   
 
                 // main query
                 var pageQuery = filtered
@@ -196,14 +197,13 @@ namespace Infrastructure.UseCases
 
                 while (stack.Count > 0)
                     yield return stack.Pop();
-
-                // previous one
-                var prev = await filtered
-                    .Where(w => w.Id < request.WordId)
-                    .OrderByDescending(w => w.Id)
-                    .Skip(request.PageSize)
+                             
+                // next one
+                var next = await filtered
+                    .Where(w => w.Id > request.WordId)
+                    .OrderBy(w => w.Id)
                     .FirstOrDefaultAsync(ct);
-                yield return (prev, false);
+                yield return (next, false);
             }
         }
     }

@@ -1,23 +1,10 @@
-﻿using Application.Abstractions.Services;
-using Application.DTO;
-using Application.DTO.Activity;
-using Application.DTO.Email;
-using Application.DTO.Tokens;
+﻿using Application.DTO.Activity;
 using Application.DTO.Users;
 using Application.Exceptions;
-using Application.Extensions;
 using Application.Mapping;
 using Application.UseCases;
-using Domain.Entities;
-using FluentValidation;
-using Infrastructure.Services.RazorRenderer;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
-using Shared;
-using Shared.Configuration;
-using System.Security.Claims;
 
 namespace GatewayApi.Controllers
 {
