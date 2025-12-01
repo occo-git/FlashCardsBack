@@ -14,6 +14,7 @@ using Infrastructure.Services.RazorRenderer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.Extensions.Options;
 using Shared;
@@ -59,6 +60,7 @@ namespace GatewayApi.Controllers
         /// </returns>
         [HttpPost("register")]
         [AllowAnonymous]
+        [EnableRateLimiting(SharedConstants.RateLimitAuthPolicy)]
         public async Task<ActionResult<UserInfoDto>> Register(
             [FromBody] RegisterRequestDto request,
             [FromServices] IValidator<RegisterRequestDto> validator,
@@ -96,6 +98,7 @@ namespace GatewayApi.Controllers
         /// </returns>
         [HttpPost("login")]
         [AllowAnonymous]
+        [EnableRateLimiting(SharedConstants.RateLimitAuthPolicy)]
         public async Task<ActionResult<TokenResponseDto>> Login(
             [FromBody] LoginRequestDto request,
             [FromServices] IValidator<LoginRequestDto> validator,

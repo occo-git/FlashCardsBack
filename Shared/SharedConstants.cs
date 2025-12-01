@@ -17,5 +17,7 @@
 
         public const string FlashCardsConnectionString = "FlashCardsConnectionString";
         public const string Migrate = "migrate";
+
+        public const string RateLimitAuthPolicy = "RateLimitAuthPolicy";
     }
 }
