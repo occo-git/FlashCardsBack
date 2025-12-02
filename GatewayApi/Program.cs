@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.OpenApi;
 using Shared;
+using Shared.Configuration;
 using System.Threading.RateLimiting;
 
 public class Program
@@ -56,36 +57,41 @@ public class Program
         #endregion
 
         #region Rate limit
-        builder.Services.AddRateLimiter(options =>
+        services.Configure<RateLimitOptions>(configuration.GetSection(SharedConstants.EnvRateLimitGroup));
+        var rlo = builder.Configuration.GetSection(SharedConstants.EnvRateLimitGroup).Get<RateLimitOptions>();
+        if (rlo?.Enabled == true)
         {
-            // http status code when rate limit exceeded
-            options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-
-            // 1. Global rate limit by IP
-            options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+            builder.Services.AddRateLimiter(options =>
             {
-                var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+                // http status code when rate limit exceeded
+                options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
-                return RateLimitPartition.GetFixedWindowLimiter(
-                    partitionKey: ip,
-                    factory: _ => new FixedWindowRateLimiterOptions
-                    {
-                        PermitLimit = 100,                  // 100 requests maximum
-                        Window = TimeSpan.FromMinutes(1),   // per 1 minute window
-                        QueueLimit = 0,                     // no queue, 429 immediately
-                        AutoReplenishment = true,           // refreshes window automaticaly
-                    });
-            });
+                // 1. Global rate limit by IP
+                options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+                {
+                    var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
 
-            // 2. Rate limit policy for Auth endpoints
-            options.AddFixedWindowLimiter(SharedConstants.RateLimitAuthPolicy, opt =>
-            {
-                opt.PermitLimit = 10;                   // 10 requests maximum
-                opt.Window = TimeSpan.FromMinutes(1);   // per 1 minute window
-                opt.QueueLimit = 0;                     // no queue, 429 immediately
-                opt.AutoReplenishment = true;           // refreshes window automaticaly
+                    return RateLimitPartition.GetFixedWindowLimiter(
+                        partitionKey: ip,
+                        factory: _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = rlo.GeneralPermitLimit,   // 100 requests maximum
+                            Window = TimeSpan.FromMinutes(1),       // per 1 minute window
+                            QueueLimit = 0,                         // no queue, 429 immediately
+                            AutoReplenishment = true,               // refreshes window automaticaly
+                        });
+                });
+
+                // 2. Rate limit policy for Auth endpoints
+                options.AddFixedWindowLimiter(SharedConstants.RateLimitAuthPolicy, opt =>
+                {
+                    opt.PermitLimit = rlo.AuthPermitLimit;  // 10 requests maximum
+                    opt.Window = TimeSpan.FromMinutes(1);   // per 1 minute window
+                    opt.QueueLimit = 0;                     // no queue, 429 immediately
+                    opt.AutoReplenishment = true;           // refreshes window automaticaly
+                });
             });
-        });
+        }
         #endregion
 
         #region DataContext
@@ -249,8 +255,9 @@ public class Program
         }
 
         app.UseAuthentication();
-        app.UseRateLimiter(); // rate limit middleware
-        app.UseAuthorization();
+        if (rlo?.Enabled == true)
+            app.UseRateLimiter(); // rate limit middleware
+            app.UseAuthorization();
         #endregion
 
         // Route to process errors by status code

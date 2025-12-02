@@ -62,6 +62,9 @@ services:
       - SMTP__Account=${SMTP__Account}
       - SMTP__Password=${SMTP__Password}
       - SMTP__From=${SMTP__From}
+      - RATE_LIMIT__Enabled=${RATE_LIMIT__Enabled}
+      - RATE_LIMIT__GeneralPermitLimit=${RATE_LIMIT__GeneralPermitLimit}
+      - RATE_LIMIT__AuthPermitLimit=${RATE_LIMIT__AuthPermitLimit}
       - FILE_STORAGE_PATH=/storage/images
     volumes:
       - ./Infrastructure/Storage/Images:/storage/images
