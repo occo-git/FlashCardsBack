@@ -6,14 +6,8 @@ using Infrastructure.DataContexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection.Emit;
-using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 
 namespace Infrastructure.Caching
 {
@@ -23,8 +17,9 @@ namespace Infrastructure.Caching
         private readonly IDbContextFactory<DataContext> _dbContextFactory;
         private readonly ILogger<SmartWordCache> _logger;
 
-        private readonly SemaphoreSlim _preloadSemaphore = new(Levels.Length, Levels.Length); // 3 параллельно
-        private readonly TimeSpan _ttl = TimeSpan.FromHours(6); // 6 часов
+        private readonly SemaphoreSlim _preloadSemaphore = new(Levels.Length, Levels.Length);
+        private readonly TimeSpan _ttl = TimeSpan.FromHours(6);
+        private readonly TimeSpan _slideTime = TimeSpan.FromMinutes(30);
 
         public SmartWordCache(
             IDistributedCache cache,
@@ -61,7 +56,7 @@ namespace Infrastructure.Caching
             var tasks = Levels.All.Select(level => PreloadLevelAsync(level, ct)).ToArray();
             await Task.WhenAll(tasks);
 
-            _logger.LogInformation("✅ All {Count} levels preloaded successfully", Levels.Length);
+            _logger.LogInformation(" • All {Count} levels preloaded successfully", Levels.Length);
         }
 
         private async Task PreloadLevelAsync(string level, CancellationToken ct)
@@ -95,13 +90,13 @@ namespace Infrastructure.Caching
 
                 var options = new DistributedCacheEntryOptions
                 {
-                    AbsoluteExpirationRelativeToNow = _ttl
+                    AbsoluteExpirationRelativeToNow = _ttl,
+                    SlidingExpiration = _slideTime // slides cache expiration if it hits
                 };
 
                 await _cache.SetStringAsync(cacheKey, json, options, ct);
 
-                _logger.LogInformation("✅ Loaded {Count} words for level {Level}",
-                    words.Count, level);
+                _logger.LogInformation(" • Level {Level}: Loaded words - {Count}",  words.Count, level);
             }
             catch (Exception ex)
             {

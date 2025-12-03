@@ -1,4 +1,5 @@
-﻿using Application.Abstractions.Services;
+﻿using Application.Abstractions.Caching;
+using Application.Abstractions.Services;
 using Application.Exceptions;
 using Application.Extentions;
 using Application.Mapping;
@@ -12,7 +13,7 @@ using Shared;
 using Shared.Configuration;
 using System.Threading.RateLimiting;
 
-public class Program
+public static class Program
 {
     const string CONST_CorsPolicy = "CorsPolicy";
 
@@ -281,6 +282,21 @@ public class Program
 
         app.MapControllers();
 
+        await app.PreloadCache();
         await app.RunAsync();
+    }
+
+    private static async Task PreloadCache(this WebApplication app)
+    {
+        using (var scope = app.Services.CreateScope())
+        {
+            var smartWordCache = scope.ServiceProvider.GetRequiredService<ISmartWordCache>();
+            await smartWordCache.PreloadAllLevelsAsync(CancellationToken.None);
+
+            var redisInfoService = scope.ServiceProvider.GetRequiredService<IRedisInfoService>();
+            Console.WriteLine("[ Cache Info ]");
+            Console.WriteLine($" • Database Size = {await redisInfoService.GetDatabaseSizeAsync()}");
+            Console.WriteLine($" • Total Memory Usage = {await redisInfoService.GetTotalMemoryUsageAsync()}");
+        }
     }
 }
