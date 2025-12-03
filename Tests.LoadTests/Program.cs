@@ -138,7 +138,7 @@ var loginScenario = Scenario.Create("user_login_scenario",
     .WithLoadSimulations(GetSimulationSet(10, 1, 30));
 
 var rate = 500;
-var meScenario = GetScenario("users_me_scenario", MeStep, GetSimulationSet(2000));
+var meScenario = GetScenario("users_me_scenario", MeStep, GetSimulationSet(3000));
 var progressScenario = GetScenario("users_progress_scenario", ProgressStep, GetSimulationSet(rate));
 var progressSaveScenario = GetScenario("users_progress_save_scenario", ProgressSaveStep, GetSimulationSet(rate));
 var cardFromDeckScenario = GetScenario("cards_card_from_deck_scenario", CardFromDeckStep, GetSimulationSet(rate));

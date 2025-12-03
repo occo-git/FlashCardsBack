@@ -1,4 +1,5 @@
-﻿using Application.Abstractions.DataContexts;
+﻿using Application.Abstractions.Caching;
+using Application.Abstractions.DataContexts;
 using Application.Abstractions.Services;
 using Application.DTO.Activity;
 using Application.DTO.Email;
@@ -26,37 +27,45 @@ namespace Infrastructure.UseCases
     public class UserService : IUserService
     {
         private readonly IDbContextFactory<DataContext> _dbContextFactory;
-        private readonly ITokenGenerator<ConfirmationTokenDto> _confirmationTokenGenerator;
+        private readonly IUserCacheService _userCache;
         private readonly ILogger<UserService> _logger;
         private readonly ApiOptions _apiOptions;
 
         public UserService(
             IDbContextFactory<DataContext> dbContextFactory,
-            ITokenGenerator<ConfirmationTokenDto> confirmationTokenGenerator,
+            IUserCacheService userCache,
             IOptions<ApiOptions> apiOptions,
             ILogger<UserService> logger)
         {
             ArgumentNullException.ThrowIfNull(dbContextFactory, nameof(dbContextFactory));
-            ArgumentNullException.ThrowIfNull(confirmationTokenGenerator, nameof(confirmationTokenGenerator));
+            ArgumentNullException.ThrowIfNull(userCache, nameof(userCache));
             ArgumentNullException.ThrowIfNull(apiOptions, nameof(apiOptions));
             ArgumentNullException.ThrowIfNull(apiOptions.Value, nameof(apiOptions.Value));
             ArgumentNullException.ThrowIfNull(logger, nameof(logger));
 
             _dbContextFactory = dbContextFactory;
-            _confirmationTokenGenerator = confirmationTokenGenerator;
+            _userCache = userCache;
             _apiOptions = apiOptions.Value;
             _logger = logger;
         }
 
         public async Task<User?> GetByIdAsync(Guid id, CancellationToken ct)
         {
+            var cached = await _userCache.GetUserByIdAsync(id, ct);
+            if (cached != null) return cached;
+
             using var context = await _dbContextFactory.CreateDbContextAsync(ct);
-            return await context.Users
+            var user = await context.Users
                 .AsNoTracking()
                 .FirstOrDefaultAsync(u => u.Id == id);
+
+            if (user != null)
+                await _userCache.SetUserAsync(user, ct);
+
+            return user;
         }
 
-        public async Task<User?> GetByUsernameAsync(string? username, CancellationToken ct)
+        public async Task<User?> GetByUsernameAsync(string username, CancellationToken ct)
         {
             using var context = await _dbContextFactory.CreateDbContextAsync(ct);
             return await context.Users
@@ -124,6 +133,8 @@ namespace Infrastructure.UseCases
             using var context = await _dbContextFactory.CreateDbContextAsync(ct);
             context.Users.Update(user);
             await context.SaveChangesAsync(ct);
+
+            await _userCache.RemoveUserByIdAsync(user.Id, ct);
             return user;
         }
 
@@ -136,7 +147,10 @@ namespace Infrastructure.UseCases
                 throw new KeyNotFoundException("User not found");
 
             existingUser.Level = level;
-            return await context.SaveChangesAsync(ct);
+            var result = await context.SaveChangesAsync(ct);
+
+            await _userCache.RemoveUserByIdAsync(existingUser.Id, ct);
+            return result;
         }
         #endregion
 

@@ -24,7 +24,7 @@ using StackExchange.Redis;
 namespace GatewayApi.Extensions
 {
     public static class ServiceCollectionExtensions
-    {   
+    {
         public static ApiOptions AddApiOptions(this IServiceCollection services, IConfiguration configuration)
         {
             services.Configure<ApiOptions>(configuration.GetSection(SharedConstants.EnvApiGroup));
@@ -59,9 +59,8 @@ namespace GatewayApi.Extensions
         {
             services.Configure<RedisOptions>(configuration.GetSection(SharedConstants.EnvRedisGroup));
 
-            var sp = services.BuildServiceProvider();
-            var redisOptions = sp.GetRequiredService<IOptions<RedisOptions>>().Value;
-
+            var redisOptions = configuration.GetSection(SharedConstants.EnvRedisGroup).Get<RedisOptions>()!;
+            ArgumentNullException.ThrowIfNull(redisOptions);
             var redisConnectionString = $"{redisOptions.Host}:{redisOptions.Port},password={redisOptions.Password},defaultDatabase={redisOptions.Db}";
 
             services.AddStackExchangeRedisCache(options =>
@@ -82,8 +81,9 @@ namespace GatewayApi.Extensions
 
             services.AddSingleton<IConnectionMultiplexer>(sp => ConnectionMultiplexer.Connect(redisConnectionString));
             services.AddSingleton<IWordCacheService, RedisWordCacheService>();
-        }        
-        
+            services.AddSingleton<IUserCacheService, UserCacheService>();
+        }
+
         public static void AddInfrastructureServices(this IServiceCollection services)
         {
             services.AddSingleton<IFileStorageService, FileStorageService>();
