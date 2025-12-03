@@ -16,37 +16,34 @@ namespace GatewayApi.Extensions
         {
             services.Configure<JwtValidationOptions>(configuration.GetSection(SharedConstants.JwtValidationOptions));
             services.Configure<ApiTokenOptions>(configuration.GetSection(SharedConstants.ApiTokenOptions));
-
             services.AddScoped<CustomJwtBearerEvents>();
-
-            // get the JWT signing key from the environment variable
-            var signingKeyString = configuration[SharedConstants.EnvJwtSecret];
-            ArgumentException.ThrowIfNullOrWhiteSpace(signingKeyString, nameof(signingKeyString));
- 
-            // Symmetric key to validate the token
-            var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(signingKeyString));
-            services.AddSingleton(signingKey);
         }
 
         public static void AddJwtAuthentication(this IServiceCollection services, IConfiguration configuration)
-        {
+        {            
+            // get the JWT signing key from the environment variable
+            var signingKeyString = configuration[SharedConstants.EnvJwtSecret];
+            ArgumentException.ThrowIfNullOrWhiteSpace(signingKeyString, nameof(signingKeyString));
+
+            // Symmetric key to validate the token
+            var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(signingKeyString));
+            services.AddSingleton(signingKey);
+
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(jwtBearerOption =>
                 {
                     var options = configuration.GetSection(SharedConstants.JwtValidationOptions).Get<JwtValidationOptions>();
                     ArgumentNullException.ThrowIfNull(options, nameof(options));
 
-                    var sp = services.BuildServiceProvider();
-                    jwtBearerOption.Events = sp.GetRequiredService<CustomJwtBearerEvents>();
+                    jwtBearerOption.EventsType = typeof(CustomJwtBearerEvents);
 
-                    var sKey = sp.GetRequiredService<SymmetricSecurityKey>();
                     jwtBearerOption.TokenValidationParameters = new TokenValidationParameters
                     {
                         ValidateIssuer = options.ValidateIssuer,
                         ValidateAudience = options.ValidateAudience,
                         ValidateLifetime = options.ValidateLifetime,
                         ValidateIssuerSigningKey = options.ValidateIssuerSigningKey,
-                        IssuerSigningKey = sKey
+                        IssuerSigningKey = signingKey
                     };
                 });
         }

@@ -99,7 +99,6 @@ namespace Infrastructure.Services.Auth
         public async Task<int> RevokeRefreshTokensAsync(Guid userId, string sessionId, CancellationToken ct)
         {
             return await _refreshTokenRepository.RevokeRefreshTokensAsync(userId, sessionId, ct);
-            // does not need to invalidate cache, because TTL = 20 min
         }
 
         #region Tokens

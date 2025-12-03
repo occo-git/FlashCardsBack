@@ -34,17 +34,20 @@ public class Program
         });
         #endregion
 
-        #region CORS             
-        var apiOptions = services.AddApiOptions(configuration); // api links
+        #region CORS
         services.AddCors(options =>
         {
-            options.AddPolicy(CONST_CorsPolicy, policyBuilder =>
-            {
-                policyBuilder.WithOrigins(apiOptions.OriginUrl)
-                             .AllowAnyMethod()
-                             .AllowAnyHeader()
-                             .AllowCredentials();
-            });
+            var apiOptions = builder.Configuration.GetSection(SharedConstants.EnvApiGroup).Get<ApiOptions>();
+            if (apiOptions != null)
+                options.AddPolicy(CONST_CorsPolicy, policyBuilder =>
+                {
+                    policyBuilder.WithOrigins(apiOptions.OriginUrl)
+                                 .AllowAnyMethod()
+                                 .AllowAnyHeader()
+                                 .AllowCredentials();
+                });
+            else
+                throw new ArgumentNullException(nameof(options));
         });
         #endregion
 
@@ -101,6 +104,7 @@ public class Program
         #region Registration
         services.AddControllers();
         services.AddValidators(); // FluentValidation registration
+        services.AddApiOptions(configuration); // api links
         services.AddRazorRenderer(); // Renders pages into html
         services.AddEmailSender(configuration); // Sends emails
         services.AddCache(configuration); // Cache

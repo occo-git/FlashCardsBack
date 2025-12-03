@@ -63,10 +63,9 @@ namespace Infrastructure.Repositories
                 using var context = await _dbContextFactory.CreateDbContextAsync(ct);
                 var dbToken = await context.RefreshTokens
                     .FirstOrDefaultAsync(t => t.Token == tokenValue, ct);
-
-                // Cache set
+                                
                 if (dbToken != null)
-                    await _refreshTokenCache.SetAsync(dbToken, ct);
+                    await _refreshTokenCache.SetAsync(dbToken, ct); // Cache set
                 return dbToken;
             }
             catch (Exception ex)
@@ -82,9 +81,13 @@ namespace Infrastructure.Repositories
             try
             {
                 using var context = await _dbContextFactory.CreateDbContextAsync(ct);
-                return await context.RefreshTokens
+                var result = await context.RefreshTokens
                     .Where(t => t.UserId == userId && t.SessionId == sessionId && !t.Revoked)
                     .ExecuteUpdateAsync(t => t.SetProperty(r => r.Revoked, true), ct);
+
+                // does not need to invalidate refresh token cache, because TTL = 20 min
+                await _refreshTokenCache.RemoveValidationAsync(userId, sessionId, ct); // Cache invalidate
+                return result;
             }
             catch (Exception ex)
             {
@@ -95,13 +98,21 @@ namespace Infrastructure.Repositories
 
         public async Task<bool> ValidateRefreshTokenAsync(Guid userId, string sessionId, CancellationToken ct)
         {
+            // Cache-Aside for refresh token
+            var isValid = await _refreshTokenCache.GetValidationAsync(userId, sessionId, ct);
+            if (isValid != null)
+                return isValid.Value;
+
             _logger.LogInformation($"Validating refresh token: UserId = {userId}, SessionId = {sessionId}");
             try
             {
                 using var context = await _dbContextFactory.CreateDbContextAsync(ct);
-                return await context.RefreshTokens
+                var result =  await context.RefreshTokens
                     .AsNoTracking()
                     .AnyAsync(t => t.UserId == userId && t.SessionId == sessionId && t.ExpiresAt > DateTime.UtcNow && !t.Revoked, ct);
+
+                await _refreshTokenCache.SetValidationAsync(userId, sessionId, result, ct); // Cache set
+                return result;
             }
             catch (Exception ex)
             {
@@ -121,8 +132,8 @@ namespace Infrastructure.Repositories
                 {
                     oldRefreshToken.Revoked = true;
                     context.RefreshTokens.Update(oldRefreshToken);
-                    // Cache invalidate
-                    await _refreshTokenCache.RemoveAsync(oldRefreshToken.Token, ct);
+                    
+                    await _refreshTokenCache.RemoveAsync(oldRefreshToken.Token, ct); // Cache invalidate
                 }
 
                 await context.RefreshTokens.AddAsync(newRefreshToken, ct);

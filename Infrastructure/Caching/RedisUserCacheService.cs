@@ -25,7 +25,7 @@ namespace Infrastructure.Caching
 
         public async Task<User?> GetByIdAsync(Guid id, CancellationToken ct)
         {
-            var cacheKey = $"user:{id}";
+            var cacheKey = CacheKeys.User(id);
             return await GetFromCacheAsync<User>(cacheKey, ct);
         }
 
@@ -43,7 +43,7 @@ namespace Infrastructure.Caching
 
         public async Task SetAsync(User user, CancellationToken ct)
         {
-            var cacheKey = $"user:{user.Id}";
+            var cacheKey = CacheKeys.User(user.Id);
             var json = JsonSerializer.Serialize(user);
             var options = new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = _userTtl };
             await _cache.SetStringAsync(cacheKey, json, options, ct);

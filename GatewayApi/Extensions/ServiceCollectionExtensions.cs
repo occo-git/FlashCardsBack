@@ -25,15 +25,9 @@ namespace GatewayApi.Extensions
 {
     public static class ServiceCollectionExtensions
     {
-        public static ApiOptions AddApiOptions(this IServiceCollection services, IConfiguration configuration)
+        public static void AddApiOptions(this IServiceCollection services, IConfiguration configuration)
         {
             services.Configure<ApiOptions>(configuration.GetSection(SharedConstants.EnvApiGroup));
-            var sp = services.BuildServiceProvider();
-            var options = sp.GetRequiredService<IOptions<ApiOptions>>();
-            ArgumentNullException.ThrowIfNull(options, nameof(options));
-            ArgumentNullException.ThrowIfNull(options.Value, nameof(options.Value));
-
-            return options.Value;
         }
 
         public static void AddDataContext(this IServiceCollection services, IConfiguration configuration)
@@ -80,8 +74,10 @@ namespace GatewayApi.Extensions
             });
 
             services.AddSingleton<IConnectionMultiplexer>(sp => ConnectionMultiplexer.Connect(redisConnectionString));
+            services.AddSingleton<IRedisInfoService, RedisInfoService>();
             services.AddSingleton<IRefreshTokenCache, RedisRefreshTokenCache>();
             services.AddSingleton<IUserCacheService, RedisUserCacheService>();
+            services.AddSingleton<ISmartWordCache, SmartWordCache>();
             services.AddSingleton<IWordCacheService, RedisWordCacheService>();
         }
 
