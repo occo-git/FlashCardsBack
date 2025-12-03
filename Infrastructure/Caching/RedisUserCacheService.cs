@@ -11,54 +11,49 @@ using System.Threading.Tasks;
 
 namespace Infrastructure.Caching
 {
-    public class UserCacheService : IUserCacheService
+    public class RedisUserCacheService : IUserCacheService
     {
         private readonly IDistributedCache _cache;
-        private readonly ILogger<UserCacheService> _logger;
-        private readonly TimeSpan userTTL = TimeSpan.FromHours(1);
+        private readonly ILogger<RedisUserCacheService> _logger;
+        private readonly TimeSpan _userTtl = TimeSpan.FromHours(1);
 
-        public UserCacheService(IDistributedCache cache, ILogger<UserCacheService> logger)
+        public RedisUserCacheService(IDistributedCache cache, ILogger<RedisUserCacheService> logger)
         {
             _cache = cache;
             _logger = logger;
         }
 
-        public async Task<User?> GetUserByIdAsync(Guid id, CancellationToken ct)
+        public async Task<User?> GetByIdAsync(Guid id, CancellationToken ct)
         {
             var cacheKey = $"user:{id}";
             return await GetFromCacheAsync<User>(cacheKey, ct);
         }
 
-        //public async Task<User?> GetUserByUsernameAsync(string username, CancellationToken ct)
+        //public async Task<User?> GetByUsernameAsync(string username, CancellationToken ct)
         //{
         //    var cacheKey = $"username:{username.ToLowerInvariant()}";
         //    return await GetFromCacheAsync<User>(cacheKey, ct);
         //}
 
-        //public async Task<User?> GetUserByEmailAsync(string email, CancellationToken ct)
+        //public async Task<User?> GetByEmailAsync(string email, CancellationToken ct)
         //{
         //    var cacheKey = $"email:{email.ToLowerInvariant()}";
         //    return await GetFromCacheAsync<User>(cacheKey, ct);
         //}
 
-        public async Task SetUserAsync(User user, CancellationToken ct)
+        public async Task SetAsync(User user, CancellationToken ct)
         {
             var cacheKey = $"user:{user.Id}";
             var json = JsonSerializer.Serialize(user);
-            var options = new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = userTTL };
+            var options = new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = _userTtl };
             await _cache.SetStringAsync(cacheKey, json, options, ct);
-            _logger.LogDebug("User {UserId} cached for {Ttl}h", user.Id, userTTL.TotalHours);
+            _logger.LogDebug("User {UserId} cached for {Ttl}h", user.Id, _userTtl.TotalHours);
         }
 
-        public async Task RemoveUserByIdAsync(Guid id, CancellationToken ct)
+        public async Task RemoveByIdAsync(Guid id, CancellationToken ct)
         {
             await _cache.RemoveAsync($"user:{id}", ct);
             _logger.LogDebug("Cache removed for user {UserId}", id);
-        }
-
-        public async Task RemoveUserByUsernameAsync(string username, CancellationToken ct)
-        {
-            await _cache.RemoveAsync($"username:{username.ToLowerInvariant()}", ct);
         }
 
         private async Task<T?> GetFromCacheAsync<T>(string cacheKey, CancellationToken ct)

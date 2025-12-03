@@ -9,12 +9,10 @@ namespace Application.Abstractions.Caching
 {
     public interface IUserCacheService
     {
-        Task<User?> GetUserByIdAsync(Guid id, CancellationToken ct);
-        //Task<User?> GetUserByUsernameAsync(string username, CancellationToken ct);
-        //Task<User?> GetUserByEmailAsync(string email, CancellationToken ct);
-        Task SetUserAsync(User user, CancellationToken ct);
-        Task RemoveUserByIdAsync(Guid id, CancellationToken ct);
-        Task RemoveUserByUsernameAsync(string username, CancellationToken ct);
+        Task<User?> GetByIdAsync(Guid id, CancellationToken ct);
+        //Task<User?> GetByUsernameAsync(string username, CancellationToken ct);
+        //Task<User?> GetByEmailAsync(string email, CancellationToken ct);
+        Task SetAsync(User user, CancellationToken ct);
+        Task RemoveByIdAsync(Guid id, CancellationToken ct);
     }
-
 }

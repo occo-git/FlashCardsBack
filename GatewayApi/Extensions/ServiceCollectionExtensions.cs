@@ -80,8 +80,9 @@ namespace GatewayApi.Extensions
             });
 
             services.AddSingleton<IConnectionMultiplexer>(sp => ConnectionMultiplexer.Connect(redisConnectionString));
+            services.AddSingleton<IRefreshTokenCache, RedisRefreshTokenCache>();
+            services.AddSingleton<IUserCacheService, RedisUserCacheService>();
             services.AddSingleton<IWordCacheService, RedisWordCacheService>();
-            services.AddSingleton<IUserCacheService, UserCacheService>();
         }
 
         public static void AddInfrastructureServices(this IServiceCollection services)

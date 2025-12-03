@@ -51,7 +51,8 @@ namespace Infrastructure.UseCases
 
         public async Task<User?> GetByIdAsync(Guid id, CancellationToken ct)
         {
-            var cached = await _userCache.GetUserByIdAsync(id, ct);
+            // Cache-Aside for User
+            var cached = await _userCache.GetByIdAsync(id, ct);
             if (cached != null) return cached;
 
             using var context = await _dbContextFactory.CreateDbContextAsync(ct);
@@ -60,7 +61,7 @@ namespace Infrastructure.UseCases
                 .FirstOrDefaultAsync(u => u.Id == id);
 
             if (user != null)
-                await _userCache.SetUserAsync(user, ct);
+                await _userCache.SetAsync(user, ct);
 
             return user;
         }
@@ -134,7 +135,7 @@ namespace Infrastructure.UseCases
             context.Users.Update(user);
             await context.SaveChangesAsync(ct);
 
-            await _userCache.RemoveUserByIdAsync(user.Id, ct);
+            await _userCache.RemoveByIdAsync(user.Id, ct);
             return user;
         }
 
@@ -149,7 +150,7 @@ namespace Infrastructure.UseCases
             existingUser.Level = level;
             var result = await context.SaveChangesAsync(ct);
 
-            await _userCache.RemoveUserByIdAsync(existingUser.Id, ct);
+            await _userCache.RemoveByIdAsync(existingUser.Id, ct);
             return result;
         }
         #endregion

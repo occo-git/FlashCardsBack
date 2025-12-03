@@ -1,4 +1,5 @@
-﻿using Application.Abstractions.Repositories;
+﻿using Application.Abstractions.Caching;
+using Application.Abstractions.Repositories;
 using Application.Abstractions.Services;
 using Application.DTO.Email;
 using Application.DTO.Tokens;
@@ -29,6 +30,7 @@ namespace Infrastructure.Services.Auth
         public AuthenticationService(
             IDbContextFactory<DataContext> dbContextFactory,
             IRefreshTokenRepository refreshTokenRepository,
+            IRefreshTokenCache refreshTokenCache,
             IValidator<LoginRequestDto> loginValidator,
             ITokenGenerator<string> accessTokenGenerator,
             ITokenGenerator<RefreshToken> refreshTokenGenerator,
@@ -97,6 +99,7 @@ namespace Infrastructure.Services.Auth
         public async Task<int> RevokeRefreshTokensAsync(Guid userId, string sessionId, CancellationToken ct)
         {
             return await _refreshTokenRepository.RevokeRefreshTokensAsync(userId, sessionId, ct);
+            // does not need to invalidate cache, because TTL = 20 min
         }
 
         #region Tokens

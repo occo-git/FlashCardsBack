@@ -1,4 +1,5 @@
-﻿using Application.Abstractions.Repositories;
+﻿using Application.Abstractions.Caching;
+using Application.Abstractions.Repositories;
 using Domain.Entities.Auth;
 using Infrastructure.DataContexts;
 using Microsoft.EntityFrameworkCore;
@@ -14,16 +15,20 @@ namespace Infrastructure.Repositories
     public class RefreshTokenRepository : IRefreshTokenRepository
     {
         private readonly IDbContextFactory<DataContext> _dbContextFactory;
+        private readonly IRefreshTokenCache _refreshTokenCache;
         private readonly ILogger<RefreshTokenRepository> _logger;
 
         public RefreshTokenRepository(
-            IDbContextFactory<DataContext> dbContextFactory, 
+            IDbContextFactory<DataContext> dbContextFactory,
+            IRefreshTokenCache refreshTokenCache,
             ILogger<RefreshTokenRepository> logger)
         {
             ArgumentNullException.ThrowIfNull(dbContextFactory, nameof(dbContextFactory));
+            ArgumentNullException.ThrowIfNull(refreshTokenCache, nameof(refreshTokenCache));
             ArgumentNullException.ThrowIfNull(logger, nameof(logger));
 
             _dbContextFactory = dbContextFactory;
+            _refreshTokenCache = refreshTokenCache;
             _logger = logger;
         }
 
@@ -48,13 +53,21 @@ namespace Infrastructure.Repositories
 
         public async Task<RefreshToken?> GetRefreshTokenAsync(string tokenValue, CancellationToken ct)
         {
-            //_logger.LogInformation("Getting refresh token for value {TokenValue}", tokenValue);
-            //_logger.LogInformation("Getting refresh token by value");
+            // Cache-Aside for refresh token
+            var cachedToken = await _refreshTokenCache.GetAsync(tokenValue, ct);
+            if (cachedToken != null)
+                return cachedToken;
+
             try
             {
                 using var context = await _dbContextFactory.CreateDbContextAsync(ct);
-                return await context.RefreshTokens
+                var dbToken = await context.RefreshTokens
                     .FirstOrDefaultAsync(t => t.Token == tokenValue, ct);
+
+                // Cache set
+                if (dbToken != null)
+                    await _refreshTokenCache.SetAsync(dbToken, ct);
+                return dbToken;
             }
             catch (Exception ex)
             {
@@ -108,6 +121,8 @@ namespace Infrastructure.Repositories
                 {
                     oldRefreshToken.Revoked = true;
                     context.RefreshTokens.Update(oldRefreshToken);
+                    // Cache invalidate
+                    await _refreshTokenCache.RemoveAsync(oldRefreshToken.Token, ct);
                 }
 
                 await context.RefreshTokens.AddAsync(newRefreshToken, ct);
