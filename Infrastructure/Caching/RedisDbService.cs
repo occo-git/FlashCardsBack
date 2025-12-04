@@ -8,11 +8,11 @@ using System.Threading.Tasks;
 
 namespace Infrastructure.Caching
 {
-    public class RedisInfoService : IRedisInfoService
+    public class RedisDbService : IRedisDbService
     {
         private readonly IConnectionMultiplexer _multiplexer;
 
-        public RedisInfoService(IConnectionMultiplexer multiplexer)
+        public RedisDbService(IConnectionMultiplexer multiplexer)
         {
             ArgumentNullException.ThrowIfNull(multiplexer, nameof(multiplexer));
 
@@ -38,6 +38,18 @@ namespace Infrastructure.Caching
             var server = _multiplexer.GetServer(_multiplexer.GetEndPoints().First());
             var dbsize = await server.DatabaseSizeAsync();
             return dbsize;
+        }
+
+        public async Task FlushDb()
+        {
+            var db = _multiplexer.GetDatabase();
+            await db.ExecuteAsync("FLUSHDB");
+        }
+
+        public async Task FlushAll()
+        {
+            var db = _multiplexer.GetDatabase();
+            await db.ExecuteAsync("FLUSHALL");
         }
     }
 }

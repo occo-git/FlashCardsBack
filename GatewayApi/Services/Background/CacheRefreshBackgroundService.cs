@@ -33,7 +33,7 @@ namespace GatewayApi.Services.Background
                 try
                 {
                     using var scope = _services.CreateScope();
-                    var cache = scope.ServiceProvider.GetRequiredService<ISmartWordCacheService>();
+                    var cache = scope.ServiceProvider.GetRequiredService<IRedisWordCacheService>();
                     await cache.PreloadAllLevelsAsync(ct);
                 }
                 catch (Exception ex)

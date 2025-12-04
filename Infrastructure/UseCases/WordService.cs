@@ -20,24 +20,24 @@ namespace Infrastructure.UseCases
     public class WordService : IWordService
     {
         private readonly IDbContextFactory<DataContext> _dbContextFactory;
+        private readonly IRedisWordCacheService _wordCacheService;
         private readonly IWordQueryBuilder _wordQueryBuilder;
-        //private readonly IWordCacheService _cacheService;
         private readonly ILogger _logger;
 
         public WordService(
             IDbContextFactory<DataContext> dbContextFactory,
+            IRedisWordCacheService wordCacheService,
             IWordQueryBuilder wordQueryBuilder,
-            //IWordCacheService cacheService,
             ILogger<WordService> logger)
         {
             ArgumentNullException.ThrowIfNull(dbContextFactory, nameof(dbContextFactory));
+            ArgumentNullException.ThrowIfNull(wordCacheService, nameof(wordCacheService));
             ArgumentNullException.ThrowIfNull(wordQueryBuilder, nameof(wordQueryBuilder));
-            //ArgumentNullException.ThrowIfNull(cacheService, nameof(cacheService));
             ArgumentNullException.ThrowIfNull(logger, nameof(logger));
 
             _dbContextFactory = dbContextFactory;
+            _wordCacheService = wordCacheService;
             _wordQueryBuilder = wordQueryBuilder;
-            //_cacheService = cacheService;
             _logger = logger;
         }
 
@@ -67,6 +67,7 @@ namespace Infrastructure.UseCases
 
             await using var dbContext = _dbContextFactory.CreateDbContext();
             var themes = await dbContext.Themes
+                .AsNoTracking()
                 .Where(t => t.WordThemes.Any(wt => wt.Word != null && wt.Word.Level == filter.Level))
                 .Select(t => t.ToDto(t.WordThemes.Count(wt => wt.Word != null && wt.Word.Level == filter.Level)))
                 .ToListAsync(ct);
@@ -130,6 +131,7 @@ namespace Infrastructure.UseCases
                 dbContext.UserBookmarks.Add(newBookmark);
                 await dbContext.SaveChangesAsync(ct);
             }
+            await _wordCacheService.InvalidateBookmarksAsync(userId, ct); // invalidate bookmark cache for user
         }
 
         public async IAsyncEnumerable<WordDto?> GetWords(CardsPageRequestDto request, Guid userId, [EnumeratorCancellation] CancellationToken ct)

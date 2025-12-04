@@ -288,13 +288,18 @@ public static class Program
     {
         using (var scope = app.Services.CreateScope())
         {
-            var smartWordCache = scope.ServiceProvider.GetRequiredService<ISmartWordCacheService>();
+            Console.WriteLine("[ Cache ]");
+
+            var redisDbService = scope.ServiceProvider.GetRequiredService<IRedisDbService>();
+            Console.WriteLine($" • Flush Db");
+            await redisDbService.FlushDb();
+
+            var smartWordCache = scope.ServiceProvider.GetRequiredService<IRedisWordCacheService>();
             await smartWordCache.PreloadAllLevelsAsync(CancellationToken.None);
 
-            var redisInfoService = scope.ServiceProvider.GetRequiredService<IRedisInfoService>();
             Console.WriteLine("[ Cache Info ]");
-            Console.WriteLine($" • Database Size = {await redisInfoService.GetDatabaseSizeAsync()}");
-            Console.WriteLine($"{await redisInfoService.GetMemoryInfoAsync()}");
+            Console.WriteLine($" • Database Size = {await redisDbService.GetDatabaseSizeAsync()}");
+            Console.WriteLine($"{await redisDbService.GetMemoryInfoAsync()}");
         }
     }
 }

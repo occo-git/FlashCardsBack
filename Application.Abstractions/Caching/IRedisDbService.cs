@@ -6,12 +6,12 @@ using System.Threading.Tasks;
 
 namespace Application.Abstractions.Caching
 {
-    public  interface IRedisInfoService
+    public  interface IRedisDbService
     {
         Task<string> GetMemoryInfoAsync();
-
         Task<string> GetKeySizeAsync(string key);
-
         Task<long> GetDatabaseSizeAsync();
+        Task FlushDb();
+        Task FlushAll();
     }
 }
