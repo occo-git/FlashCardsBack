@@ -1,5 +1,6 @@
 ﻿using Application.Abstractions.Caching;
-using Microsoft.EntityFrameworkCore.Internal;
+using Microsoft.Extensions.Options;
+using Shared.Configuration;
 
 namespace GatewayApi.Services.Background
 {
@@ -7,15 +8,21 @@ namespace GatewayApi.Services.Background
     {
         private readonly IServiceProvider _services;
         private readonly ILogger _logger;
-        private readonly TimeSpan _refreshInterval = TimeSpan.FromHours(4);
+        private readonly TimeSpan _refreshInterval = TimeSpan.FromMinutes(240);
 
-        public CacheRefreshBackgroundService(IServiceProvider services, ILogger<CacheRefreshBackgroundService> logger)
+        public CacheRefreshBackgroundService(
+            IServiceProvider services,
+            ILogger<CacheRefreshBackgroundService> logger,
+            IOptions<CacheServiceOptions> options)
         {
             ArgumentNullException.ThrowIfNull(services, nameof(services));
             ArgumentNullException.ThrowIfNull(logger, nameof(logger));
+            ArgumentNullException.ThrowIfNull(options, nameof(options));
+            ArgumentNullException.ThrowIfNull(options.Value, nameof(options.Value));
 
             _services = services;
             _logger = logger;
+            _refreshInterval = TimeSpan.FromMinutes(options.Value.CacheRefreshIntervalMinutes);
         }
 
         protected override async Task ExecuteAsync(CancellationToken ct)

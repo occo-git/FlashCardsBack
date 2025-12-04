@@ -79,7 +79,6 @@ namespace GatewayApi.Extensions
             services.AddSingleton<IRefreshTokenCacheService, RedisRefreshTokenCacheService>();
             services.AddSingleton<IUserCacheService, RedisUserCacheService>();
             services.AddSingleton<ISmartWordCacheService, SmartWordCacheService>();
-            services.AddSingleton<IWordCacheService, RedisWordCacheService>();
 
             services.AddHostedService<CacheRefreshBackgroundService>();
         }

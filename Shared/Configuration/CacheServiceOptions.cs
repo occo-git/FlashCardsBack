@@ -13,5 +13,6 @@ namespace Shared.Configuration
         public int UserTtlMinutes { get; set; } = 60;
         public int WordsTtlMinutes { get; set; } = 360;
         public int WordsSlideTimeMinutes { get; set; } = 30;
+        public int CacheRefreshIntervalMinutes { get; set; } = 240;
     }
 }
