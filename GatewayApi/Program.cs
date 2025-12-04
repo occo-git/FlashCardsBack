@@ -110,8 +110,6 @@ public static class Program
         services.AddEmailSender(configuration); // Sends emails
         services.AddCache(configuration); // Cache
         services.AddInfrastructureServices(); // Infrastructure services registration
-        services.AddHostedServices(); // Hosted services registration
-        services.AddJwtAuthenticationOptions(configuration); // JWT authentication options registration
         services.AddJwtAuthentication(configuration); // JWT authentication registration
 
         services.AddEndpointsApiExplorer(); // Swagger/OpenAPI
@@ -290,13 +288,13 @@ public static class Program
     {
         using (var scope = app.Services.CreateScope())
         {
-            var smartWordCache = scope.ServiceProvider.GetRequiredService<ISmartWordCache>();
+            var smartWordCache = scope.ServiceProvider.GetRequiredService<ISmartWordCacheService>();
             await smartWordCache.PreloadAllLevelsAsync(CancellationToken.None);
 
             var redisInfoService = scope.ServiceProvider.GetRequiredService<IRedisInfoService>();
             Console.WriteLine("[ Cache Info ]");
             Console.WriteLine($" • Database Size = {await redisInfoService.GetDatabaseSizeAsync()}");
-            Console.WriteLine($" • Total Memory Usage = {await redisInfoService.GetTotalMemoryUsageAsync()}");
+            Console.WriteLine($"{await redisInfoService.GetMemoryInfoAsync()}");
         }
     }
 }

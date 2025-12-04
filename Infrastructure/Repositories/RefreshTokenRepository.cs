@@ -15,12 +15,12 @@ namespace Infrastructure.Repositories
     public class RefreshTokenRepository : IRefreshTokenRepository
     {
         private readonly IDbContextFactory<DataContext> _dbContextFactory;
-        private readonly IRefreshTokenCache _refreshTokenCache;
+        private readonly IRefreshTokenCacheService _refreshTokenCache;
         private readonly ILogger<RefreshTokenRepository> _logger;
 
         public RefreshTokenRepository(
             IDbContextFactory<DataContext> dbContextFactory,
-            IRefreshTokenCache refreshTokenCache,
+            IRefreshTokenCacheService refreshTokenCache,
             ILogger<RefreshTokenRepository> logger)
         {
             ArgumentNullException.ThrowIfNull(dbContextFactory, nameof(dbContextFactory));

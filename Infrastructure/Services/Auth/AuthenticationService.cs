@@ -30,7 +30,7 @@ namespace Infrastructure.Services.Auth
         public AuthenticationService(
             IDbContextFactory<DataContext> dbContextFactory,
             IRefreshTokenRepository refreshTokenRepository,
-            IRefreshTokenCache refreshTokenCache,
+            IRefreshTokenCacheService refreshTokenCache,
             IValidator<LoginRequestDto> loginValidator,
             ITokenGenerator<string> accessTokenGenerator,
             ITokenGenerator<RefreshToken> refreshTokenGenerator,

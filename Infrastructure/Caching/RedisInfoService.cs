@@ -19,7 +19,7 @@ namespace Infrastructure.Caching
             _multiplexer = multiplexer;
         }
 
-        public async Task<string> GetTotalMemoryUsageAsync()
+        public async Task<string> GetMemoryInfoAsync()
         {
             var server = _multiplexer.GetServer(_multiplexer.GetEndPoints().First());
             var result = await server.ExecuteAsync("INFO", "MEMORY");

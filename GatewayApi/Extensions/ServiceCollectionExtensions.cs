@@ -51,6 +51,7 @@ namespace GatewayApi.Extensions
 
         public static void AddCache(this IServiceCollection services, IConfiguration configuration)
         {
+            services.Configure<CacheServiceOptions>(configuration.GetSection(SharedConstants.CacheServiceOptions));
             services.Configure<RedisOptions>(configuration.GetSection(SharedConstants.EnvRedisGroup));
 
             var redisOptions = configuration.GetSection(SharedConstants.EnvRedisGroup).Get<RedisOptions>()!;
@@ -75,10 +76,12 @@ namespace GatewayApi.Extensions
 
             services.AddSingleton<IConnectionMultiplexer>(sp => ConnectionMultiplexer.Connect(redisConnectionString));
             services.AddSingleton<IRedisInfoService, RedisInfoService>();
-            services.AddSingleton<IRefreshTokenCache, RedisRefreshTokenCache>();
+            services.AddSingleton<IRefreshTokenCacheService, RedisRefreshTokenCacheService>();
             services.AddSingleton<IUserCacheService, RedisUserCacheService>();
-            services.AddSingleton<ISmartWordCache, SmartWordCache>();
+            services.AddSingleton<ISmartWordCacheService, SmartWordCacheService>();
             services.AddSingleton<IWordCacheService, RedisWordCacheService>();
+
+            services.AddHostedService<CacheRefreshBackgroundService>();
         }
 
         public static void AddInfrastructureServices(this IServiceCollection services)
@@ -98,11 +101,6 @@ namespace GatewayApi.Extensions
             services.AddScoped<IWordQueryBuilder, WordQueryBuilder>();
             services.AddScoped<IWordService, WordService>();
             services.AddScoped<IActivityService, ActivityService>();
-        }
-
-        public static void AddHostedServices(this IServiceCollection services)
-        {
-            services.AddHostedService<RefreshTokenCleanupService>();
         }
     }
 }

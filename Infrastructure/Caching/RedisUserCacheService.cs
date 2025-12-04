@@ -2,6 +2,8 @@
 using Domain.Entities;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Shared.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,10 +19,19 @@ namespace Infrastructure.Caching
         private readonly ILogger<RedisUserCacheService> _logger;
         private readonly TimeSpan _userTtl = TimeSpan.FromHours(1);
 
-        public RedisUserCacheService(IDistributedCache cache, ILogger<RedisUserCacheService> logger)
+        public RedisUserCacheService(
+            IDistributedCache cache, 
+            ILogger<RedisUserCacheService> logger,
+            IOptions<CacheServiceOptions> options)
         {
+            ArgumentNullException.ThrowIfNull(cache, nameof(cache));
+            ArgumentNullException.ThrowIfNull(logger, nameof(logger));
+            ArgumentNullException.ThrowIfNull(options, nameof(options));
+            ArgumentNullException.ThrowIfNull(options.Value, nameof(options.Value));
+
             _cache = cache;
             _logger = logger;
+            _userTtl = TimeSpan.FromMinutes(options.Value.UserTtlMinutes);
         }
 
         public async Task<User?> GetByIdAsync(Guid id, CancellationToken ct)

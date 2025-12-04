@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Application.Abstractions.Caching
 {
-    public interface IRefreshTokenCache
+    public interface IRefreshTokenCacheService
     {
         Task<RefreshToken?> GetAsync(string token, CancellationToken ct);
         Task<bool?> GetValidationAsync(Guid userId, string sessionId, CancellationToken ct);

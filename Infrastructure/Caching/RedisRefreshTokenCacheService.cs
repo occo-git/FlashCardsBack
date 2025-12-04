@@ -3,6 +3,8 @@ using Domain.Entities;
 using Domain.Entities.Auth;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Shared.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,17 +14,27 @@ using System.Threading.Tasks;
 
 namespace Infrastructure.Caching
 {
-    public class RedisRefreshTokenCache : IRefreshTokenCache
+    public class RedisRefreshTokenCacheService : IRefreshTokenCacheService
     {
         private readonly IDistributedCache _cache;
-        private readonly ILogger<RedisRefreshTokenCache> _logger;
+        private readonly ILogger<RedisRefreshTokenCacheService> _logger;
         private readonly TimeSpan _refreshTokenTtl = TimeSpan.FromMinutes(20);
         private readonly TimeSpan _validationTtl = TimeSpan.FromMinutes(10);
 
-        public RedisRefreshTokenCache(IDistributedCache cache, ILogger<RedisRefreshTokenCache> logger)
+        public RedisRefreshTokenCacheService(
+            IDistributedCache cache, 
+            ILogger<RedisRefreshTokenCacheService> logger,
+            IOptions<CacheServiceOptions> options)
         {
+            ArgumentNullException.ThrowIfNull(cache, nameof(cache));
+            ArgumentNullException.ThrowIfNull(logger, nameof(logger));
+            ArgumentNullException.ThrowIfNull(options, nameof(options));
+            ArgumentNullException.ThrowIfNull(options.Value, nameof(options.Value));
+
             _cache = cache;
             _logger = logger;
+            _refreshTokenTtl = TimeSpan.FromMinutes(options.Value.RefreshTokenTtlMinutes);
+            _validationTtl = TimeSpan.FromMinutes(options.Value.RefreshTokenValidationTtlMinutes);
         }
 
         public async Task<RefreshToken?> GetAsync(string token, CancellationToken ct)

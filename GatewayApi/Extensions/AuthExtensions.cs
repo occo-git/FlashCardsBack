@@ -1,5 +1,6 @@
 ﻿using GatewayApi.Auth;
 using GatewayApi.Services;
+using GatewayApi.Services.Background;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,15 +13,14 @@ namespace GatewayApi.Extensions
 {
     public static class AuthExtensions
     {
-        public static void AddJwtAuthenticationOptions(this IServiceCollection services, IConfiguration configuration)
-        {
+        public static void AddJwtAuthentication(this IServiceCollection services, IConfiguration configuration)
+        {            
             services.Configure<JwtValidationOptions>(configuration.GetSection(SharedConstants.JwtValidationOptions));
             services.Configure<ApiTokenOptions>(configuration.GetSection(SharedConstants.ApiTokenOptions));
             services.AddScoped<CustomJwtBearerEvents>();
-        }
 
-        public static void AddJwtAuthentication(this IServiceCollection services, IConfiguration configuration)
-        {            
+            services.AddHostedService<RefreshTokenCleanupService>();
+
             // get the JWT signing key from the environment variable
             var signingKeyString = configuration[SharedConstants.EnvJwtSecret];
             ArgumentException.ThrowIfNullOrWhiteSpace(signingKeyString, nameof(signingKeyString));

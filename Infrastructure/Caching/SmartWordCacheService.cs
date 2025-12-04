@@ -6,29 +6,39 @@ using Infrastructure.DataContexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Shared.Configuration;
 using System.Collections.Concurrent;
 using System.Text.Json;
 
 namespace Infrastructure.Caching
 {
-    public class SmartWordCache : ISmartWordCache
+    public class SmartWordCacheService : ISmartWordCacheService
     {
         private readonly IDistributedCache _cache;
         private readonly IDbContextFactory<DataContext> _dbContextFactory;
-        private readonly ILogger<SmartWordCache> _logger;
+        private readonly ILogger<SmartWordCacheService> _logger;
 
         private readonly SemaphoreSlim _preloadSemaphore = new(Levels.Length, Levels.Length);
-        private readonly TimeSpan _ttl = TimeSpan.FromHours(6);
-        private readonly TimeSpan _slideTime = TimeSpan.FromMinutes(30);
+        private readonly TimeSpan _wordsTtl = TimeSpan.FromMinutes(360);
+        private readonly TimeSpan _wordsSlideTime = TimeSpan.FromMinutes(30);
 
-        public SmartWordCache(
+        public SmartWordCacheService(
             IDistributedCache cache,
             IDbContextFactory<DataContext> dbContextFactory,
-            ILogger<SmartWordCache> logger)
+            ILogger<SmartWordCacheService> logger,
+            IOptions<CacheServiceOptions> options)
         {
+            ArgumentNullException.ThrowIfNull(cache, nameof(cache));
+            ArgumentNullException.ThrowIfNull(logger, nameof(logger));
+            ArgumentNullException.ThrowIfNull(options, nameof(options));
+            ArgumentNullException.ThrowIfNull(options.Value, nameof(options.Value));
+
             _cache = cache;
             _dbContextFactory = dbContextFactory;
             _logger = logger;
+            _wordsTtl = TimeSpan.FromMinutes(options.Value.WordsTtlMinutes);
+            _wordsSlideTime = TimeSpan.FromMinutes(options.Value.WordsSlideTimeMinutes);
         }
 
         public async Task<List<CardDto>> GetWordsByLevelAsync(string level, CancellationToken ct)
@@ -90,8 +100,8 @@ namespace Infrastructure.Caching
 
                 var options = new DistributedCacheEntryOptions
                 {
-                    AbsoluteExpirationRelativeToNow = _ttl,
-                    SlidingExpiration = _slideTime // slides cache expiration if it hits
+                    AbsoluteExpirationRelativeToNow = _wordsTtl,
+                    SlidingExpiration = _wordsSlideTime // slides cache expiration if it hits
                 };
 
                 await _cache.SetStringAsync(cacheKey, json, options, ct);

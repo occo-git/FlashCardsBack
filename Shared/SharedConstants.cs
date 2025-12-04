@@ -9,6 +9,8 @@
         public const string ApiTokenOptions = "ApiTokenOptions";
         public const string JwtValidationOptions = "JwtValidationOptions";
 
+        public const string CacheServiceOptions = "CacheServiceOptions";
+
         public const string EnvJwtSecret = "JWT_SECRET_KEY";
         public const string EnvApiGroup = "API";
         public const string EnvRedisGroup = "REDIS";

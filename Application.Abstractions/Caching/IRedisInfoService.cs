@@ -8,7 +8,7 @@ namespace Application.Abstractions.Caching
 {
     public  interface IRedisInfoService
     {
-        Task<string> GetTotalMemoryUsageAsync();
+        Task<string> GetMemoryInfoAsync();
 
         Task<string> GetKeySizeAsync(string key);
 

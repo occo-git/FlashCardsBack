@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Application.Abstractions.Caching
 {
-    public interface ISmartWordCache
+    public interface ISmartWordCacheService
     {
         Task<List<CardDto>> GetWordsByLevelAsync(string level, CancellationToken ct);
         Task PreloadAllLevelsAsync(CancellationToken ct);
