@@ -79,35 +79,32 @@ namespace Infrastructure.UseCases
         {
             _logger.LogInformation("GetCardWithNeighbors: {request}", request);
 
-            await using var dbContext = _dbContextFactory.CreateDbContext();
-            var filtered = await _wordQueryBuilder.BuildQueryCachedAsync(dbContext, request.Filter, userId, ct);
+            var filtered = await _wordQueryBuilder.GetCardsListAsync(request.Filter, userId, ct);
 
-            Word? current;
+            CardDto? current;
             if (request.WordId == 0)
-                current = await filtered.OrderBy(c => c.Id).FirstOrDefaultAsync(ct);
+                current = filtered.OrderBy(c => c.Id).FirstOrDefault();
             else
-                current = await filtered.FirstOrDefaultAsync(c => c.Id == request.WordId, ct);                
+                current = filtered.FirstOrDefault(c => c.Id == request.WordId);                
             if (current == null) return null;
 
-            bool currentIsMarked = await dbContext.UserBookmarks.AnyAsync(b => b.WordId == current.Id && b.UserId == userId);
-
-            var previousCard = await filtered
+            var previousCard = filtered
                 .Where(w => w.Id < current.Id)
                 .OrderByDescending(w => w.Id)
                 .Select(w => w.ToCardInfo())
-                .FirstOrDefaultAsync(ct);
+                .FirstOrDefault();
 
-            var nextCard = await filtered
+            var nextCard = filtered
                 .Where(w => w.Id > current.Id)
                 .OrderBy(w => w.Id)
                 .Select(w => w.ToCardInfo())
-                .FirstOrDefaultAsync(ct);
+                .FirstOrDefault();
 
-            int currentIndex = 1 + await filtered.CountAsync(c => c.Id < current.Id, ct);
-            int total = await filtered.CountAsync(ct);
+            int currentIndex = 1 + filtered.Count(c => c.Id < current.Id);
+            int total = filtered.Count();
 
             return new CardExtendedDto(
-                current.ToCardDto(currentIsMarked),
+                current,
                 previousCard,
                 nextCard,
                 currentIndex,
@@ -139,73 +136,71 @@ namespace Infrastructure.UseCases
             _logger.LogInformation("GetWords: {request}", request);
 
             await using var dbContext = _dbContextFactory.CreateDbContext();
-            var words = GetWords(dbContext, request, userId, ct);
+            var cards = GetCardsPage(request, userId, ct);
 
-            await foreach (var word in words.WithCancellation(ct))
-                yield return word.ToWordDto();
+            await foreach (var card in cards.WithCancellation(ct))
+                yield return card.ToWordDto();
         }
 
-        private async IAsyncEnumerable<(Word?, bool)> GetWords(DataContext dbContext, CardsPageRequestDto request, Guid userId, [EnumeratorCancellation] CancellationToken ct)
+        private async IAsyncEnumerable<CardDto?> GetCardsPage(CardsPageRequestDto request, Guid userId, [EnumeratorCancellation] CancellationToken ct)
         {
-            var filtered = await _wordQueryBuilder.BuildQueryCachedAsync(dbContext, request.Filter, userId, ct);
+            var filtered = await _wordQueryBuilder.GetCardsListAsync(request.Filter, userId, ct);
 
             if (request.isDirectionForward)
             {
                 // previous one
-                var prev = await filtered
+                var prev = filtered
                     .Where(w => w.Id < request.WordId)
                     .OrderByDescending(w => w.Id)
-                    .FirstOrDefaultAsync(ct);
-                yield return (prev, false);
+                    .FirstOrDefault();
+                yield return prev;
 
                 // main query
                 var pageQuery = filtered
                     .Where(w => w.Id > request.WordId)
                     .OrderBy(w => w.Id)
-                    .Take(request.PageSize)
-                    .Include(w => w.Bookmarks.Where(b => b.UserId == userId));
+                    .Take(request.PageSize);
 
-                await foreach (var word in pageQuery.AsAsyncEnumerable().WithCancellation(ct))
-                    yield return (word, word.Bookmarks.Any());
+                foreach (var card in pageQuery)
+                    yield return card;
 
                 // next one
-                var next = await filtered
+                var next = filtered
                     .Where(w => w.Id > request.WordId)
                     .OrderBy(w => w.Id)
                     .Skip(request.PageSize)
-                    .FirstOrDefaultAsync(ct);
-                yield return (next, false);
+                    .FirstOrDefault();
+                yield return next;
             }
             else
             {
                 // previous one
-                var prev = await filtered
+                var prev = filtered
                     .Where(w => w.Id < request.WordId)
                     .OrderByDescending(w => w.Id)
                     .Skip(request.PageSize)
-                    .FirstOrDefaultAsync(ct);
-                yield return (prev, false);   
+                    .FirstOrDefault();
+                yield return prev;
 
                 // main query
                 var pageQuery = filtered
                     .Where(w => w.Id < request.WordId)
                     .OrderByDescending(w => w.Id)
-                    .Take(request.PageSize)
-                    .Include(w => w.Bookmarks.Where(b => b.UserId == userId));
+                    .Take(request.PageSize);
 
-                var stack = new Stack<(Word, bool)>();
-                await foreach (var word in pageQuery.AsAsyncEnumerable().WithCancellation(ct))
-                    stack.Push((word, word.Bookmarks.Any()));
+                var stack = new Stack<CardDto>();
+                foreach (var card in pageQuery)
+                    stack.Push(card);
 
                 while (stack.Count > 0)
                     yield return stack.Pop();
                              
                 // next one
-                var next = await filtered
+                var next = filtered
                     .Where(w => w.Id > request.WordId)
                     .OrderBy(w => w.Id)
-                    .FirstOrDefaultAsync(ct);
-                yield return (next, false);
+                    .FirstOrDefault();
+                yield return next;
             }
         }
     }

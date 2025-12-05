@@ -83,6 +83,25 @@ namespace GatewayApi.Extensions
             services.AddHostedService<CacheRefreshBackgroundService>();
         }
 
+        public static async Task PreloadCache(this WebApplication app)
+        {
+            using (var scope = app.Services.CreateScope())
+            {
+                Console.WriteLine("[ Cache ]");
+
+                var redisDbService = scope.ServiceProvider.GetRequiredService<IRedisDbService>();
+                Console.WriteLine($" • Flush Db");
+                await redisDbService.FlushDb();
+
+                var smartWordCache = scope.ServiceProvider.GetRequiredService<IRedisWordCacheService>();
+                await smartWordCache.PreloadAllLevelsAsync(CancellationToken.None);
+
+                Console.WriteLine("[ Cache Info ]");
+                Console.WriteLine($" • Database Size = {await redisDbService.GetDatabaseSizeAsync()}");
+                Console.WriteLine($"{await redisDbService.GetMemoryInfoAsync()}");
+            }
+        }
+
         public static void AddInfrastructureServices(this IServiceCollection services)
         {
             services.AddSingleton<IFileStorageService, FileStorageService>();

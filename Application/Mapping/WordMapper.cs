@@ -14,25 +14,23 @@ namespace Application.Mapping
 {
     public static class WordMapper
     {
-        public static WordDto? ToWordDto(this (Word? Word, bool IsMarked) tuple)
+        public static WordDto? ToWordDto(this CardDto? card)
         {
-            if (tuple.Word == null) return null;
-            return tuple.Word.ToWordDto(tuple.IsMarked);
-        }
-        public static WordDto ToWordDto(this Word word, bool isMarked = false)
-        {
+            if (card == null)
+                return null;
+
             return new WordDto(
-                word.Id,
-                word.WordText,
-                word.PartOfSpeech,
-                LocalizationMapper.GetDto(word.Translation),
-                isMarked
+                card.Id,
+                card.WordText,
+                card.PartOfSpeech,
+                card.Translation,
+                card.IsMarked
             );
         }
-        
-        public static CardInfo ToCardInfo(this Word word)
+
+        public static CardInfo ToCardInfo(this CardDto card)
         {
-            return new CardInfo(word.Id, word.WordText);
+            return new CardInfo(card.Id, card.WordText);
         }
 
         public static CardDto? ToCardDto(this Word? word, bool isMarked = false)
@@ -51,6 +49,11 @@ namespace Application.Mapping
                 isMarked,
                 ImageAttributesMapper.GetDto(word.ImageAttributes)
             );
+        }
+
+        public static CardDto Mark(this CardDto card)
+        {
+            return card with { IsMarked = true };
         }
     }
 }

@@ -13,8 +13,10 @@ namespace Application.UseCases
 {
     public interface IWordQueryBuilder
     {
-        IQueryable<Word> BuildQuery(IDataContext dbContext, DeckFilterDto filter, Guid userId);
+        IQueryable<Word> BuildDbQuery(IDataContext dbContext, DeckFilterDto filter, Guid userId);
         Task<IQueryable<Word>> BuildQueryCachedAsync(IDataContext dbContext, DeckFilterDto filter, Guid userId, CancellationToken ct);
-        Task<IEnumerable<CardDto>> GetCardsListCachedAsync(IDataContext dbContext, DeckFilterDto filter, Guid userId, CancellationToken ct);
+
+        Task<IEnumerable<CardDto>> GetCardsListAsync(DeckFilterDto filter, Guid userId, CancellationToken ct);
+        Task<IEnumerable<CardDto>> GetCardsActivityListAsync(DeckFilterDto filter, Guid userId, CancellationToken ct);
     }
 }

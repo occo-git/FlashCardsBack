@@ -13,11 +13,11 @@ using Shared;
 using Shared.Configuration;
 using System.Threading.RateLimiting;
 
-public static class Program
+public class Program
 {
     const string CONST_CorsPolicy = "CorsPolicy";
 
-    public static async Task Main(string[] args)
+    public async static Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
         var services = builder.Services;
@@ -282,24 +282,5 @@ public static class Program
 
         await app.PreloadCache();
         await app.RunAsync();
-    }
-
-    private static async Task PreloadCache(this WebApplication app)
-    {
-        using (var scope = app.Services.CreateScope())
-        {
-            Console.WriteLine("[ Cache ]");
-
-            var redisDbService = scope.ServiceProvider.GetRequiredService<IRedisDbService>();
-            Console.WriteLine($" • Flush Db");
-            await redisDbService.FlushDb();
-
-            var smartWordCache = scope.ServiceProvider.GetRequiredService<IRedisWordCacheService>();
-            await smartWordCache.PreloadAllLevelsAsync(CancellationToken.None);
-
-            Console.WriteLine("[ Cache Info ]");
-            Console.WriteLine($" • Database Size = {await redisDbService.GetDatabaseSizeAsync()}");
-            Console.WriteLine($"{await redisDbService.GetMemoryInfoAsync()}");
-        }
     }
 }

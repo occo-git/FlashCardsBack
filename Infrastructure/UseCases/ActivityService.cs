@@ -43,17 +43,16 @@ namespace Infrastructure.UseCases
 
         public async Task<TypeWordResponseDto> GetTypeWord(ActivityRequestDto request, Guid userId, CancellationToken ct)
         {
-            await using var dbContext = _dbContextFactory.CreateDbContext();
-            var filtered = await _wordQueryBuilder.BuildQueryCachedAsync(dbContext, request.Filter, userId, ct);
+            var filtered = await _wordQueryBuilder.GetCardsActivityListAsync(request.Filter, userId, ct);
 
-            // random word
-            var word = await filtered
+            // random card
+            var card = filtered
                 .OrderBy(w => Guid.NewGuid())
-                .FirstOrDefaultAsync(ct);
-            if (word == null)
+                .FirstOrDefault();
+            if (card == null)
                 throw new KeyNotFoundException("Not enough words match the filter.");
             else
-                return new TypeWordResponseDto(ActivityTypes.TypeWord, word.ToWordDto());
+                return new TypeWordResponseDto(ActivityTypes.TypeWord, card.ToWordDto()!);
         }
 
         public async Task<FillBlankResponseDto> GetFillBlank(ActivityRequestDto request, Guid userId, CancellationToken ct)
@@ -82,20 +81,19 @@ namespace Infrastructure.UseCases
 
         private async Task<WordDto[]> GetWords(ActivityRequestDto request, Guid userId, CancellationToken ct)
         {
-            await using var dbContext = _dbContextFactory.CreateDbContext();
-            var filtered = await _wordQueryBuilder.BuildQueryCachedAsync(dbContext, request.Filter, userId, ct);
+            var filtered = await _wordQueryBuilder.GetCardsActivityListAsync(request.Filter, userId, ct);
 
             // group by PartOfSpeech
-            var posGroups = await filtered
+            var posGroups = filtered
                 .GroupBy(w => w.PartOfSpeech)
                 .Select(g => new
                 {
                     PartOfSpeech = g.Key,
-                    Words = g.ToList(),
+                    Cards = g.ToList(),
                     Count = g.Count()
                 })
-                .Where(g => g.Count >= request.Count) // only those POS, where words count >= Count
-                .ToListAsync(ct);
+                .Where(g => g.Count >= request.Count) // only those POS, where cards count >= Count
+                .ToList();
 
             // no suitable group - throw an error
             if (!posGroups.Any())
@@ -105,11 +103,11 @@ namespace Infrastructure.UseCases
             var random = new Random();
             var selectedGroup = posGroups[random.Next(posGroups.Count)];
 
-            // random words from group
-            var selectedWords = selectedGroup.Words
+            // random cards from group
+            var selectedWords = selectedGroup.Cards
                 .OrderBy(w => Guid.NewGuid())
                 .Take(request.Count)
-                .Select(w => w.ToWordDto())
+                .Select(w => w.ToWordDto()!)
                 .ToArray();
 
             return selectedWords;
