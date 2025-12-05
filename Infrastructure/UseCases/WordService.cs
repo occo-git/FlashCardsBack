@@ -80,7 +80,7 @@ namespace Infrastructure.UseCases
             _logger.LogInformation("GetCardWithNeighbors: {request}", request);
 
             await using var dbContext = _dbContextFactory.CreateDbContext();
-            var filtered = _wordQueryBuilder.BuildQuery(dbContext, request.Filter, userId);
+            var filtered = await _wordQueryBuilder.BuildQueryCachedAsync(dbContext, request.Filter, userId, ct);
 
             Word? current;
             if (request.WordId == 0)
@@ -147,7 +147,7 @@ namespace Infrastructure.UseCases
 
         private async IAsyncEnumerable<(Word?, bool)> GetWords(DataContext dbContext, CardsPageRequestDto request, Guid userId, [EnumeratorCancellation] CancellationToken ct)
         {
-            var filtered = _wordQueryBuilder.BuildQuery(dbContext, request.Filter, userId);
+            var filtered = await _wordQueryBuilder.BuildQueryCachedAsync(dbContext, request.Filter, userId, ct);
 
             if (request.isDirectionForward)
             {

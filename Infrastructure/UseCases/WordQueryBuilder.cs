@@ -17,6 +17,13 @@ namespace Infrastructure.UseCases
 {
     public class WordQueryBuilder : IWordQueryBuilder
     {
+        private readonly IRedisWordCacheService _cache;
+        public WordQueryBuilder(IRedisWordCacheService cache) 
+        { 
+            ArgumentNullException.ThrowIfNull(cache, nameof(cache));
+            _cache = cache;
+        }
+
         public IQueryable<Word> BuildQuery(IDataContext dbContext, DeckFilterDto filter, Guid userId)
         {
             var query = filter.ThemeId > 0 ?
@@ -36,25 +43,20 @@ namespace Infrastructure.UseCases
             return query;
         }
 
-        public async Task<IQueryable<Word>> BuildQueryCachedAsync(
-            IDataContext dbContext,
-            DeckFilterDto filter,
-            Guid userId,
-            IRedisWordCacheService cache,
-            CancellationToken ct)
+        public async Task<IQueryable<Word>> BuildQueryCachedAsync(IDataContext dbContext, DeckFilterDto filter, Guid userId, CancellationToken ct)
         {
             IQueryable<Word> query;
 
             if (filter.ThemeId > 0)
             {
-                var themeWordIds = await cache.GetWordIdsByThemeAsync(filter.ThemeId, ct);
+                var themeWordIds = await _cache.GetWordIdsByThemeAsync(filter.ThemeId, ct);
                 query = dbContext.Words
                     .AsNoTracking()
                     .Where(w => themeWordIds.Contains(w.Id));
             }
             else
             {
-                var levelWordIds = await cache.GetWordIdsByLevelAsync(filter.Level, ct);
+                var levelWordIds = await _cache.GetWordIdsByLevelAsync(filter.Level, ct);
                 query = dbContext.Words
                     .AsNoTracking()
                     .Where(w => levelWordIds.Contains(w.Id));
@@ -65,8 +67,7 @@ namespace Infrastructure.UseCases
 
             if (filter.IsMarked != 0)
             {
-                var userBookmarks = await cache.GetUserBookmarksAsync(userId, ct);
-
+                var userBookmarks = await _cache.GetUserBookmarksAsync(userId, ct);
                 if (filter.IsMarked == 1)
                     query = query.Where(w => userBookmarks.Contains(w.Id));
                 else
@@ -74,6 +75,29 @@ namespace Infrastructure.UseCases
             }
 
             return query;
+        }
+        public async Task<IEnumerable<CardDto>> GetCardsListCachedAsync(IDataContext dbContext, DeckFilterDto filter, Guid userId, CancellationToken ct)
+        {
+            IEnumerable<CardDto> list;
+
+            if (filter.ThemeId > 0)
+                list = await _cache.GetWordsByThemeAsync(filter.ThemeId, ct);
+            else
+                list = await _cache.GetWordsByLevelAsync(filter.Level, ct);
+
+            if (filter.Difficulty > 0)
+                list = list.Where(w => w.Difficulty == filter.Difficulty);
+
+            if (filter.IsMarked != 0)
+            {
+                var userBookmarks = await _cache.GetUserBookmarksAsync(userId, ct);
+                if (filter.IsMarked == 1)
+                    list = list.Where(w => userBookmarks.Contains(w.Id));
+                else
+                    list = list.Where(w => !userBookmarks.Contains(w.Id));
+            }
+
+            return list;
         }
     }
 }

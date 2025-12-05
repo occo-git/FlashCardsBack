@@ -44,7 +44,7 @@ namespace Infrastructure.UseCases
         public async Task<TypeWordResponseDto> GetTypeWord(ActivityRequestDto request, Guid userId, CancellationToken ct)
         {
             await using var dbContext = _dbContextFactory.CreateDbContext();
-            var filtered = _wordQueryBuilder.BuildQuery(dbContext, request.Filter, userId);
+            var filtered = await _wordQueryBuilder.BuildQueryCachedAsync(dbContext, request.Filter, userId, ct);
 
             // random word
             var word = await filtered
@@ -83,7 +83,7 @@ namespace Infrastructure.UseCases
         private async Task<WordDto[]> GetWords(ActivityRequestDto request, Guid userId, CancellationToken ct)
         {
             await using var dbContext = _dbContextFactory.CreateDbContext();
-            var filtered = _wordQueryBuilder.BuildQuery(dbContext, request.Filter, userId);
+            var filtered = await _wordQueryBuilder.BuildQueryCachedAsync(dbContext, request.Filter, userId, ct);
 
             // group by PartOfSpeech
             var posGroups = await filtered

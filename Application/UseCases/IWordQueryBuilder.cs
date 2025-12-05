@@ -14,12 +14,7 @@ namespace Application.UseCases
     public interface IWordQueryBuilder
     {
         IQueryable<Word> BuildQuery(IDataContext dbContext, DeckFilterDto filter, Guid userId);
-
-        Task<IQueryable<Word>> BuildQueryCachedAsync(
-            IDataContext dbContext,
-            DeckFilterDto filter,
-            Guid userId,
-            IRedisWordCacheService cache,
-            CancellationToken ct);
+        Task<IQueryable<Word>> BuildQueryCachedAsync(IDataContext dbContext, DeckFilterDto filter, Guid userId, CancellationToken ct);
+        Task<IEnumerable<CardDto>> GetCardsListCachedAsync(IDataContext dbContext, DeckFilterDto filter, Guid userId, CancellationToken ct);
     }
 }

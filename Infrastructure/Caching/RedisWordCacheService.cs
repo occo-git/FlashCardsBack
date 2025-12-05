@@ -88,7 +88,7 @@ namespace Infrastructure.Caching
                     .Select(w => w.ToCardDto(false))
                     .ToListAsync(ct);
 
-                var json = JsonSerializer.Serialize(words, _jsonOptions);
+                var json = JsonSerializer.Serialize(words);
                 var options = new DistributedCacheEntryOptions
                 {
                     AbsoluteExpirationRelativeToNow = _wordsTtl,
@@ -126,7 +126,7 @@ namespace Infrastructure.Caching
                         .Select(t => t.ToDto(t.WordThemes.Count(wt => wt.Word != null && wt.Word.Level == level)))
                         .ToListAsync(ct);
 
-                    var json = JsonSerializer.Serialize(themes, _jsonOptions);
+                    var json = JsonSerializer.Serialize(themes);
                     var options = new DistributedCacheEntryOptions
                     {
                         AbsoluteExpirationRelativeToNow = _wordsTtl,
@@ -190,7 +190,7 @@ namespace Infrastructure.Caching
                     .Select(w => w.ToCardDto(false))
                     .ToListAsync(ct);
 
-                var json = JsonSerializer.Serialize(words, _jsonOptions);
+                var json = JsonSerializer.Serialize(words);
                 var options = new DistributedCacheEntryOptions
                 {
                     AbsoluteExpirationRelativeToNow = _wordsTtl,
@@ -214,7 +214,6 @@ namespace Infrastructure.Caching
         {
             var cacheKey = CacheKeys.WordsByLevel(level);
             var cached = await _cache.GetStringAsync(cacheKey, ct);
-
             if (cached != null)
             {
                 _logger.LogDebug("Cache HIT: words:level:{Level}", level);
@@ -229,7 +228,7 @@ namespace Infrastructure.Caching
         }
         public async Task<HashSet<long>> GetWordIdsByLevelAsync(string level, CancellationToken ct)
         {
-            var words = await GetWordsByLevelAsync(level, ct); // List<CardDto>
+            var words = await GetWordsByLevelAsync(level, ct);
             return words.Select(w => w.Id).ToHashSet();
         }
 
@@ -288,7 +287,7 @@ namespace Infrastructure.Caching
                 .Select(b => b.WordId)
                 .ToListAsync(ct);
 
-            var resultJson = JsonSerializer.Serialize(bookmarkWordIds, _jsonOptions);
+            var resultJson = JsonSerializer.Serialize(bookmarkWordIds);
             var options = new DistributedCacheEntryOptions
             {
                 AbsoluteExpirationRelativeToNow = _bookmarksTtl,
