@@ -35,23 +35,6 @@ public class Program
         });
         #endregion
 
-        #region CORS
-        services.AddCors(options =>
-        {
-            var apiOptions = builder.Configuration.GetSection(SharedConstants.EnvApiGroup).Get<ApiOptions>();
-            if (apiOptions != null)
-                options.AddPolicy(CONST_CorsPolicy, policyBuilder =>
-                {
-                    policyBuilder.WithOrigins(apiOptions.OriginUrl)
-                                 .AllowAnyMethod()
-                                 .AllowAnyHeader()
-                                 .AllowCredentials();
-                });
-            else
-                throw new ArgumentNullException(nameof(options));
-        });
-        #endregion
-
         #region Kestrel
         //builder.WebHost.ConfigureKestrel(options =>
         //{
@@ -122,6 +105,23 @@ public class Program
                     Title = SharedConstants.ApiTitle,
                     Version = SharedConstants.ApiVersion
                 });
+        });
+        #endregion
+
+        #region CORS
+        services.AddCors(options =>
+        {
+            var apiOptions = builder.Configuration.GetSection(SharedConstants.EnvApiGroup).Get<ApiOptions>();
+            if (apiOptions != null)
+                options.AddPolicy(CONST_CorsPolicy, policyBuilder =>
+                {
+                    policyBuilder.WithOrigins(apiOptions.OriginUrl)
+                                 .AllowAnyMethod()
+                                 .AllowAnyHeader()
+                                 .AllowCredentials();
+                });
+            else
+                throw new ArgumentNullException(nameof(options));
         });
         #endregion
 

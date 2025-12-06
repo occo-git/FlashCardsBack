@@ -33,7 +33,7 @@ namespace Application.Mapping
             };
         }
 
-        public static bool CheckPassword(User user, LoginRequestDto loginUserDto)
+        public static bool CheckPassword(User user, TokenRequestDto loginUserDto)
         {
             return BCrypt.Net.BCrypt.Verify(loginUserDto.Password, user.PasswordHash);
         }

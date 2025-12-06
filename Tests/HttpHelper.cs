@@ -30,7 +30,7 @@ namespace Tests
             var sessionId = Guid.NewGuid();
             _client.DefaultRequestHeaders.Add(HeaderNames.SessionId, sessionId.ToString());
 
-            var request = new LoginRequestDto(username, password);
+            var request = new TokenRequestDto(OAuthConstants.DefaultClientId, OAuthConstants.GrantTypePassword, username, password);
             var response = await _client.PostAsJsonAsync("/api/auth/login", request);
             await CheckResponseAsync(response);
             response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -40,7 +40,7 @@ namespace Tests
             tokenResponse!.RefreshToken.Should().NotBeNull();
             tokenResponse!.SessionId.Should().NotBeNull();
 
-            _client.DefaultRequestHeaders.Authorization = new("Bearer", tokenResponse.AccessToken);
+            _client.DefaultRequestHeaders.Authorization = new(OAuthConstants.TokenTypeBearer, tokenResponse.AccessToken);
             return tokenResponse;
         }
 

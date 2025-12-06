@@ -25,30 +25,35 @@ namespace GatewayApi.Auth
 
         public override async Task TokenValidated(TokenValidatedContext context)
         {
-            //Console.WriteLine(">>> JwtEvents.TokenValidated called");
-
+            // sessionId header
             var sessionId = context.HttpContext.Request.Headers[HeaderNames.SessionId].FirstOrDefault();
             if (string.IsNullOrEmpty(sessionId))
             {
-                //Console.WriteLine(">>> JwtEvents.TokenValidated: SessionId header is missing.");
                 context.Fail("SessionId header missing.");
                 return;
             }
 
+            // client-id claim
+            var clientId= context.Principal?.FindFirst(OAuthConstants.ClientIdClaim)?.Value;
+            if (string.IsNullOrEmpty(clientId) || !OAuthConstants.Clients.ContainsKey(clientId))
+            {
+                context.Fail("ClientId claim is invalid.");
+                return;
+            }            
+            
+            // userId claim
             var userIdStr = context.Principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!Guid.TryParse(userIdStr, out var userId))
             {
-                //Console.WriteLine(">>> JwtEvents.TokenValidated: UserId claim is invalid.");
                 context.Fail("UserId claim is invalid.");
                 return;
             }
 
-            //Console.WriteLine($">>> JwtEvents.TokenValidated: UserId = {userId}, (Header) sessionId = {sessionId}");
             var ct = context.HttpContext.RequestAborted;
+            //Console.WriteLine($">>> JwtEvents.TokenValidated: request.Path = {context.Request.Path}");
             bool isValid = await _refreshTokenRepository.ValidateRefreshTokenAsync(userId, sessionId, ct);
             if (!isValid)
             {
-                //Console.WriteLine(">>> JwtEvents.TokenValidated: Invalid session.");
                 context.Fail("Invalid session.");
                 return;
             }

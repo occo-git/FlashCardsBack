@@ -17,8 +17,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.Extensions.Options;
+using Org.BouncyCastle.Asn1.Ocsp;
 using Shared;
 using Shared.Configuration;
+using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.Security.Claims;
 
@@ -86,64 +88,54 @@ namespace GatewayApi.Controllers
         }
 
         /// <summary>
-        /// Logs in a user and returns a JWT token
+        /// Logs in a user and returns a JWT token.
+        /// Updates refresh token to a new one.
         /// </summary>
         /// <remarks>
-        /// POST: api/auth/login
+        /// POST: api/auth/token
         /// This endpoint is open to anonymous users.
         /// </remarks>
-        /// <param name="request">The user login details.</param>
+        /// <param name="request">The user token details.</param>
         /// <returns>
         /// JWT tokens for the authenticated user.
         /// </returns>
-        [HttpPost("login")]
+        [HttpPost("token")]
         [AllowAnonymous]
         [EnableRateLimiting(SharedConstants.RateLimitAuthPolicy)]
-        public async Task<ActionResult<TokenResponseDto>> Login(
-            [FromBody] LoginRequestDto request,
-            [FromServices] IValidator<LoginRequestDto> validator,
+        public async Task<ActionResult<TokenResponseDto>> Token(
+            [FromBody] TokenRequestDto request,
+            [FromServices] IValidator<TokenRequestDto> validator,
             CancellationToken ct)
         {
+            _logger.LogInformation($"> AuthController.Token: {request.GrantType}");
             ArgumentNullException.ThrowIfNull(request, nameof(request));
-            _logger.LogInformation($"> AuthController.Login Username = {request.Username}");
-            
+
+            if (!OAuthConstants.Clients.TryGetValue(request.ClientId, out var allowedGrants))
+                return BadRequest("Invalid client");
+            if (!allowedGrants.Contains(request.GrantType))
+                return BadRequest("Unsupported grant type");
+
             var sessionId = GetSessionIdFromHeader();
             ArgumentException.ThrowIfNullOrWhiteSpace(sessionId, nameof(sessionId));
-            //_logger.LogInformation($"> AuthController.Login: sessionId = {sessionId}");
 
+            return request.GrantType switch
+            {
+                OAuthConstants.GrantTypePassword => await LoginAsync(request, validator, sessionId, ct),
+                OAuthConstants.GrantTypeRefreshToken => await RefreshAsync(request, sessionId, ct),
+                _ => BadRequest("Invalid grant type")
+            };            
+        }
+
+        private async Task<ActionResult<TokenResponseDto>> LoginAsync(TokenRequestDto request, IValidator<TokenRequestDto> validator, string sessionId, CancellationToken ct)
+        {
             await validator.ValidationCheck(request);
-
-            //_logger.LogInformation($"> AuthController.Login: Authenticate UserName = {request.Username}");
             var tokenResponse = await _authenticationService.AuthenticateAsync(request, sessionId, ct);
-
-            //_logger.LogInformation($"> AuthController.Login: Authenticated Username={request.Username}");
             return Ok(tokenResponse);
         }
 
-        /// <summary>
-        /// Updates refresh token to a new one
-        /// </summary>
-        /// <remarks>
-        /// POST: api/auth/refresh
-        /// Requires authentication.
-        /// </remarks>
-        /// <param name="request">The old refresh token.</param>
-        /// <returns>
-        /// New refresh token for the authenticated user.
-        /// </returns>
-        [HttpPost("refresh")]
-        [Authorize]
-        public async Task<ActionResult<TokenResponseDto>> Refresh(
-            [FromBody] RefreshTokenRequestDto request,
-            CancellationToken ct)
+        private async Task<ActionResult<TokenResponseDto>> RefreshAsync(TokenRequestDto request, string sessionId, CancellationToken ct)
         {
-            ArgumentNullException.ThrowIfNull(request, nameof(request));
-            _logger.LogInformation("> AuthController.Refresh");
-
-            var sessionId = GetSessionIdFromHeader();
-            ArgumentException.ThrowIfNullOrWhiteSpace(sessionId, nameof(sessionId));
-            _logger.LogInformation($"> AuthController.Refresh: sessionId = {sessionId}");
-
+            ArgumentNullException.ThrowIfNullOrEmpty(request.RefreshToken, nameof(request.RefreshToken));
             var tokenResponse = await _authenticationService.UpdateTokensAsync(request.RefreshToken, sessionId, ct);
             return Ok(tokenResponse);
         }

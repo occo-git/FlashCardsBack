@@ -30,5 +30,7 @@ namespace Infrastructure.Services.Auth.Tokens
             var claims = CreateClaims(user, expires, sessionId);
             return GenerateJwtToken(claims, expires);
         }
+
+        public int ExpiresInSeconds { get { return _accessTokenExpirationMinutes * 60; } }
     }
 }

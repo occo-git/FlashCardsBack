@@ -315,7 +315,6 @@ namespace Infrastructure.Caching
         {
             await _cache.RemoveAsync(key, ct);
             _logger.LogInformation("Invalidated cache: {Key}", key);
-
         }
     }
 }

@@ -45,10 +45,6 @@ namespace Infrastructure.UseCases
         {
             _logger.LogInformation("GetWordById: WordId = {WordId}", wordId);
 
-            //var cachedWord = await _cacheService.GetWordAsync(wordId);
-            //if (cachedWord != null)
-            //    return cachedWord;
-
             await using var dbContext = _dbContextFactory.CreateDbContext();
             var word = await dbContext.Words
                 .AsNoTracking()
@@ -58,19 +54,15 @@ namespace Infrastructure.UseCases
             if (dto == null)
                 return null;           
 
-            //await _cacheService.SetWordAsync(dto);
             return dto;
         }
+
         public async IAsyncEnumerable<ThemeDto?> GetThemes(LevelFilterDto filter, [EnumeratorCancellation] CancellationToken ct)
         {
             _logger.LogInformation("GetThemes: {filter}", filter);
 
-            await using var dbContext = _dbContextFactory.CreateDbContext();
-            var themes = await dbContext.Themes
-                .AsNoTracking()
-                .Where(t => t.WordThemes.Any(wt => wt.Word != null && wt.Word.Level == filter.Level))
-                .Select(t => t.ToDto(t.WordThemes.Count(wt => wt.Word != null && wt.Word.Level == filter.Level)))
-                .ToListAsync(ct);
+            var themes = await _wordCacheService.GetThemesByLevelAsync(filter.Level, ct);
+
             foreach (var theme in themes)
                 yield return theme;
         }

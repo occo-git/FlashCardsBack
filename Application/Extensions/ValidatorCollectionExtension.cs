@@ -11,7 +11,7 @@ namespace Application.Extentions
         {
             return services
                 .AddScoped<IValidator<RegisterRequestDto>, CreateUserValidator>()
-                .AddScoped<IValidator<LoginRequestDto>, LoginUserValidator>();
+                .AddScoped<IValidator<TokenRequestDto>, LoginUserValidator>();
         }
     }
 }

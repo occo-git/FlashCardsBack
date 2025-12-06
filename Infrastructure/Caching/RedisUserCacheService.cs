@@ -17,7 +17,7 @@ namespace Infrastructure.Caching
     {
         private readonly IDistributedCache _cache;
         private readonly ILogger<RedisUserCacheService> _logger;
-        private readonly TimeSpan _userTtl = TimeSpan.FromHours(1);
+        private readonly TimeSpan _userTtl = TimeSpan.FromMinutes(60);
 
         public RedisUserCacheService(
             IDistributedCache cache, 
@@ -63,7 +63,8 @@ namespace Infrastructure.Caching
 
         public async Task RemoveByIdAsync(Guid id, CancellationToken ct)
         {
-            await _cache.RemoveAsync($"user:{id}", ct);
+            var cacheKey = CacheKeys.User(id);
+            await _cache.RemoveAsync(cacheKey, ct);
             _logger.LogDebug("Cache removed for user {UserId}", id);
         }
 

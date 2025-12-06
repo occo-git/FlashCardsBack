@@ -12,7 +12,7 @@ namespace Application.Abstractions.Services
 {
     public interface IAuthenticationService
     {
-        Task<TokenResponseDto> AuthenticateAsync(LoginRequestDto loginUserDto, string sessionId, CancellationToken ct);
+        Task<TokenResponseDto> AuthenticateAsync(TokenRequestDto loginUserDto, string sessionId, CancellationToken ct);
         Task<TokenResponseDto> UpdateTokensAsync(string refreshToken, string sessionId, CancellationToken ct);
         Task<int> RevokeRefreshTokensAsync(Guid userId, string sessionId, CancellationToken ct);
     }

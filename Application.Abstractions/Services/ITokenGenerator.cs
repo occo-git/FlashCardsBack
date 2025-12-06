@@ -13,5 +13,7 @@ namespace Application.Abstractions.Services
         Guid GetUserId(string token);
         DateTime GetExpiration(string token);
         bool IsTokenExpired(string token);
+
+        int ExpiresInSeconds { get; }
     }
 }

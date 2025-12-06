@@ -35,5 +35,7 @@ namespace Infrastructure.Services.Auth.Tokens
 
             return new RefreshToken(token, user.Id, expires, sessionId);
         }
+
+        public int ExpiresInSeconds { get { return _refreshTokenExpirationDays * 86400; } }
     }
 }

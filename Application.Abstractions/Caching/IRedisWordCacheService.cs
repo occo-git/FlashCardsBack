@@ -17,6 +17,7 @@ namespace Application.Abstractions.Caching
         Task<List<CardDto>> GetWordsByThemeAsync(long themeId, CancellationToken ct);
         Task<HashSet<long>> GetWordIdsByThemeAsync(long themeId, CancellationToken ct);
 
+        Task<List<ThemeDto>> GetThemesByLevelAsync(string level, CancellationToken ct);
         Task<HashSet<long>> GetUserBookmarksAsync(Guid userId, CancellationToken ct);
 
         Task InvalidateBookmarksAsync(Guid userId, CancellationToken ct);

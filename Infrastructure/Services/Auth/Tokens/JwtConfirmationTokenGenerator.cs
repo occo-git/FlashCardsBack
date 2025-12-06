@@ -33,5 +33,7 @@ namespace Infrastructure.Services.Auth.Tokens
 
             return new ConfirmationTokenDto(user.Id, token);
         }
+
+        public int ExpiresInSeconds { get { return _confirmationTokenExpirationMinutes * 60; } }
     }
 }

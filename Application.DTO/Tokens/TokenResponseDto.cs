@@ -6,5 +6,10 @@ using System.Threading.Tasks;
 
 namespace Application.DTO.Tokens
 {
-    public record TokenResponseDto(string AccessToken, string RefreshToken, string SessionId);
+    public record TokenResponseDto(
+        string AccessToken, 
+        string RefreshToken, 
+        string TokenType,
+        int ExpiresIn,
+        string SessionId);
 }

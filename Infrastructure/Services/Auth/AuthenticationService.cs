@@ -14,6 +14,7 @@ using Infrastructure.DataContexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
+using Shared;
 using System.Diagnostics;
 
 namespace Infrastructure.Services.Auth
@@ -22,7 +23,7 @@ namespace Infrastructure.Services.Auth
     {
         private readonly IDbContextFactory<DataContext> _dbContextFactory;
         private readonly IRefreshTokenRepository _refreshTokenRepository;
-        private readonly IValidator<LoginRequestDto> _loginValidator;
+        private readonly IValidator<TokenRequestDto> _loginValidator;
         private readonly ITokenGenerator<string> _accessTokenGenerator;
         private readonly ITokenGenerator<RefreshToken> _refreshTokenGenerator;
         private readonly ILogger<AuthenticationService> _logger;
@@ -31,7 +32,7 @@ namespace Infrastructure.Services.Auth
             IDbContextFactory<DataContext> dbContextFactory,
             IRefreshTokenRepository refreshTokenRepository,
             IRefreshTokenCacheService refreshTokenCache,
-            IValidator<LoginRequestDto> loginValidator,
+            IValidator<TokenRequestDto> loginValidator,
             ITokenGenerator<string> accessTokenGenerator,
             ITokenGenerator<RefreshToken> refreshTokenGenerator,
             ILogger<AuthenticationService> logger)
@@ -50,7 +51,7 @@ namespace Infrastructure.Services.Auth
             _logger = logger;
         }
 
-        public async Task<TokenResponseDto> AuthenticateAsync(LoginRequestDto loginUserDto, string sessionId, CancellationToken ct)
+        public async Task<TokenResponseDto> AuthenticateAsync(TokenRequestDto loginUserDto, string sessionId, CancellationToken ct)
         {
             await _loginValidator.ValidationCheck(loginUserDto);
             _logger.LogInformation("Authenticate: Username = {Username}", loginUserDto.Username);
@@ -58,20 +59,14 @@ namespace Infrastructure.Services.Auth
             using var context = await _dbContextFactory.CreateDbContextAsync(ct);
             var user = await context.Users.FirstOrDefaultAsync(u => u.UserName == loginUserDto.Username || u.Email == loginUserDto.Username, ct);
 
-            var sw3 = Stopwatch.StartNew();
             if (user == null || !UserMapper.CheckPassword(user, loginUserDto))
                 throw new UnauthorizedAccessException("Incorrect username or password.");
             if (!user.EmailConfirmed)
                 throw new EmailNotConfirmedException("Account is not confirmed.");
             if (!user.Active)
                 throw new AccountNotActiveException("Account is currently inactive. Please contact support.");
-            sw3.Stop();
-            _logger.LogInformation($"---> AuthenticateAsync.CheckPassword: {sw3.ElapsedMilliseconds} ms");
 
-            var sw4 = Stopwatch.StartNew();
             var tokens = await GenerateTokens(user, sessionId, ct);
-            sw4.Stop();
-            _logger.LogInformation($"---> AuthenticateAsync.GenerateTokens: {sw4.ElapsedMilliseconds} ms");
 
             user.LastActive = DateTime.UtcNow;
             await context.SaveChangesAsync();
@@ -114,6 +109,8 @@ namespace Infrastructure.Services.Auth
             return new TokenResponseDto(
                 newAccessToken, 
                 newRefreshToken.Token,
+                OAuthConstants.TokenTypeBearer,
+                _accessTokenGenerator.ExpiresInSeconds,
                 newRefreshToken.SessionId);
         }
         private async Task<TokenResponseDto> UpdateTokens(User user, RefreshToken oldRefreshToken, string sessionId, CancellationToken ct)
@@ -128,6 +125,8 @@ namespace Infrastructure.Services.Auth
             return new TokenResponseDto(
                 newAccessToken, 
                 newRefreshToken.Token,
+                OAuthConstants.TokenTypeBearer,
+                _accessTokenGenerator.ExpiresInSeconds,
                 newRefreshToken.SessionId);
         }
         #endregion

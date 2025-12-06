@@ -41,7 +41,6 @@ namespace Infrastructure.UseCases
             }
             return query;
         }
-
         public async Task<IQueryable<Word>> BuildQueryCachedAsync(IDataContext dbContext, DeckFilterDto filter, Guid userId, CancellationToken ct)
         {
             IQueryable<Word> query;
@@ -75,6 +74,7 @@ namespace Infrastructure.UseCases
 
             return query;
         }
+
         public async Task<IEnumerable<CardDto>> GetCardsListAsync(DeckFilterDto filter, Guid userId, CancellationToken ct)
         {
             var list = await GetCardsListCachedAsync(filter, userId, ct);
