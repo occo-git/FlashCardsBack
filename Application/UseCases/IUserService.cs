@@ -14,6 +14,7 @@ namespace Application.UseCases
         Task<IEnumerable<User>> GetAllAsync(CancellationToken ct);
         IAsyncEnumerable<User?> GetAllAsyncEnumerable(CancellationToken ct);
         Task<User> CreateNewAsync(User user, CancellationToken ct);
+        Task<User> GetOrAddGoogleUserAsync(string googleEmail, string googleName, CancellationToken ct);
         Task<User> AddAsync(User user, CancellationToken ct);
         Task<User> UpdateAsync(User user, CancellationToken ct);
         Task<int> SetLevel(Guid userId, string level, CancellationToken ct);

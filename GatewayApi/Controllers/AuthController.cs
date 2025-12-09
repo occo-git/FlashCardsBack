@@ -1,28 +1,19 @@
 ﻿using Application.Abstractions.Services;
-using Application.DTO;
-using Application.DTO.Activity;
-using Application.DTO.Email;
 using Application.DTO.Tokens;
 using Application.DTO.Users;
-using Application.Exceptions;
 using Application.Extensions;
 using Application.Mapping;
 using Application.UseCases;
 using Domain.Entities;
 using FluentValidation;
-using Infrastructure.Services.RazorRenderer;
+using Google.Apis.Auth;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using Org.BouncyCastle.Asn1.Ocsp;
 using Shared;
 using Shared.Configuration;
-using System.ComponentModel.DataAnnotations;
-using System.Diagnostics;
-using System.Security.Claims;
 
 namespace GatewayApi.Controllers
 {
@@ -33,20 +24,25 @@ namespace GatewayApi.Controllers
         private readonly IUserService _userService;
         private readonly IUserEmailService _userEmailService;
         private readonly IAuthenticationService _authenticationService;
+        private readonly AuthOptions _authOptions;
 
         public AuthController(
             IUserService userService,
             IUserEmailService userEmailService,
             IAuthenticationService authenticationService,
+            IOptions<AuthOptions> authOptions,
             ILogger<UsersController> logger) : base(logger)
         {
             ArgumentNullException.ThrowIfNull(userService, nameof(userService));
             ArgumentNullException.ThrowIfNull(userEmailService, nameof(userEmailService));
             ArgumentNullException.ThrowIfNull(authenticationService, nameof(authenticationService));
+            ArgumentNullException.ThrowIfNull(authOptions, nameof(authOptions));
+            ArgumentNullException.ThrowIfNull(authOptions.Value, nameof(authOptions.Value));
 
             _userService = userService;
             _userEmailService = userEmailService;
             _authenticationService = authenticationService;
+            _authOptions = authOptions.Value;
         }
 
         /// <summary>
@@ -121,9 +117,10 @@ namespace GatewayApi.Controllers
             return request.GrantType switch
             {
                 OAuthConstants.GrantTypePassword => await LoginAsync(request, validator, sessionId, ct),
+                OAuthConstants.GrantTypeGoogle => await GoogleLoginAsync(request, sessionId, ct),
                 OAuthConstants.GrantTypeRefreshToken => await RefreshAsync(request, sessionId, ct),
                 _ => BadRequest("Invalid grant type")
-            };            
+            };
         }
 
         private async Task<ActionResult<TokenResponseDto>> LoginAsync(TokenRequestDto request, IValidator<TokenRequestDto> validator, string sessionId, CancellationToken ct)
@@ -133,10 +130,31 @@ namespace GatewayApi.Controllers
             return Ok(tokenResponse);
         }
 
+        private async Task<ActionResult<TokenResponseDto>> GoogleLoginAsync(TokenRequestDto request, string sessionId, CancellationToken ct)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(request.IdToken, nameof(request.IdToken));
+
+            var settings = new GoogleJsonWebSignature.ValidationSettings
+            {
+                Audience = new[] { _authOptions.GoogleClientId }
+            };
+
+            var payload = await GoogleJsonWebSignature.ValidateAsync(request.IdToken, settings);
+            if (payload == null)
+                throw new UnauthorizedAccessException("Invalid Google token");
+
+            if (!payload.EmailVerified)
+                return BadRequest("Email not verified by Google");
+
+            var user = await _userService.GetOrAddGoogleUserAsync(payload.Email, payload.Name, ct);
+
+            var tokenResponse = await _authenticationService.AuthenticateGoogleUserAsync(user, request.ClientId, sessionId, ct);
+            return Ok(tokenResponse);
+        }
+
         private async Task<ActionResult<TokenResponseDto>> RefreshAsync(TokenRequestDto request, string sessionId, CancellationToken ct)
         {
-            ArgumentNullException.ThrowIfNullOrEmpty(request.RefreshToken, nameof(request.RefreshToken));
-            var tokenResponse = await _authenticationService.UpdateTokensAsync(request.RefreshToken, sessionId, ct);
+            var tokenResponse = await _authenticationService.UpdateTokensAsync(request, sessionId, ct);
             return Ok(tokenResponse);
         }
 

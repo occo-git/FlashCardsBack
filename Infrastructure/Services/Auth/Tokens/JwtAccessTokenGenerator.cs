@@ -24,10 +24,10 @@ namespace Infrastructure.Services.Auth.Tokens
             _accessTokenExpirationMinutes = apiTokenOptions.Value.AccessTokenExpiresMinutes;
         }
 
-        public string GenerateToken(User user, string? sessionId = null)
+        public string GenerateToken(User user, string clientId, string? sessionId = null)
         {
             var expires = DateTime.UtcNow.AddMinutes(_accessTokenExpirationMinutes);
-            var claims = CreateClaims(user, expires, sessionId);
+            var claims = CreateClaims(user, clientId, expires);
             return GenerateJwtToken(claims, expires);
         }
 

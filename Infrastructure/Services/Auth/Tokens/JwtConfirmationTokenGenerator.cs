@@ -25,10 +25,10 @@ namespace Infrastructure.Services.Auth.Tokens
             _confirmationTokenExpirationMinutes = apiTokenOptions.Value.ConfirmationTokenExpiresMinutes;
         }
 
-        public ConfirmationTokenDto GenerateToken(User user, string? sessionId = null)
+        public ConfirmationTokenDto GenerateToken(User user, string clientId, string? sessionId = null)
         {
             var expires = DateTime.UtcNow.AddMinutes(_confirmationTokenExpirationMinutes);
-            var claims = CreateClaims(user, expires, sessionId);
+            var claims = CreateClaims(user, clientId, expires);
             var token = GenerateJwtToken(claims, expires);
 
             return new ConfirmationTokenDto(user.Id, token);

@@ -1,4 +1,5 @@
-﻿using Application.DTO.Users;
+﻿using Application.DTO.Tokens;
+using Application.DTO.Users;
 using Application.Validation;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;

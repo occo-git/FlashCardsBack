@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Application.DTO.Users
+namespace Application.DTO.Tokens
 {
     public record TokenRequestDto(
         string ClientId,
@@ -12,6 +12,7 @@ namespace Application.DTO.Users
         string? Username = null, 
         string? Password = null,
         string? RefreshToken = null,
+        string? IdToken = null, // google
         string? ClientSecret = null,
         string? Scope = null);
 }

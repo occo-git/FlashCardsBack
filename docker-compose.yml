@@ -75,6 +75,8 @@ services:
       - RATE_LIMIT__Enabled=${RATE_LIMIT__Enabled}
       - RATE_LIMIT__GeneralPermitLimit=${RATE_LIMIT__GeneralPermitLimit}
       - RATE_LIMIT__AuthPermitLimit=${RATE_LIMIT__AuthPermitLimit}
+      - AUTH__GoogleClientId=${AUTH__GoogleClientId}
+      - AUTH__GoogleClientSecret=${AUTH__GoogleClientSecret}
       - FILE_STORAGE_PATH=/storage/images
     volumes:
       - ./Infrastructure/Storage/Images:/storage/images

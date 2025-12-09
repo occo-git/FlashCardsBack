@@ -25,12 +25,12 @@ namespace Infrastructure.Services.Auth.Tokens
             _refreshTokenExpirationDays = apiTokenOptions.Value.RefreshTokenExpiresDays;
         }
 
-        public RefreshToken GenerateToken(User user, string? sessionId = null)
+        public RefreshToken GenerateToken(User user, string clientId, string? sessionId = null)
         {
             ArgumentNullException.ThrowIfNull(sessionId, nameof(sessionId));
 
             var expires = DateTime.UtcNow.AddDays(_refreshTokenExpirationDays);
-            var claims = CreateClaims(user, expires, sessionId);
+            var claims = CreateClaims(user, clientId, expires);
             var token = GenerateJwtToken(claims, expires);
 
             return new RefreshToken(token, user.Id, expires, sessionId);

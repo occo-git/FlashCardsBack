@@ -5,6 +5,7 @@ using Application.DTO.Activity;
 using Application.DTO.Email;
 using Application.DTO.Tokens;
 using Application.Exceptions;
+using Application.Mapping;
 using Application.UseCases;
 using Domain.Constants;
 using Domain.Entities;
@@ -117,6 +118,32 @@ namespace Infrastructure.UseCases
             user.Active = true;
 
             return user;
+        }
+
+        public async Task<User> GetOrAddGoogleUserAsync(string googleEmail, string googleName, CancellationToken ct)
+        {
+            var existingUser = await GetByEmailAsync(googleEmail, ct);
+            if (existingUser != null)
+                return existingUser;
+
+            // unique name
+            var userName = $"{(String.IsNullOrEmpty(googleName) ? googleEmail.Split('@')[0] : googleName.Replace(" ", "").ToLower())}_{Guid.NewGuid().ToString("N")[..8]}";
+            var randomPassword = UserMapper.GenerateRandomPassword(32);
+            var passwordHash = BCrypt.Net.BCrypt.HashPassword(randomPassword);
+
+            var newUser = new User
+            {
+                Id = Guid.NewGuid(),
+                UserName = userName, 
+                Email = googleEmail,
+                PasswordHash = passwordHash,
+                Level = Levels.A1,  
+                CreatedAt = DateTime.UtcNow,
+                LastActive = DateTime.UtcNow,
+                EmailConfirmed = true,
+                Active = true
+            };
+            return await AddAsync(newUser, ct);
         }
 
         public async Task<User> AddAsync(User user, CancellationToken ct)

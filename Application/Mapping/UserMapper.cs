@@ -1,9 +1,11 @@
-﻿using Application.DTO.Users;
+﻿using Application.DTO.Tokens;
+using Application.DTO.Users;
 using Domain.Constants;
 using Domain.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -36,6 +38,15 @@ namespace Application.Mapping
         public static bool CheckPassword(User user, TokenRequestDto loginUserDto)
         {
             return BCrypt.Net.BCrypt.Verify(loginUserDto.Password, user.PasswordHash);
+        }
+
+        public static string GenerateRandomPassword(int length = 32)
+        {
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+            var random = RandomNumberGenerator.Create();
+            var bytes = new byte[length];
+            random.GetBytes(bytes);
+            return new string(bytes.Select(b => chars[b % chars.Length]).ToArray());
         }
     }
 }

@@ -1,5 +1,5 @@
 ﻿using Application.DTO.Tokens;
-using Application.DTO.Users;
+using Domain.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,7 +13,8 @@ namespace Application.Abstractions.Services
     public interface IAuthenticationService
     {
         Task<TokenResponseDto> AuthenticateAsync(TokenRequestDto loginUserDto, string sessionId, CancellationToken ct);
-        Task<TokenResponseDto> UpdateTokensAsync(string refreshToken, string sessionId, CancellationToken ct);
+        Task<TokenResponseDto> AuthenticateGoogleUserAsync(User user, string clientId, string sessionId, CancellationToken ct);
+        Task<TokenResponseDto> UpdateTokensAsync(TokenRequestDto request, string sessionId, CancellationToken ct);
         Task<int> RevokeRefreshTokensAsync(Guid userId, string sessionId, CancellationToken ct);
     }
 }

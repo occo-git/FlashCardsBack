@@ -17,6 +17,7 @@ namespace GatewayApi.Extensions
         {            
             services.Configure<JwtValidationOptions>(configuration.GetSection(SharedConstants.JwtValidationOptions));
             services.Configure<ApiTokenOptions>(configuration.GetSection(SharedConstants.ApiTokenOptions));
+            services.Configure<AuthOptions>(configuration.GetSection(SharedConstants.EnvAuthGroup));
             services.AddScoped<CustomJwtBearerEvents>();
 
             services.AddHostedService<RefreshTokenCleanupService>();

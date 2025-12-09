@@ -34,7 +34,7 @@ namespace GatewayApi.Auth
             }
 
             // client-id claim
-            var clientId= context.Principal?.FindFirst(OAuthConstants.ClientIdClaim)?.Value;
+            var clientId = context.Principal?.FindFirst(OAuthConstants.ClientIdClaim)?.Value;
             if (string.IsNullOrEmpty(clientId) || !OAuthConstants.Clients.ContainsKey(clientId))
             {
                 context.Fail("ClientId claim is invalid.");

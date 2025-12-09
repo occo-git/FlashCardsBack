@@ -6,6 +6,8 @@ using Domain.Entities;
 using Infrastructure.UseCases;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Polly;
+using Shared;
 
 namespace GatewayApi.Controllers
 {

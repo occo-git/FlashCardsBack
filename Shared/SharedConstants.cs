@@ -14,6 +14,7 @@
         public const string EnvApiGroup = "API";
         public const string EnvRedisGroup = "REDIS";
         public const string EnvSmtpGroup = "SMTP";
+        public const string EnvAuthGroup = "AUTH";
         public const string EnvRateLimitGroup = "RATE_LIMIT";
         public const string EnvFileStoragePath = "FILE_STORAGE_PATH";
 

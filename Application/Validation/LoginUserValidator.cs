@@ -1,4 +1,4 @@
-﻿using Application.DTO.Users;
+﻿using Application.DTO.Tokens;
 using FluentValidation;
 using System;
 using System.Collections.Generic;

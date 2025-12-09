@@ -31,7 +31,7 @@ async Task<TokenResponseDto> Login()
 #region Steps
 async Task<Response<TokenResponseDto>> LoginStep()
 {
-    var loginRequestDto = new TokenRequestDto(OAuthConstants.DefaultClientId, OAuthConstants.GrantTypePassword, "test_user", "123123123q");
+    var loginRequestDto = new TokenRequestDto(OAuthConstants.WebAppClientId, OAuthConstants.GrantTypePassword, "test_user", "123123123q");
     var sessionId = Guid.NewGuid();
     var request = Http.CreateRequest("POST", ApiRequests.AuthLogin)
         .WithHeader(HeaderNames.SessionId, sessionId.ToString())

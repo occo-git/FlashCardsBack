@@ -30,7 +30,7 @@ namespace Tests
             var sessionId = Guid.NewGuid();
             _client.DefaultRequestHeaders.Add(HeaderNames.SessionId, sessionId.ToString());
 
-            var request = new TokenRequestDto(OAuthConstants.DefaultClientId, OAuthConstants.GrantTypePassword, username, password);
+            var request = new TokenRequestDto(OAuthConstants.WebAppClientId, OAuthConstants.GrantTypePassword, username, password);
             var response = await _client.PostAsJsonAsync("/api/auth/login", request);
             await CheckResponseAsync(response);
             response.StatusCode.Should().Be(HttpStatusCode.OK);

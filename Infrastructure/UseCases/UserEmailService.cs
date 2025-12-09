@@ -9,7 +9,11 @@ using Infrastructure.DataContexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Org.BouncyCastle.Asn1.Ocsp;
+using Shared;
 using Shared.Configuration;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 namespace Infrastructure.UseCases
 {
@@ -106,7 +110,7 @@ namespace Infrastructure.UseCases
 
         private string GenerateEmailConfirmationLink(User user, CancellationToken ct)
         {
-            var confirmationToken = _confirmationTokenGenerator.GenerateToken(user);
+            var confirmationToken = _confirmationTokenGenerator.GenerateToken(user, OAuthConstants.DefaultClientId);
             ArgumentNullException.ThrowIfNullOrEmpty(confirmationToken.Token, nameof(confirmationToken.Token));
 
             user.SecureCode = confirmationToken.Token;
@@ -118,7 +122,16 @@ namespace Infrastructure.UseCases
 
         public async Task<ConfirmEmailResponseDto> ConfirmEmailAsync(string token, CancellationToken ct)
         {
-            Guid userId = _confirmationTokenGenerator.GetUserId(token);
+            var claims = GetClaims(token);
+            var clientId = GetClientId(claims);
+            ArgumentNullException.ThrowIfNullOrEmpty(clientId, nameof(clientId));
+
+            if (!OAuthConstants.Clients.TryGetValue(clientId, out var allowedGrants))
+                throw new ConfirmationFailedException("Invalid client.");
+            if (!allowedGrants.Contains(OAuthConstants.GrantTypeEmailConfirmation))
+                throw new ConfirmationFailedException("Unsupported grant type");
+
+            Guid userId = GetUserId(claims);
             return await ConfirmEmailAsync(userId, token, ct);
         }
 
@@ -127,7 +140,7 @@ namespace Infrastructure.UseCases
             using var context = await _dbContextFactory.CreateDbContextAsync(ct);
             var user = await context.Users.FindAsync(userId, ct);
             if (user == null)
-                throw new KeyNotFoundException("User not found");
+                throw new KeyNotFoundException("User not found.");
 
             if (user.EmailConfirmed)
                 return new ConfirmEmailResponseDto("Email already confirmed.");
@@ -135,7 +148,7 @@ namespace Infrastructure.UseCases
                 throw new ConfirmationLinkMismatchException("Confirmation link is invalid or has expired.");
             else
             {
-                if (_confirmationTokenGenerator.IsTokenExpired(user.SecureCode))
+                if (IsTokenExpired(user.SecureCode))
                     throw new ConfirmationLinkMismatchException("The link is no longer valid.");
             }
 
@@ -150,6 +163,7 @@ namespace Infrastructure.UseCases
                 throw new ConfirmationFailedException("Failed to confirm email. Please try again or contact support.");
         }
 
+        #region Helpers
         private string FormatTimeSpan(TimeSpan t)
         {
             if (t <= TimeSpan.Zero) return "0 sec";
@@ -160,5 +174,51 @@ namespace Infrastructure.UseCases
 
             return $"{minutes} min {t.Seconds:D2} sec";
         }
+
+        private IEnumerable<Claim> GetClaims(string token)
+        {
+            try
+            {
+                var jwt = new JwtSecurityTokenHandler().ReadJwtToken(token);
+                return jwt.Claims;
+            }
+            catch (Exception)
+            {
+                throw new TokenInvalidFormatException("Invalid or malformed confirmation token.");
+            }
+        }
+
+        private string? GetClientId(IEnumerable<Claim> claims)
+        {
+            return claims.FirstOrDefault(c => c.Type == OAuthConstants.ClientIdClaim)?.Value;
+        }
+
+        private Guid GetUserId(IEnumerable<Claim> claims)
+        {
+            string? userIdStr = claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+
+            if (String.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var userId))
+                throw new TokenInvalidFormatException("Invalid or malformed confirmation token.");
+
+            return userId;
+        }
+        private bool IsTokenExpired(string token)
+        {
+            var expiration = GetExpiration(token);
+            return DateTime.UtcNow > expiration;
+        }
+
+        private DateTime GetExpiration(string token)
+        {
+            var claims = GetClaims(token);
+            string? expirationStr = claims.FirstOrDefault(c => c.Type == ClaimTypes.Expiration)?.Value;
+
+            if (String.IsNullOrEmpty(expirationStr) ||
+                !DateTime.TryParse(expirationStr, null, System.Globalization.DateTimeStyles.RoundtripKind, out var expiration)) // DateTimeStyles.RoundtripKind to parse "o" (ISO 8601)
+                throw new TokenInvalidFormatException("Invalid or malformed confirmation token.");
+
+            return expiration.ToUniversalTime();
+        }
+        #endregion
     }
 }
