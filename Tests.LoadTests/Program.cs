@@ -33,7 +33,7 @@ async Task<Response<TokenResponseDto>> LoginStep()
 {
     var loginRequestDto = new TokenRequestDto(OAuthConstants.WebAppClientId, OAuthConstants.GrantTypePassword, "test_user", "123123123q");
     var sessionId = Guid.NewGuid();
-    var request = Http.CreateRequest("POST", ApiRequests.AuthLogin)
+    var request = Http.CreateRequest("POST", ApiRequests.AuthToken)
         .WithHeader(HeaderNames.SessionId, sessionId.ToString())
         .WithJsonBody(loginRequestDto);
 
@@ -137,12 +137,14 @@ var loginScenario = Scenario.Create("user_login_scenario",
     .WithWarmUpDuration(TimeSpan.FromSeconds(1))
     .WithLoadSimulations(GetSimulationSet(10, 1, 30));
 
-var rate = 400;
-var meScenario = GetScenario("users_me_scenario", MeStep, GetSimulationSet(3000));
-var progressScenario = GetScenario("users_progress_scenario", ProgressStep, GetSimulationSet(rate));
-var progressSaveScenario = GetScenario("users_progress_save_scenario", ProgressSaveStep, GetSimulationSet(rate));
-var cardFromDeckScenario = GetScenario("cards_card_from_deck_scenario", CardFromDeckStep, GetSimulationSet(rate));
-var cardsListScenario = GetScenario("cards_list_scenario", CardsListStep, GetSimulationSet(rate));
+var highRate = 3000;
+var readRate = 1000;
+var saveRate = 500;
+var meScenario = GetScenario("users_me_scenario", MeStep, GetSimulationSet(highRate));
+var progressScenario = GetScenario("users_progress_scenario", ProgressStep, GetSimulationSet(readRate));
+var progressSaveScenario = GetScenario("users_progress_save_scenario", ProgressSaveStep, GetSimulationSet(saveRate));
+var cardFromDeckScenario = GetScenario("cards_card_from_deck_scenario", CardFromDeckStep, GetSimulationSet(readRate));
+var cardsListScenario = GetScenario("cards_list_scenario", CardsListStep, GetSimulationSet(readRate));
 
 var testMetricsScenario = GetScenario("test_metrics_scenario", TestMetricsStep, GetSimulationSet())
     .WithInit(ctx =>
@@ -198,7 +200,9 @@ LoadSimulation[] GetSimulationSet(int rate = 1000, int intervalSec = 5, int dura
 
 var stats = NBomberRunner
     //.RegisterScenarios(meScenario)//, progressScenario, progressSaveScenario, cardFromDeckScenario, cardsListScenario)
-    .RegisterScenarios(cardFromDeckScenario, cardsListScenario)
+    //.RegisterScenarios(cardFromDeckScenario, cardsListScenario)
+    .RegisterScenarios(progressSaveScenario)
+    //.RegisterScenarios(progressSaveScenario, progressScenario)
     .WithReportFormats(ReportFormat.Html)
     .WithReportFileName("users_tests")
     .Run();

@@ -65,7 +65,7 @@ services:
       - SMTP__From=${SMTP__From}
       - FILE_STORAGE_PATH=/storage/images
     deploy:
-      replicas: 4
+      replicas: 10
     volumes:
       - ./Infrastructure/Storage/Images:/storage/images
     depends_on:

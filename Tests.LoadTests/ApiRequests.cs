@@ -9,7 +9,7 @@ namespace Tests.LoadTests
 {
     public static class ApiRequests
     {
-        public static string AuthLogin = "http://localhost:8080/api/auth/login";
+        public static string AuthToken = "http://localhost:8080/api/auth/token";
 
         public static string UsersMe = "http://localhost:8080/api/users/me";
         public static string UsersLevel = "http://localhost:8080/api/users/level";
