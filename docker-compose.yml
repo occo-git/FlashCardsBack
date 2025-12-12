@@ -54,30 +54,9 @@ services:
       - "8080:8080"
     networks:
       - net1
+    env_file:
+      - .env
     #command: ["migrate"] # flag to start the migration process - JWT_SECRET_KEY = "test_secret_for_migrations"; Add-Migration Tokens -Project Infrastructure -StartupProject GatewayApi
-    environment:
-      - ASPNETCORE_ENVIRONMENT=${ASP_ENV} 
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
-      - ConnectionStrings__FlashCardsConnectionString=${FLASHCARDS_DB_CONNECTION_STRING} # connection string from .env or secrets
-      - API__OriginUrl=${API__OriginUrl}
-      - API__LoginUrl=${API__LoginUrl}
-      - API__ConfirmEmailUrlTemplate=${API__ConfirmEmailUrlTemplate}
-      - REDIS__Host=${REDIS__Host}
-      - REDIS__Port=${REDIS__Port}
-      - REDIS__Password=${REDIS__Password}
-      - REDIS__Db=${REDIS__Db}
-      - REDIS__InstanceName=${REDIS__InstanceName}
-      - SMTP__Host=${SMTP__Host}
-      - SMTP__Port=${SMTP__Port}
-      - SMTP__Account=${SMTP__Account}
-      - SMTP__Password=${SMTP__Password}
-      - SMTP__From=${SMTP__From}
-      - RATE_LIMIT__Enabled=${RATE_LIMIT__Enabled}
-      - RATE_LIMIT__GeneralPermitLimit=${RATE_LIMIT__GeneralPermitLimit}
-      - RATE_LIMIT__AuthPermitLimit=${RATE_LIMIT__AuthPermitLimit}
-      - AUTH__GoogleClientId=${AUTH__GoogleClientId}
-      - AUTH__GoogleClientSecret=${AUTH__GoogleClientSecret}
-      - FILE_STORAGE_PATH=/storage/images
     volumes:
       - ./Infrastructure/Storage/Images:/storage/images
     depends_on:
