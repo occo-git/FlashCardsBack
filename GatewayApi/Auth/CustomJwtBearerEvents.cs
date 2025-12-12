@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Components.Server.Circuits;
 using Microsoft.Extensions.Options;
 using Shared;
+using Shared.Auth;
 using Shared.Configuration;
 using System;
 using System.Collections.Generic;
@@ -34,8 +35,8 @@ namespace GatewayApi.Auth
             }
 
             // client-id claim
-            var clientId = context.Principal?.FindFirst(OAuthConstants.ClientIdClaim)?.Value;
-            if (string.IsNullOrEmpty(clientId) || !OAuthConstants.Clients.ContainsKey(clientId))
+            var clientId = context.Principal?.FindFirst(Clients.ClientIdClaim)?.Value;
+            if (string.IsNullOrEmpty(clientId) || !Clients.All.ContainsKey(clientId))
             {
                 context.Fail("ClientId claim is invalid.");
                 return;

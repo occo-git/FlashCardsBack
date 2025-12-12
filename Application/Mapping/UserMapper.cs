@@ -2,6 +2,7 @@
 using Application.DTO.Users;
 using Domain.Constants;
 using Domain.Entities;
+using Shared.Auth;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,7 +20,9 @@ namespace Application.Mapping
             {
                 Id = user.Id,
                 Username = user.UserName,
-                Level = user.Level
+                Email = user.Email,
+                Level = user.Level,
+                Provider = user.Provider,
             };
         }
 
@@ -31,6 +34,7 @@ namespace Application.Mapping
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password), // workFactor = 11 - by default
                 Email = dto.Email,
                 Level = Levels.A1,
+                Provider = Providers.ProviderLocal,
                 LastActive = DateTime.UtcNow,
             };
         }

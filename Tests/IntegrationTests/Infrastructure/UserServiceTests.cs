@@ -174,7 +174,7 @@ namespace Tests.IntegrationTests.Infrastructure
 
             user.UserName = "updatedname";
             user.Email = "updated@test.com";
-            user.Level = "B2";
+            user.Level = Levels.B2;
 
             // Act
             var updated = await Service.UpdateAsync(user, CancellationToken.None);
@@ -183,7 +183,7 @@ namespace Tests.IntegrationTests.Infrastructure
             var fromDb = await Service.GetByIdAsync(user.Id, CancellationToken.None);
             Assert.Equal("updatedname", fromDb!.UserName);
             Assert.Equal("updated@test.com", fromDb.Email);
-            Assert.Equal("B2", fromDb.Level);
+            Assert.Equal(Levels.B2, fromDb.Level);
         }
 
         [Fact]
@@ -198,7 +198,7 @@ namespace Tests.IntegrationTests.Infrastructure
             // Assert
             Assert.Equal(1, affected);
             var fromDb = await Service.GetByIdAsync(user.Id, CancellationToken.None);
-            Assert.Equal("C1", fromDb!.Level);
+            Assert.Equal(Levels.C1, fromDb!.Level);
         }
 
         [Fact]

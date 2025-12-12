@@ -1,7 +1,7 @@
 ﻿using Application.Exceptions;
 using Domain.Entities;
 using Microsoft.IdentityModel.Tokens;
-using Shared;
+using Shared.Auth;
 using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
@@ -31,7 +31,7 @@ namespace Infrastructure.Services.Auth.Tokens
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(ClaimTypes.Name, user.UserName),
-                new Claim(OAuthConstants.ClientIdClaim, clientId),
+                new Claim(Clients.ClientIdClaim, clientId),
                 new Claim(ClaimTypes.Expiration, expires.ToString("o")), // "o" (ISO 8601)
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };

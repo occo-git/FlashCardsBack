@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Shared;
+using Shared.Auth;
 using Shared.Configuration;
 
 namespace GatewayApi.Controllers
@@ -106,7 +107,7 @@ namespace GatewayApi.Controllers
             _logger.LogInformation($"> AuthController.Token: {request.GrantType}");
             ArgumentNullException.ThrowIfNull(request, nameof(request));
 
-            if (!OAuthConstants.Clients.TryGetValue(request.ClientId, out var allowedGrants))
+            if (!Clients.All.TryGetValue(request.ClientId, out var allowedGrants))
                 return BadRequest("Invalid client");
             if (!allowedGrants.Contains(request.GrantType))
                 return BadRequest("Unsupported grant type");
@@ -116,9 +117,9 @@ namespace GatewayApi.Controllers
 
             return request.GrantType switch
             {
-                OAuthConstants.GrantTypePassword => await LoginAsync(request, validator, sessionId, ct),
-                OAuthConstants.GrantTypeGoogle => await GoogleLoginAsync(request, sessionId, ct),
-                OAuthConstants.GrantTypeRefreshToken => await RefreshAsync(request, sessionId, ct),
+                GrantTypes.GrantTypePassword => await LoginAsync(request, validator, sessionId, ct),
+                GrantTypes.GrantTypeGoogle => await GoogleLoginAsync(request, sessionId, ct),
+                GrantTypes.GrantTypeRefreshToken => await RefreshAsync(request, sessionId, ct),
                 _ => BadRequest("Invalid grant type")
             };
         }

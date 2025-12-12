@@ -9,6 +9,7 @@ using NBomber.CSharp;
 using NBomber.Http;
 using NBomber.Http.CSharp;
 using Shared;
+using Shared.Auth;
 using System.Net.Http.Json;
 using Tests.LoadTests;
 
@@ -31,7 +32,7 @@ async Task<TokenResponseDto> Login()
 #region Steps
 async Task<Response<TokenResponseDto>> LoginStep()
 {
-    var loginRequestDto = new TokenRequestDto(OAuthConstants.WebAppClientId, OAuthConstants.GrantTypePassword, "test_user", "123123123q");
+    var loginRequestDto = new TokenRequestDto(Clients.WebAppClientId, GrantTypes.GrantTypePassword, "test_user", "123123123q");
     var sessionId = Guid.NewGuid();
     var request = Http.CreateRequest("POST", ApiRequests.AuthToken)
         .WithHeader(HeaderNames.SessionId, sessionId.ToString())

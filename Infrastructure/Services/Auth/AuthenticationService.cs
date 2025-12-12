@@ -133,7 +133,6 @@ namespace Infrastructure.Services.Auth
             return new TokenResponseDto(
                 newAccessToken, 
                 newRefreshToken.Token,
-                OAuthConstants.TokenTypeBearer,
                 _accessTokenGenerator.ExpiresInSeconds,
                 newRefreshToken.SessionId);
         }
@@ -149,7 +148,6 @@ namespace Infrastructure.Services.Auth
             return new TokenResponseDto(
                 newAccessToken, 
                 newRefreshToken.Token,
-                OAuthConstants.TokenTypeBearer,
                 _accessTokenGenerator.ExpiresInSeconds,
                 newRefreshToken.SessionId);
         }

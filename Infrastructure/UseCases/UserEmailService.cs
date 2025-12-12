@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Org.BouncyCastle.Asn1.Ocsp;
-using Shared;
+using Shared.Auth;
 using Shared.Configuration;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -110,7 +110,7 @@ namespace Infrastructure.UseCases
 
         private string GenerateEmailConfirmationLink(User user, CancellationToken ct)
         {
-            var confirmationToken = _confirmationTokenGenerator.GenerateToken(user, OAuthConstants.DefaultClientId);
+            var confirmationToken = _confirmationTokenGenerator.GenerateToken(user, Clients.DefaultClientId);
             ArgumentNullException.ThrowIfNullOrEmpty(confirmationToken.Token, nameof(confirmationToken.Token));
 
             user.SecureCode = confirmationToken.Token;
@@ -126,9 +126,9 @@ namespace Infrastructure.UseCases
             var clientId = GetClientId(claims);
             ArgumentNullException.ThrowIfNullOrEmpty(clientId, nameof(clientId));
 
-            if (!OAuthConstants.Clients.TryGetValue(clientId, out var allowedGrants))
+            if (!Clients.All.TryGetValue(clientId, out var allowedGrants))
                 throw new ConfirmationFailedException("Invalid client.");
-            if (!allowedGrants.Contains(OAuthConstants.GrantTypeEmailConfirmation))
+            if (!allowedGrants.Contains(GrantTypes.GrantTypeEmailConfirmation))
                 throw new ConfirmationFailedException("Unsupported grant type");
 
             Guid userId = GetUserId(claims);
@@ -190,7 +190,7 @@ namespace Infrastructure.UseCases
 
         private string? GetClientId(IEnumerable<Claim> claims)
         {
-            return claims.FirstOrDefault(c => c.Type == OAuthConstants.ClientIdClaim)?.Value;
+            return claims.FirstOrDefault(c => c.Type == Clients.ClientIdClaim)?.Value;
         }
 
         private Guid GetUserId(IEnumerable<Claim> claims)

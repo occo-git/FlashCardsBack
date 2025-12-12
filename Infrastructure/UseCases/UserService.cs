@@ -1,27 +1,18 @@
 ﻿using Application.Abstractions.Caching;
-using Application.Abstractions.DataContexts;
-using Application.Abstractions.Services;
 using Application.DTO.Activity;
-using Application.DTO.Email;
-using Application.DTO.Tokens;
 using Application.Exceptions;
 using Application.Mapping;
 using Application.UseCases;
 using Domain.Constants;
 using Domain.Entities;
 using Domain.Entities.Users;
-using Domain.Entities.Words;
 using Infrastructure.DataContexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Shared.Auth;
 using Shared.Configuration;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Infrastructure.UseCases
 {
@@ -140,6 +131,7 @@ namespace Infrastructure.UseCases
                 Level = Levels.A1,  
                 CreatedAt = DateTime.UtcNow,
                 LastActive = DateTime.UtcNow,
+                Provider = Providers.ProviderGoogle,
                 EmailConfirmed = true,
                 Active = true
             };

@@ -10,6 +10,8 @@ namespace Application.DTO.Users
     {
         public Guid Id { get; set; }
         public string Username { get; set; } = string.Empty;
+        public string Email {  get; set; } = string.Empty;
         public string Level { get; set; } = string.Empty;
+        public string Provider {  get; set; } = string.Empty;
     }
 }

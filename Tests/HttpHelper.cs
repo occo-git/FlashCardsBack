@@ -2,6 +2,7 @@
 using Application.DTO.Users;
 using FluentAssertions;
 using Shared;
+using Shared.Auth;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -30,7 +31,7 @@ namespace Tests
             var sessionId = Guid.NewGuid();
             _client.DefaultRequestHeaders.Add(HeaderNames.SessionId, sessionId.ToString());
 
-            var request = new TokenRequestDto(OAuthConstants.WebAppClientId, OAuthConstants.GrantTypePassword, username, password);
+            var request = new TokenRequestDto(Clients.WebAppClientId, GrantTypes.GrantTypePassword, username, password);
             var response = await _client.PostAsJsonAsync("/api/auth/login", request);
             await CheckResponseAsync(response);
             response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -40,7 +41,7 @@ namespace Tests
             tokenResponse!.RefreshToken.Should().NotBeNull();
             tokenResponse!.SessionId.Should().NotBeNull();
 
-            _client.DefaultRequestHeaders.Authorization = new(OAuthConstants.TokenTypeBearer, tokenResponse.AccessToken);
+            _client.DefaultRequestHeaders.Authorization = new(SharedConstants.TokenTypeBearer, tokenResponse.AccessToken);
             return tokenResponse;
         }
 

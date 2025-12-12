@@ -35,6 +35,7 @@ namespace Domain.Entities
         public int SecureCodeAttempts { get; set; }
         public bool EmailConfirmed { get; set; }
         public bool Active { get; set; }
+        public string Provider { get; set; } = null!;
 
 
         public List<UserBookmark> Bookmarks { get; set; } = new();
