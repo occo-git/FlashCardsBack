@@ -214,8 +214,12 @@ namespace Infrastructure.UseCases
             var user = await GetByIdAsync(userId, ct);
             if (user == null)
                 throw new KeyNotFoundException("User not found");
-            
-            //user.Active = false;
+            if (!user.Active && user.IsDeleted)
+                return 0;
+
+            user.Active = false;
+            user.IsDeleted = true;
+            user.DeletedAt = DateTime.UtcNow;
             return await UpdateAsync(user, ct);
         }
 

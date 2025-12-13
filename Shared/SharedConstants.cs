@@ -24,5 +24,8 @@
         public const string Migrate = "migrate";
 
         public const string RateLimitAuthPolicy = "RateLimitAuthPolicy";
+        public const string RateLimitUpdateUsernamePolicy = "RateLimitUsernameChangePolicy";
+        public const string RateLimitUpdatePasswordPolicy = "RateLimitPasswordChangePolicy";
+        public const string RateLimitDeleteProfilePolicy = "RateLimitDeleteProfilePolicy";
     }
 }

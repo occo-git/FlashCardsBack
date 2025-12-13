@@ -37,6 +37,9 @@ namespace Domain.Entities
         public bool Active { get; set; }
         public string Provider { get; set; } = null!;
 
+        public bool IsDeleted { get; set; } = false;
+        public DateTime? DeletedAt { get; set; }
+
 
         public List<UserBookmark> Bookmarks { get; set; } = new();
         public List<UserWordsProgress> WordProgresses { get; set; } = new();

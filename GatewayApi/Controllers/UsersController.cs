@@ -7,6 +7,8 @@ using Application.UseCases;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using Shared;
 
 namespace GatewayApi.Controllers
 {
@@ -138,6 +140,7 @@ namespace GatewayApi.Controllers
         }
 
         [HttpPatch("username")]
+        [EnableRateLimiting(SharedConstants.RateLimitUpdateUsernamePolicy)]
         [Authorize]
         public async Task<ActionResult<int>> UpdateUsername(
             [FromBody] UpdateUsernameDto request,
@@ -153,6 +156,7 @@ namespace GatewayApi.Controllers
         }
 
         [HttpPatch("password")]
+        [EnableRateLimiting(SharedConstants.RateLimitUpdatePasswordPolicy)]
         [Authorize]
         public async Task<ActionResult<int>> UpdatePassword(
             [FromBody] UpdatePasswordDto request,
@@ -171,6 +175,7 @@ namespace GatewayApi.Controllers
         }
 
         [HttpPatch("delete")]
+        [EnableRateLimiting(SharedConstants.RateLimitDeleteProfilePolicy)]
         [Authorize]
         public async Task<ActionResult<int>> DeleteProfile([FromBody] DeleteProfileDto request, CancellationToken ct)
         {

@@ -10,6 +10,7 @@ namespace Application.Mapping
     public static class ErrorCodeMapper 
     {
         public const string ErrorCode = "ErrorCode";
+
         private const string ErrAccountNotActive = "ERR_ACCOUNT_NOT_ACTIVE";
         private const string ErrConfirmationFailed = "ERR_CONFIRMATION_FAILED";
         private const string ErrConfirmationLinkMismatch = "ERR_CONFIRMATION_LINK_MISMATCH";
