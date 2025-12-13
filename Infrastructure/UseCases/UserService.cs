@@ -202,7 +202,7 @@ namespace Infrastructure.UseCases
             var user = await GetByIdAsync(userId, ct);
             if (user == null)
                 throw new KeyNotFoundException("User not found");
-            if (_passwordHasher.VerifyHashedPassword(user.PasswordHash, request.OldPassword))
+            if (!_passwordHasher.VerifyHashedPassword(user.PasswordHash, request.OldPassword))
                 throw new UnauthorizedAccessException("Incorrect old password.");
 
             user.PasswordHash = _passwordHasher.HashPassword(request.NewPassword);
