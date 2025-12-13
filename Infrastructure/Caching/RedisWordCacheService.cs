@@ -2,18 +2,12 @@
 using Application.DTO.Words;
 using Application.Mapping;
 using Domain.Constants;
-using Domain.Entities.Users;
-using Domain.Entities.Words;
 using Infrastructure.DataContexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Polly;
 using Shared.Configuration;
-using StackExchange.Redis;
-using System.Collections.Concurrent;
-using System.Reflection.Emit;
 using System.Text.Json;
 
 namespace Infrastructure.Caching

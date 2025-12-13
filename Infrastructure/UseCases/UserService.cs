@@ -1,8 +1,11 @@
 ﻿using Application.Abstractions.Caching;
 using Application.DTO.Activity;
+using Application.DTO.Users;
 using Application.Exceptions;
 using Application.Mapping;
+using Application.Security;
 using Application.UseCases;
+using Application.Validators.Entity;
 using Domain.Constants;
 using Domain.Entities;
 using Domain.Entities.Users;
@@ -19,23 +22,27 @@ namespace Infrastructure.UseCases
     public class UserService : IUserService
     {
         private readonly IDbContextFactory<DataContext> _dbContextFactory;
+        private readonly IUserPasswordHasher _passwordHasher;
         private readonly IUserCacheService _userCache;
         private readonly ILogger<UserService> _logger;
         private readonly ApiOptions _apiOptions;
 
         public UserService(
             IDbContextFactory<DataContext> dbContextFactory,
+            IUserPasswordHasher passwordHasher,
             IUserCacheService userCache,
             IOptions<ApiOptions> apiOptions,
             ILogger<UserService> logger)
         {
             ArgumentNullException.ThrowIfNull(dbContextFactory, nameof(dbContextFactory));
+            ArgumentNullException.ThrowIfNull(passwordHasher, nameof(passwordHasher));
             ArgumentNullException.ThrowIfNull(userCache, nameof(userCache));
             ArgumentNullException.ThrowIfNull(apiOptions, nameof(apiOptions));
             ArgumentNullException.ThrowIfNull(apiOptions.Value, nameof(apiOptions.Value));
             ArgumentNullException.ThrowIfNull(logger, nameof(logger));
 
             _dbContextFactory = dbContextFactory;
+            _passwordHasher = passwordHasher;
             _userCache = userCache;
             _apiOptions = apiOptions.Value;
             _logger = logger;
@@ -72,6 +79,14 @@ namespace Infrastructure.UseCases
             return await context.Users
                 .AsNoTracking()
                 .FirstOrDefaultAsync(u => u.Email == email, ct);
+        }
+
+        public async Task<User?> GetByNameOrEmailAsync(string? text, CancellationToken ct)
+        {
+            using var context = await _dbContextFactory.CreateDbContextAsync(ct);
+            return await context.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Email == text || u.UserName == text, ct);
         }
 
         public async Task<IEnumerable<User>> GetAllAsync(CancellationToken ct)
@@ -147,30 +162,73 @@ namespace Infrastructure.UseCases
             return user;
         }
 
-        public async Task<User> UpdateAsync(User user, CancellationToken ct)
+        public async Task<int> UpdateAsync(User user, CancellationToken ct)
         {
             ArgumentNullException.ThrowIfNull(user, nameof(user));
             using var context = await _dbContextFactory.CreateDbContextAsync(ct);
+            user.LastActive = DateTime.UtcNow;
             context.Users.Update(user);
-            await context.SaveChangesAsync(ct);
+            var result = await context.SaveChangesAsync(ct);
 
             await _userCache.RemoveByIdAsync(user.Id, ct);
-            return user;
+            return result;
+        }
+
+        public async Task<int> UpdateUsernameAsync(UpdateUsernameDto request, Guid userId, CancellationToken ct)
+        {
+            using var context = await _dbContextFactory.CreateDbContextAsync(ct);
+            var existedUser = await context.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.UserName == request.NewUsername && u.Id != userId, ct);
+            if (existedUser != null)
+                throw new UserAlreadyExistsException("User with the same username already exists");
+
+            var user = await GetByIdAsync(userId, ct);
+            if (user == null)
+                throw new KeyNotFoundException("User not found");
+            if (user.UserName != request.NewUsername)
+            {
+                user.UserName = request.NewUsername;
+                return await UpdateAsync(user, ct);
+            }
+            return 0;
+        }
+
+        public async Task<int> UpdatePasswordAsync(UpdatePasswordDto request, Guid userId, CancellationToken ct)
+        {
+            if (request.NewPassword == request.OldPassword)
+                return 0;
+
+            var user = await GetByIdAsync(userId, ct);
+            if (user == null)
+                throw new KeyNotFoundException("User not found");
+            if (_passwordHasher.VerifyHashedPassword(user.PasswordHash, request.OldPassword))
+                throw new UnauthorizedAccessException("Incorrect old password.");
+
+            user.PasswordHash = _passwordHasher.HashPassword(request.NewPassword);
+            return await UpdateAsync(user, ct);
+        }
+
+        public async Task<int> DeleteProfileAsync(DeleteProfileDto request, Guid userId, CancellationToken ct)
+        {
+            var user = await GetByIdAsync(userId, ct);
+            if (user == null)
+                throw new KeyNotFoundException("User not found");
+            
+            //user.Active = false;
+            return await UpdateAsync(user, ct);
         }
 
         #region User Level
         public async Task<int> SetLevel(Guid userId, string level, CancellationToken ct)
         {
             using var context = await _dbContextFactory.CreateDbContextAsync();
-            var existingUser = await context.Users.FindAsync(userId, ct);
-            if (existingUser == null)
+            var user = await GetByIdAsync(userId, ct);
+            if (user == null)
                 throw new KeyNotFoundException("User not found");
 
-            existingUser.Level = level;
-            var result = await context.SaveChangesAsync(ct);
-
-            await _userCache.RemoveByIdAsync(existingUser.Id, ct);
-            return result;
+            user.Level = level;
+            return await UpdateAsync(user, ct);
         }
         #endregion
 

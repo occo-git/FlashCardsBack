@@ -93,7 +93,8 @@ namespace Tests
         protected User GetUser(string username, string email, string password = "strongpassword123!!")
         {
             var request = new RegisterRequestDto(username, email, password);
-            return UserMapper.ToDomain(request);
+            var passwordHash = "";//_passwordHasher.HashPassword(password);
+            return UserMapper.ToDomain(request, passwordHash);
         }
         #endregion
 

@@ -93,7 +93,8 @@ namespace Tests.IntegrationTests
         protected async Task<User> AddConfirmedUserAsync(string username, string email, string password)
         {
             var request = new RegisterRequestDto(username, email, password);
-            var user = UserMapper.ToDomain(request);
+            var passwordHash = "";//_passwordHasher.HashPassword(password);
+            var user = UserMapper.ToDomain(request, passwordHash);
             user.EmailConfirmed = true;
             user.Active = true;
 
@@ -113,7 +114,8 @@ namespace Tests.IntegrationTests
         protected User GetUser(string username, string email, string password = "strongpassword123!!")
         {
             var request = new RegisterRequestDto(username, email, password);
-            return UserMapper.ToDomain(request);
+            var passwordHash = "";//_passwordHasher.HashPassword(password);
+            return UserMapper.ToDomain(request, passwordHash);
         }
 
         protected async Task<Word> AddTestWordAsync(Word? word = null)

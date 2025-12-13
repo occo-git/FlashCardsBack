@@ -2,7 +2,6 @@
 using Application.DTO.Users;
 using FluentAssertions;
 using Infrastructure.DataContexts;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using Shared;
 using System;

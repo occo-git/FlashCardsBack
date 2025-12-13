@@ -6,18 +6,19 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Application.Validation
+namespace Application.Validators.Dto
 {
     public class LoginUserValidator : AbstractValidator<TokenRequestDto>
     {
         public LoginUserValidator()
         {
             // Username not empty
-            RuleFor(user => user.Username)
-                .NotEmpty().WithMessage("The user Name cannot be empty.");
+            RuleFor(request => request.Username)
+                .NotEmpty().WithMessage("The user Name cannot be empty.")
+                .Matches(@"^[a-zA-Z0-9._ % +-@]+$").WithMessage("Only Latin letters, digits, _ - . % + @ allowed"); 
 
             // Password not empty
-            RuleFor(user => user.Password)
+            RuleFor(request => request.Password)
                 .NotEmpty().WithMessage("The user Password cannot be empty.");
         }
     }

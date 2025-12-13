@@ -6,25 +6,25 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Application.Validation
+namespace Application.Validators.Dto
 {
     public class CreateUserValidator : AbstractValidator<RegisterRequestDto>
     {
-        //  TODO: correct email check, password check (special characters, etc.)
         public CreateUserValidator()
         {
             // Name not empty - 8...100 length
-            RuleFor(user => user.Username)
+            RuleFor(request => request.Username)
                 .NotEmpty().WithMessage("The user Name cannot be empty.")
-                .Length(8, 100).WithMessage("The user Name should have a length of 8-100.");
+                .Length(8, 100).WithMessage("The user Name should have a length of 8-100.")
+                .Matches(@"^[a-zA-Z0-9_-]+$").WithMessage("Latin letters, digits, _, - only");
 
             // Email not empty
-            RuleFor(user => user.Email)
+            RuleFor(request => request.Email)
                 .NotEmpty().WithMessage("The user Email cannot be empty.")
                 .EmailAddress().WithMessage("The user Email format is not valid.");
 
             // Password not empty - 8...100 length
-            RuleFor(user => user.Password)
+            RuleFor(request => request.Password)
                 .NotEmpty().WithMessage("The user Password cannot be empty.")
                 .Length(8, 100).WithMessage("The user Password should have a length of 8-100.");
         }

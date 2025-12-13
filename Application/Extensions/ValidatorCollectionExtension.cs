@@ -1,6 +1,6 @@
 ﻿using Application.DTO.Tokens;
 using Application.DTO.Users;
-using Application.Validation;
+using Application.Validators.Dto;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -12,7 +12,8 @@ namespace Application.Extentions
         {
             return services
                 .AddScoped<IValidator<RegisterRequestDto>, CreateUserValidator>()
-                .AddScoped<IValidator<TokenRequestDto>, LoginUserValidator>();
+                .AddScoped<IValidator<TokenRequestDto>, LoginUserValidator>()
+                .AddScoped<IValidator<UpdatePasswordDto>, UpdatePasswordValidator>();
         }
     }
 }

@@ -3,7 +3,6 @@ using Application.DTO.Tokens;
 using Application.DTO.Users;
 using Application.Extensions;
 using Application.Mapping;
-using Application.UseCases;
 using Domain.Entities;
 using FluentValidation;
 using Google.Apis.Auth;
@@ -22,26 +21,18 @@ namespace GatewayApi.Controllers
     [Route("api/auth")]
     public class AuthController : UserControllerBase
     {
-        private readonly IUserService _userService;
-        private readonly IUserEmailService _userEmailService;
         private readonly IAuthenticationService _authenticationService;
         private readonly AuthOptions _authOptions;
 
         public AuthController(
-            IUserService userService,
-            IUserEmailService userEmailService,
             IAuthenticationService authenticationService,
             IOptions<AuthOptions> authOptions,
             ILogger<UsersController> logger) : base(logger)
         {
-            ArgumentNullException.ThrowIfNull(userService, nameof(userService));
-            ArgumentNullException.ThrowIfNull(userEmailService, nameof(userEmailService));
             ArgumentNullException.ThrowIfNull(authenticationService, nameof(authenticationService));
             ArgumentNullException.ThrowIfNull(authOptions, nameof(authOptions));
             ArgumentNullException.ThrowIfNull(authOptions.Value, nameof(authOptions.Value));
 
-            _userService = userService;
-            _userEmailService = userEmailService;
             _authenticationService = authenticationService;
             _authOptions = authOptions.Value;
         }
@@ -69,12 +60,7 @@ namespace GatewayApi.Controllers
             _logger.LogInformation($"> AuthController.Register Username = {request.Username}");
 
             await validator.ValidationCheck(request);
-
-            User newUser = UserMapper.ToDomain(request);
-            var createdUser = await _userService.CreateNewAsync(newUser, ct);
-            await _userEmailService.SendEmailConfirmation(createdUser, ct);
-
-            await _userService.AddAsync(createdUser, ct);
+            User createdUser = await _authenticationService.RegisterAsync(request, ct);
             var dto = UserMapper.ToDto(createdUser);
 
             return CreatedAtAction(
@@ -124,14 +110,21 @@ namespace GatewayApi.Controllers
             };
         }
 
-        private async Task<ActionResult<TokenResponseDto>> LoginAsync(TokenRequestDto request, IValidator<TokenRequestDto> validator, string sessionId, CancellationToken ct)
+        private async Task<ActionResult<TokenResponseDto>> LoginAsync(
+            TokenRequestDto request, 
+            IValidator<TokenRequestDto> validator, 
+            string sessionId, 
+            CancellationToken ct)
         {
             await validator.ValidationCheck(request);
             var tokenResponse = await _authenticationService.AuthenticateAsync(request, sessionId, ct);
             return Ok(tokenResponse);
         }
 
-        private async Task<ActionResult<TokenResponseDto>> GoogleLoginAsync(TokenRequestDto request, string sessionId, CancellationToken ct)
+        private async Task<ActionResult<TokenResponseDto>> GoogleLoginAsync(
+            TokenRequestDto request, 
+            string sessionId, 
+            CancellationToken ct)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(request.IdToken, nameof(request.IdToken));
 
@@ -147,13 +140,14 @@ namespace GatewayApi.Controllers
             if (!payload.EmailVerified)
                 return BadRequest("Email not verified by Google");
 
-            var user = await _userService.GetOrAddGoogleUserAsync(payload.Email, payload.Name, ct);
-
-            var tokenResponse = await _authenticationService.AuthenticateGoogleUserAsync(user, request.ClientId, sessionId, ct);
+            var tokenResponse = await _authenticationService.AuthenticateGoogleUserAsync(payload.Email, payload.Name, request.ClientId, sessionId, ct);
             return Ok(tokenResponse);
         }
 
-        private async Task<ActionResult<TokenResponseDto>> RefreshAsync(TokenRequestDto request, string sessionId, CancellationToken ct)
+        private async Task<ActionResult<TokenResponseDto>> RefreshAsync(
+            TokenRequestDto request, 
+            string sessionId, 
+            CancellationToken ct)
         {
             var tokenResponse = await _authenticationService.UpdateTokensAsync(request, sessionId, ct);
             return Ok(tokenResponse);

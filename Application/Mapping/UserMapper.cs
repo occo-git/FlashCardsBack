@@ -26,22 +26,17 @@ namespace Application.Mapping
             };
         }
 
-        public static User ToDomain(RegisterRequestDto dto)
+        public static User ToDomain(RegisterRequestDto dto, string passwordHash)
         {
             return new User
             {
                 UserName = dto.Username,
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password), // workFactor = 11 - by default
                 Email = dto.Email,
+                PasswordHash = passwordHash,
                 Level = Levels.A1,
                 Provider = Providers.ProviderLocal,
                 LastActive = DateTime.UtcNow,
             };
-        }
-
-        public static bool CheckPassword(User user, TokenRequestDto loginUserDto)
-        {
-            return BCrypt.Net.BCrypt.Verify(loginUserDto.Password, user.PasswordHash);
         }
 
         public static string GenerateRandomPassword(int length = 32)

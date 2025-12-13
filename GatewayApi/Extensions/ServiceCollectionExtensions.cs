@@ -1,10 +1,12 @@
 ﻿using Application.Abstractions.Repositories;
 using Application.Abstractions.Services;
 using Application.DTO.Tokens;
+using Application.Security;
 using Application.UseCases;
 using Domain.Entities.Auth;
 using Infrastructure.DataContexts;
 using Infrastructure.Repositories;
+using Infrastructure.Security;
 using Infrastructure.Services.Auth;
 using Infrastructure.Services.Auth.Tokens;
 using Infrastructure.Services.EmailSender;
@@ -55,6 +57,7 @@ namespace GatewayApi.Extensions
             services.AddScoped<ITokenGenerator<RefreshToken>, JwtRefreshTokenGenerator>();
             services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 
+            services.AddScoped<IUserPasswordHasher, BCryptPasswordHasher>();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IUserEmailService, UserEmailService>();
             services.AddScoped<IAuthenticationService, AuthenticationService>();

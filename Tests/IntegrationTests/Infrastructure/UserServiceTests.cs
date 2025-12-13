@@ -177,7 +177,7 @@ namespace Tests.IntegrationTests.Infrastructure
             user.Level = Levels.B2;
 
             // Act
-            var updated = await Service.UpdateAsync(user, CancellationToken.None);
+            await Service.UpdateAsync(user, CancellationToken.None);
 
             // Assert
             var fromDb = await Service.GetByIdAsync(user.Id, CancellationToken.None);

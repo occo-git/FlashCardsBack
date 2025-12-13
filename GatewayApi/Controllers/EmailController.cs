@@ -15,16 +15,20 @@ namespace GatewayApi.Controllers
     public class EmailController : Controller
     {
         private readonly IUserEmailService _userEmailService;
+        private readonly IUserService _userService;
         private readonly ILogger<EmailController> _logger;
 
         public EmailController(
             IUserEmailService userEmailService,
+            IUserService userService,
             ILogger<EmailController> logger)
         {
             ArgumentNullException.ThrowIfNull(userEmailService, nameof(userEmailService));
+            ArgumentNullException.ThrowIfNull(userService, nameof(userService));
             ArgumentNullException.ThrowIfNull(logger, nameof(logger));
 
             _userEmailService = userEmailService;
+            _userService = userService;
             _logger = logger;
         }
 

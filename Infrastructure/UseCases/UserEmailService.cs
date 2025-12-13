@@ -122,23 +122,8 @@ namespace Infrastructure.UseCases
 
         public async Task<ConfirmEmailResponseDto> ConfirmEmailAsync(string token, CancellationToken ct)
         {
-            var claims = GetClaims(token);
-            var clientId = GetClientId(claims);
-            ArgumentNullException.ThrowIfNullOrEmpty(clientId, nameof(clientId));
-
-            if (!Clients.All.TryGetValue(clientId, out var allowedGrants))
-                throw new ConfirmationFailedException("Invalid client.");
-            if (!allowedGrants.Contains(GrantTypes.GrantTypeEmailConfirmation))
-                throw new ConfirmationFailedException("Unsupported grant type");
-
-            Guid userId = GetUserId(claims);
-            return await ConfirmEmailAsync(userId, token, ct);
-        }
-
-        private async Task<ConfirmEmailResponseDto> ConfirmEmailAsync(Guid userId, string token, CancellationToken ct)
-        {
-            using var context = await _dbContextFactory.CreateDbContextAsync(ct);
-            var user = await context.Users.FindAsync(userId, ct);
+            var userId = GetUserIdWithCheck(token);
+            var user = await _userService.GetByIdAsync(userId, ct);
             if (user == null)
                 throw new KeyNotFoundException("User not found.");
 
@@ -155,9 +140,9 @@ namespace Infrastructure.UseCases
             user.EmailConfirmed = true;
             user.SecureCode = null;
             user.SecureCodeCreatedAt = null;
-            var saved = await context.SaveChangesAsync(ct) > 0;
+            var result = await _userService.UpdateAsync(user, ct);
 
-            if (saved)
+            if (result > 0)
                 return new ConfirmEmailResponseDto("Thank you! Your email has been successfully confirmed.");
             else
                 throw new ConfirmationFailedException("Failed to confirm email. Please try again or contact support.");
@@ -218,6 +203,20 @@ namespace Infrastructure.UseCases
                 throw new TokenInvalidFormatException("Invalid or malformed confirmation token.");
 
             return expiration.ToUniversalTime();
+        }        
+        
+        private Guid GetUserIdWithCheck(string token)
+        {
+            var claims = GetClaims(token);
+            var clientId = GetClientId(claims);
+            ArgumentNullException.ThrowIfNullOrEmpty(clientId, nameof(clientId));
+
+            if (!Clients.All.TryGetValue(clientId, out var allowedGrants))
+                throw new ConfirmationFailedException("Invalid client.");
+            if (!allowedGrants.Contains(GrantTypes.GrantTypeEmailConfirmation))
+                throw new ConfirmationFailedException("Unsupported grant type");
+
+            return GetUserId(claims); 
         }
         #endregion
     }

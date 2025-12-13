@@ -1,8 +1,10 @@
 ﻿using Application.DTO.Activity;
 using Application.DTO.Users;
 using Application.Exceptions;
+using Application.Extensions;
 using Application.Mapping;
 using Application.UseCases;
+using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -37,7 +39,7 @@ namespace GatewayApi.Controllers
         [Authorize]
         public async Task<ActionResult<UserInfoDto>> GetById(Guid id, CancellationToken ct)
         {
-            _logger.LogInformation($"> UsersController.GetById: Id = {id}");
+            //_logger.LogInformation($"> UsersController.GetById: Id = {id}");
 
             var user = await _userService.GetByIdAsync(id, ct);
             if (user == null)
@@ -81,10 +83,10 @@ namespace GatewayApi.Controllers
         /// Sets the Level of the currently logged-in user
         /// </summary>
         /// <remarks>
-        /// POST: api/users/level
+        /// PATCH: api/users/level
         /// Requires authentication.
         /// </remarks>
-        [HttpPost("level")]
+        [HttpPatch("level")]
         [Authorize]
         public async Task<ActionResult<int>> SetLevel([FromBody] LevelRequestDto request, CancellationToken ct)
         {
@@ -126,11 +128,58 @@ namespace GatewayApi.Controllers
         public async Task<ActionResult<int>> SaveProgress([FromBody] ActivityProgressRequestDto request, CancellationToken ct)
         {
             ArgumentNullException.ThrowIfNull(request, nameof(request));
-            _logger.LogInformation($"> UsersController.SaveProgress {request}");
+            var result = await GetCurrentUserAsync(async userId =>
+            {
+                _logger.LogInformation($"> UsersController.SaveProgress: userId={userId}, request={request}");
+                return await _userService.SaveProgress(userId, request, ct);
+            });
+
+            return Ok(result);
+        }
+
+        [HttpPatch("username")]
+        [Authorize]
+        public async Task<ActionResult<int>> UpdateUsername(
+            [FromBody] UpdateUsernameDto request,
+            CancellationToken ct)
+        {
+            ArgumentNullException.ThrowIfNull(request, nameof(request));
+            var result = await GetCurrentUserAsync(async userId =>
+            {
+                _logger.LogInformation($"> UsersController.UpdateUsername: userId={userId}, request={request}");
+                return await _userService.UpdateUsernameAsync(request, userId, ct);
+            });
+            return Ok(result);
+        }
+
+        [HttpPatch("password")]
+        [Authorize]
+        public async Task<ActionResult<int>> UpdatePassword(
+            [FromBody] UpdatePasswordDto request,
+            [FromServices] IValidator<UpdatePasswordDto> validator,
+            CancellationToken ct)
+        {
+            ArgumentNullException.ThrowIfNull(request, nameof(request));
+            await validator.ValidationCheck(request);
 
             var result = await GetCurrentUserAsync(async userId =>
-                await _userService.SaveProgress(userId, request, ct));
+            {
+                _logger.LogInformation($"> UsersController.UpdatePassword: userId={userId}");
+                return await _userService.UpdatePasswordAsync(request, userId, ct);
+            });
+            return Ok(result);
+        }
 
+        [HttpPatch("delete")]
+        [Authorize]
+        public async Task<ActionResult<int>> DeleteProfile([FromBody] DeleteProfileDto request, CancellationToken ct)
+        {
+            ArgumentNullException.ThrowIfNull(request, nameof(request));
+            var result = await GetCurrentUserAsync(async userId =>
+            {
+                _logger.LogInformation($"> UsersController.DeleteProfile: userId={userId}");
+                return await _userService.DeleteProfileAsync(request, userId, ct);
+            });
             return Ok(result);
         }
     }
