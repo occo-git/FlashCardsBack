@@ -33,7 +33,7 @@ namespace Infrastructure.Services.EmailSender
                 .WaitAndRetryAsync(MaxRetryAttempts, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
         }
 
-        public async Task SendEmailAsync(string toEmail, string subject, string htmlMessage)
+        public async Task SendEmailAsync(string toEmail, string subject, string htmlMessage, CancellationToken ct)
         {
             int retryAttempt = 0;
             await _retryPolicy.ExecuteAsync(async () =>
@@ -48,10 +48,10 @@ namespace Infrastructure.Services.EmailSender
                 mimeMessage.Body = new TextPart("html") { Text = htmlMessage };
 
                 using var client = new MailKit.Net.Smtp.SmtpClient();
-                await client.ConnectAsync(_smtpOptions.Host, _smtpOptions.Port, SecureSocketOptions.StartTls);
-                await client.AuthenticateAsync(_smtpOptions.Account, _smtpOptions.Password);
-                await client.SendAsync(mimeMessage);
-                await client.DisconnectAsync(true);
+                await client.ConnectAsync(_smtpOptions.Host, _smtpOptions.Port, SecureSocketOptions.StartTls, ct);
+                await client.AuthenticateAsync(_smtpOptions.Account, _smtpOptions.Password, ct);
+                await client.SendAsync(mimeMessage, ct);
+                await client.DisconnectAsync(true, ct);
             });
         }
     }

@@ -16,11 +16,11 @@ namespace Application.UseCases
         Task<IEnumerable<User>> GetAllAsync(CancellationToken ct);
         IAsyncEnumerable<User?> GetAllAsyncEnumerable(CancellationToken ct);
         Task<User> CreateNewAsync(User user, CancellationToken ct);
-        Task<User> GetOrAddGoogleUserAsync(string googleEmail, string googleName, CancellationToken ct);
+        Task<User> CreateNewGoogleUserAsync(string googleEmail, CancellationToken ct);
         Task<User> AddAsync(User user, CancellationToken ct);
         Task<int> UpdateAsync(User user, CancellationToken ct);
-        Task<int> UpdateUsernameAsync(UpdateUsernameDto request, Guid userId, CancellationToken ct);
-        Task<int> UpdatePasswordAsync(UpdatePasswordDto request, Guid userId, CancellationToken ct);
+        Task<User?> UpdateUsernameAsync(UpdateUsernameDto request, Guid userId, CancellationToken ct);
+        Task<User?> UpdatePasswordAsync(UpdatePasswordDto request, Guid userId, CancellationToken ct);
         Task<int> DeleteProfileAsync(DeleteProfileDto request, Guid userId, CancellationToken ct);
         Task<int> SetLevel(Guid userId, string level, CancellationToken ct);
         Task<ProgressResponseDto> GetProgress(Guid userId, CancellationToken ct);

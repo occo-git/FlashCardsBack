@@ -1,13 +1,7 @@
-﻿using Application.Abstractions.Services;
-using Application.DTO;
-using Application.DTO.Email;
+﻿using Application.DTO.Email;
 using Application.UseCases;
-using Domain.Entities;
-using Infrastructure.UseCases;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Polly;
-using Shared;
 
 namespace GatewayApi.Controllers
 {
@@ -15,7 +9,6 @@ namespace GatewayApi.Controllers
     public class EmailController : Controller
     {
         private readonly IUserEmailService _userEmailService;
-        private readonly IUserService _userService;
         private readonly ILogger<EmailController> _logger;
 
         public EmailController(
@@ -24,11 +17,9 @@ namespace GatewayApi.Controllers
             ILogger<EmailController> logger)
         {
             ArgumentNullException.ThrowIfNull(userEmailService, nameof(userEmailService));
-            ArgumentNullException.ThrowIfNull(userService, nameof(userService));
             ArgumentNullException.ThrowIfNull(logger, nameof(logger));
 
             _userEmailService = userEmailService;
-            _userService = userService;
             _logger = logger;
         }
 

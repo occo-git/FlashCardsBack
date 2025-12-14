@@ -15,7 +15,7 @@ namespace Application.Abstractions.Services
     {
         Task<User> RegisterAsync(RegisterRequestDto registerRequestDto, CancellationToken ct);
         Task<TokenResponseDto> AuthenticateAsync(TokenRequestDto loginUserDto, string sessionId, CancellationToken ct);
-        Task<TokenResponseDto> AuthenticateGoogleUserAsync(string email, string name, string clientId, string sessionId, CancellationToken ct);
+        Task<TokenResponseDto> AuthenticateGoogleUserAsync(string email, string clientId, string sessionId, CancellationToken ct);
         Task<TokenResponseDto> UpdateTokensAsync(TokenRequestDto request, string sessionId, CancellationToken ct);
         Task<int> RevokeRefreshTokensAsync(Guid userId, string sessionId, CancellationToken ct);
     }

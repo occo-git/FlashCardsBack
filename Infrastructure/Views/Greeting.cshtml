@@ -1,4 +1,4 @@
-﻿@using Application.DTO.Email
+﻿@using Application.DTO.Email.Letters
 @model GreetingLetterDto
 
 <!DOCTYPE html>
@@ -19,6 +19,23 @@
             padding: 20px;
             background: #f9f9f9;
         }
+
+        .button {
+            height: 50px;
+            padding: 16px 24px;
+            justify-content: center;
+            align-items: center;
+            font-size: .8rem;
+            text-decoration: none;
+            border: 1px solid #cacaca;
+            border-radius: 25px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .link {
+            font-size: .5rem;
+        }
     </style>
 </head>
 <body>
@@ -26,7 +43,10 @@
         <h2>Welcome, @Model.UserName!</h2>
         <p>Thank you for signing up with your @Model.Provider account!</p>
         <p>Your account is already verified and ready to use.</p>
-        <br /><br />
+        <br />
+        <a href="@Model.LoginLink" class="button">Log in</a>
+        <br />
+        <br />
         <p>Need help? Contact our support team.</p>
     </div>
 </body>

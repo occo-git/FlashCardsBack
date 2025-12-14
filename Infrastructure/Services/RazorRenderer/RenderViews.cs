@@ -12,7 +12,8 @@ namespace Infrastructure.Services.RazorRenderer
         public static Dictionary<RenderTemplates, string> Paths = new()
         {
             { RenderTemplates.ConfirmEmail, "~/Views/ConfirmEmail.cshtml" },
-            { RenderTemplates.Greeting, "~/Views/Greeting.cshtml" }
+            { RenderTemplates.Greeting, "~/Views/Greeting.cshtml" },
+            { RenderTemplates.Information, "~/Views/Information.cshtml" }
         };
     }
 }

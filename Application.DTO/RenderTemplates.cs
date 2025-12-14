@@ -9,6 +9,7 @@ namespace Application.DTO
     public enum RenderTemplates
     {
         ConfirmEmail,
-        Greeting
+        Greeting,
+        Information
     }
 }

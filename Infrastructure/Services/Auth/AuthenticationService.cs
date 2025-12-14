@@ -69,7 +69,6 @@ namespace Infrastructure.Services.Auth
 
             var createdUser = await _userService.CreateNewAsync(newUser, ct);
             await _userEmailService.SendEmailConfirmation(createdUser, ct);
-
             await _userService.AddAsync(createdUser, ct);
 
             return newUser;
@@ -93,9 +92,16 @@ namespace Infrastructure.Services.Auth
             return tokens;
         }
 
-        public async Task<TokenResponseDto> AuthenticateGoogleUserAsync(string email, string name, string clientId, string sessionId, CancellationToken ct)
+        public async Task<TokenResponseDto> AuthenticateGoogleUserAsync(string email, string clientId, string sessionId, CancellationToken ct)
         {
-            var user = await _userService.GetOrAddGoogleUserAsync(email, name, ct);
+            bool isNewUser = false;
+            var user = await _userService.GetByEmailAsync(email, ct);
+            if (user == null)
+            {
+                user = await _userService.CreateNewGoogleUserAsync(email, ct);
+                isNewUser = true;
+            }
+
             ArgumentNullException.ThrowIfNull(user, nameof(user));
             _logger.LogInformation("AuthenticateGoogleUser: Username = {Username}", user.UserName);
 
@@ -104,7 +110,8 @@ namespace Infrastructure.Services.Auth
 
             await _userService.UpdateAsync(user, ct);
 
-            await _userEmailService.SendGreeting(user, ct);
+            if (isNewUser)
+                _userEmailService.SendGreeting(user);
 
             return tokens;
         }

@@ -3,6 +3,7 @@ using Application.DTO.Tokens;
 using Application.DTO.Users;
 using Application.Extensions;
 using Application.Mapping;
+using Application.UseCases;
 using Domain.Entities;
 using FluentValidation;
 using Google.Apis.Auth;
@@ -140,7 +141,7 @@ namespace GatewayApi.Controllers
             if (!payload.EmailVerified)
                 return BadRequest("Email not verified by Google");
 
-            var tokenResponse = await _authenticationService.AuthenticateGoogleUserAsync(payload.Email, payload.Name, request.ClientId, sessionId, ct);
+            var tokenResponse = await _authenticationService.AuthenticateGoogleUserAsync(payload.Email, request.ClientId, sessionId, ct);
             return Ok(tokenResponse);
         }
 

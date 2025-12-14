@@ -25,7 +25,6 @@ namespace Infrastructure.UseCases
         private readonly IUserPasswordHasher _passwordHasher;
         private readonly IUserCacheService _userCache;
         private readonly ILogger<UserService> _logger;
-        private readonly ApiOptions _apiOptions;
 
         public UserService(
             IDbContextFactory<DataContext> dbContextFactory,
@@ -37,14 +36,11 @@ namespace Infrastructure.UseCases
             ArgumentNullException.ThrowIfNull(dbContextFactory, nameof(dbContextFactory));
             ArgumentNullException.ThrowIfNull(passwordHasher, nameof(passwordHasher));
             ArgumentNullException.ThrowIfNull(userCache, nameof(userCache));
-            ArgumentNullException.ThrowIfNull(apiOptions, nameof(apiOptions));
-            ArgumentNullException.ThrowIfNull(apiOptions.Value, nameof(apiOptions.Value));
             ArgumentNullException.ThrowIfNull(logger, nameof(logger));
 
             _dbContextFactory = dbContextFactory;
             _passwordHasher = passwordHasher;
             _userCache = userCache;
-            _apiOptions = apiOptions.Value;
             _logger = logger;
         }
 
@@ -126,16 +122,13 @@ namespace Infrastructure.UseCases
             return user;
         }
 
-        public async Task<User> GetOrAddGoogleUserAsync(string googleEmail, string googleName, CancellationToken ct)
+        public async Task<User> CreateNewGoogleUserAsync(string googleEmail, CancellationToken ct)
         {
-            var existingUser = await GetByEmailAsync(googleEmail, ct);
-            if (existingUser != null)
-                return existingUser;
-
             // unique name
-            var userName = $"{(String.IsNullOrEmpty(googleName) ? googleEmail.Split('@')[0] : googleName.Replace(" ", "").ToLower())}";
+            var userName = googleEmail.Split('@')[0];
+            // if user with the same username exists
             if (await GetByUsernameAsync(userName, ct) != null)
-                userName = $"{userName}_{Guid.NewGuid().ToString("N")[..8]}";
+                userName = $"{userName}_{Guid.NewGuid().ToString("N")[..8]}"; // add sufix
 
             var randomPassword = UserMapper.GenerateRandomPassword(32);
             var passwordHash = BCrypt.Net.BCrypt.HashPassword(randomPassword);
@@ -177,7 +170,7 @@ namespace Infrastructure.UseCases
             return result;
         }
 
-        public async Task<int> UpdateUsernameAsync(UpdateUsernameDto request, Guid userId, CancellationToken ct)
+        public async Task<User?> UpdateUsernameAsync(UpdateUsernameDto request, Guid userId, CancellationToken ct)
         {
             using var context = await _dbContextFactory.CreateDbContextAsync(ct);
             var existedUser = await context.Users
@@ -189,18 +182,21 @@ namespace Infrastructure.UseCases
             var user = await GetByIdAsync(userId, ct);
             if (user == null)
                 throw new KeyNotFoundException("User not found");
+
             if (user.UserName != request.NewUsername)
             {
                 user.UserName = request.NewUsername;
-                return await UpdateAsync(user, ct);
+                var result = await UpdateAsync(user, ct);
+                if (result > 0)
+                    return user;
             }
-            return 0;
+            return null;
         }
 
-        public async Task<int> UpdatePasswordAsync(UpdatePasswordDto request, Guid userId, CancellationToken ct)
+        public async Task<User?> UpdatePasswordAsync(UpdatePasswordDto request, Guid userId, CancellationToken ct)
         {
             if (request.NewPassword == request.OldPassword)
-                return 0;
+                return null;
 
             var user = await GetByIdAsync(userId, ct);
             if (user == null)
@@ -209,7 +205,9 @@ namespace Infrastructure.UseCases
                 throw new UnauthorizedAccessException("Incorrect old password.");
 
             user.PasswordHash = _passwordHasher.HashPassword(request.NewPassword);
-            return await UpdateAsync(user, ct);
+            var result = await UpdateAsync(user, ct);
+
+            return result > 0 ? user : null;
         }
 
         public async Task<int> DeleteProfileAsync(DeleteProfileDto request, Guid userId, CancellationToken ct)

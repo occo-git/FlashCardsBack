@@ -10,6 +10,6 @@ namespace Application.Abstractions.Services
 {
     public interface IEmailSender
     {
-        Task SendEmailAsync(string toEmail, string subject, string htmlMessage);
+        Task SendEmailAsync(string toEmail, string subject, string htmlMessage, CancellationToken ct);
     }
 }

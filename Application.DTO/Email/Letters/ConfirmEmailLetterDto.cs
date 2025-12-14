@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Application.DTO.Email
+namespace Application.DTO.Email.Letters
 {
-    public record GreetingLetterDto(string UserName, string Provider);
+    public record ConfirmEmailLetterDto(string UserName, string ConfirmationLink);
 }

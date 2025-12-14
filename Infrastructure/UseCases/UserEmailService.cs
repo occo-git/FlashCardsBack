@@ -1,6 +1,7 @@
 ﻿using Application.Abstractions.Services;
 using Application.DTO;
 using Application.DTO.Email;
+using Application.DTO.Email.Letters;
 using Application.DTO.Tokens;
 using Application.Exceptions;
 using Application.UseCases;
@@ -9,11 +10,11 @@ using Infrastructure.DataContexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Org.BouncyCastle.Asn1.Ocsp;
 using Shared.Auth;
 using Shared.Configuration;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Threading.Tasks;
 
 namespace Infrastructure.UseCases
 {
@@ -67,7 +68,7 @@ namespace Infrastructure.UseCases
         }
 
         #region Greeting
-        public async Task SendGreeting(User user, CancellationToken ct)
+        public void SendGreeting(User user)
         {
             if (!user.Active)
                 throw new AccountNotActiveException("Account is currently inactive. Please contact support.");
@@ -75,9 +76,58 @@ namespace Infrastructure.UseCases
             ArgumentNullException.ThrowIfNullOrEmpty(user.Email, nameof(user.Email));
             _logger.LogInformation($"UserEmailService.SendEmailConfirmation Email = {user.Email}");
 
-            var greetingLetterDto = new GreetingLetterDto(user.UserName, user.Provider);
-            var confirmEmailHtml = await _razorRenderer.RenderViewToStringAsync(RenderTemplates.Greeting, greetingLetterDto);
-            await _emailSender.SendEmailAsync(user.Email, "FlashCards: Welcome!", confirmEmailHtml);
+            var greetingLetterDto = new GreetingLetterDto(user.UserName, user.Provider, _apiOptions.LoginUrl);
+
+            FireAndFoget(async () => 
+            {
+                var confirmEmailHtml = await _razorRenderer.RenderViewToStringAsync(RenderTemplates.Greeting, greetingLetterDto);
+                await _emailSender.SendEmailAsync(user.Email, "FlashCards: Welcome!", confirmEmailHtml, CancellationToken.None);
+            });            
+        }
+        #endregion
+
+        #region Information
+        public void SendUsernameChanged(User user, string newUsername)
+        {
+            var informationLetterDto = new InformationLetterDto(
+                "Username Changed",
+                "Username changed!",
+                new string[]
+                {
+                    "Thank you for using your account!",
+                    $"Your username has been successfully updated to: {newUsername}",
+                    "Your account is secure and ready to use."
+                },
+                _apiOptions.LoginUrl);
+
+            FireAndFoget(async () => await SendInformation(user, informationLetterDto, CancellationToken.None));
+            
+        }
+        public void SendPasswordChanged(User user)
+        {
+            var informationLetterDto = new InformationLetterDto(
+                "Password Changed",
+                "Password changed!",
+                new string[]
+                {
+                    "Thank you for using your account!",
+                    "Your password has been successfully updated.",
+                    "Your account is secure and ready to use."
+                }, 
+                _apiOptions.LoginUrl);
+
+            FireAndFoget(async () => await SendInformation(user, informationLetterDto, CancellationToken.None));
+        }
+        private  async Task SendInformation(User user, InformationLetterDto informationLetterDto, CancellationToken ct)
+        {
+            if (!user.Active)
+                throw new AccountNotActiveException("Account is currently inactive. Please contact support.");
+
+            ArgumentNullException.ThrowIfNullOrEmpty(user.Email, nameof(user.Email));
+            _logger.LogInformation($"UserEmailService.SendEmailConfirmation Email = {user.Email}");
+
+            var confirmEmailHtml = await _razorRenderer.RenderViewToStringAsync(RenderTemplates.Information, informationLetterDto);
+            await _emailSender.SendEmailAsync(user.Email, "FlashCards: Information", confirmEmailHtml, ct);
         }
         #endregion
 
@@ -119,7 +169,7 @@ namespace Infrastructure.UseCases
 
             var confirmEmailLetterDto = new ConfirmEmailLetterDto(user.UserName, confirmationLink);
             var confirmEmailHtml = await _razorRenderer.RenderViewToStringAsync(RenderTemplates.ConfirmEmail, confirmEmailLetterDto);
-            await _emailSender.SendEmailAsync(user.Email, "FlashCards: Confirm your email, please", confirmEmailHtml);
+            await _emailSender.SendEmailAsync(user.Email, "FlashCards: Confirm your email, please", confirmEmailHtml, ct);
 
             return new SendEmailConfirmationResponseDto("Confirmation link has been sent.");
         }
@@ -234,6 +284,21 @@ namespace Infrastructure.UseCases
                 throw new ConfirmationFailedException("Unsupported grant type");
 
             return GetUserId(claims); 
+        }
+
+        private void FireAndFoget(Func<Task> task)
+        {
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await task();
+                }
+                catch (Exception ex) 
+                {
+                    _logger.LogError(ex, "Error occurred during FireAndFoget.");
+                }
+            });
         }
         #endregion
     }

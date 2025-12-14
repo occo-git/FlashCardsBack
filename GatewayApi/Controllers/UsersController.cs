@@ -17,14 +17,18 @@ namespace GatewayApi.Controllers
     public class UsersController : UserControllerBase
     {
         private readonly IUserService _userService;
+        private readonly IUserEmailService _emailService;
 
         public UsersController(
             IUserService userService,
+            IUserEmailService emailService,
             ILogger<UsersController> logger) : base(logger)
         {
             ArgumentNullException.ThrowIfNull(userService, nameof(userService));
+            ArgumentNullException.ThrowIfNull(emailService, nameof(emailService));
 
             _userService = userService;
+            _emailService = emailService;
         }
 
         /// <summary>        
@@ -142,7 +146,7 @@ namespace GatewayApi.Controllers
         [HttpPatch("username")]
         [EnableRateLimiting(SharedConstants.RateLimitUpdateUsernamePolicy)]
         [Authorize]
-        public async Task<ActionResult<int>> UpdateUsername(
+        public async Task<ActionResult<bool>> UpdateUsername(
             [FromBody] UpdateUsernameDto request,
             CancellationToken ct)
         {
@@ -150,7 +154,13 @@ namespace GatewayApi.Controllers
             var result = await GetCurrentUserAsync(async userId =>
             {
                 _logger.LogInformation($"> UsersController.UpdateUsername: userId={userId}, request={request}");
-                return await _userService.UpdateUsernameAsync(request, userId, ct);
+                var user = await _userService.UpdateUsernameAsync(request, userId, ct);
+                if (user != null)
+                {
+                    _emailService.SendUsernameChanged(user, request.NewUsername);
+                    return true;
+                }
+                return false;
             });
             return Ok(result);
         }
@@ -158,7 +168,7 @@ namespace GatewayApi.Controllers
         [HttpPatch("password")]
         [EnableRateLimiting(SharedConstants.RateLimitUpdatePasswordPolicy)]
         [Authorize]
-        public async Task<ActionResult<int>> UpdatePassword(
+        public async Task<ActionResult<bool>> UpdatePassword(
             [FromBody] UpdatePasswordDto request,
             [FromServices] IValidator<UpdatePasswordDto> validator,
             CancellationToken ct)
@@ -169,7 +179,13 @@ namespace GatewayApi.Controllers
             var result = await GetCurrentUserAsync(async userId =>
             {
                 _logger.LogInformation($"> UsersController.UpdatePassword: userId={userId}");
-                return await _userService.UpdatePasswordAsync(request, userId, ct);
+                var user = await _userService.UpdatePasswordAsync(request, userId, ct);
+                if (user != null)
+                {
+                    _emailService.SendPasswordChanged(user);
+                    return true;
+                }
+                return false;
             });
             return Ok(result);
         }

@@ -1,11 +1,11 @@
 ﻿@using Application.DTO.Email.Letters
-@model ConfirmEmailLetterDto
+@model InformationLetterDto
 
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8" />
-    <title>Email Confirmation</title>
+    <title>@Model.Title</title>
     <style>
         body {
             font-family: "Tahoma", sans-serif;
@@ -40,23 +40,15 @@
 </head>
 <body>
     <div class="container">
-        <h2>Confirm Your Email Address</h2>
-        <p>
-            Thank you for registering, <b>@Model.UserName</b>!
-        </p>
-        <p>
-            Please click the button below to confirm your email:
-        </p>
+        <h2>@Model.Caption</h2>
+        @foreach (var text in @Model.Texts)
+        {
+            <p>@text</p>
+        }
         <br />
-        <a href="@Model.ConfirmationLink" class="button">Confirm Email</a>
+        <a href="@Model.LoginLink" class="button">Log in</a>
         <br />
         <br />
-        <p>
-            If the button does not work, copy and paste the link into your browser:
-            <br />
-            <a href="@Model.ConfirmationLink" class="link">@Model.ConfirmationLink</a>
-        </p>
-        <p>If you did not register, please ignore this email.</p>
         <p>Need help? Contact our support team.</p>
     </div>
 </body>

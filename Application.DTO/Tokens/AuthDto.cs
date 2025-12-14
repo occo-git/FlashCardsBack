@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Application.DTO.Email
+namespace Application.DTO.Tokens
 {
-    public record ConfirmEmailLetterDto(string UserName, string ConfirmationLink);
+    public record AuthDto(TokenResponseDto Tokens, bool IsNewUser = false);
 }
