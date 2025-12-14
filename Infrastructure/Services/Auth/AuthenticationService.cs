@@ -80,7 +80,7 @@ namespace Infrastructure.Services.Auth
             await _loginValidator.ValidationCheck(loginUserDto);
             _logger.LogInformation("Authenticate: Username = {Username}", loginUserDto.Username);
 
-            var user = await _userService.GetByNameOrEmailAsync(loginUserDto.Username, ct);
+            var user = await _userService.GetByUsernameOrEmailAsync(loginUserDto.Username, ct);
 
             if (user == null || !_passwordHasher.VerifyHashedPassword(user.PasswordHash, loginUserDto.Password!))
                 throw new UnauthorizedAccessException("Incorrect username or password.");
@@ -103,6 +103,8 @@ namespace Infrastructure.Services.Auth
             var tokens = await GenerateTokens(user, clientId, sessionId, ct);
 
             await _userService.UpdateAsync(user, ct);
+
+            await _userEmailService.SendGreeting(user, ct);
 
             return tokens;
         }

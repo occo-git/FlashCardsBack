@@ -66,6 +66,22 @@ namespace Infrastructure.UseCases
             return send;
         }
 
+        #region Greeting
+        public async Task SendGreeting(User user, CancellationToken ct)
+        {
+            if (!user.Active)
+                throw new AccountNotActiveException("Account is currently inactive. Please contact support.");
+
+            ArgumentNullException.ThrowIfNullOrEmpty(user.Email, nameof(user.Email));
+            _logger.LogInformation($"UserEmailService.SendEmailConfirmation Email = {user.Email}");
+
+            var greetingLetterDto = new GreetingLetterDto(user.UserName, user.Provider);
+            var confirmEmailHtml = await _razorRenderer.RenderViewToStringAsync(RenderTemplates.Greeting, greetingLetterDto);
+            await _emailSender.SendEmailAsync(user.Email, "FlashCards: Welcome!", confirmEmailHtml);
+        }
+        #endregion
+
+        #region Email Confirmation
         public async Task<SendEmailConfirmationResponseDto> SendEmailConfirmation(User user, CancellationToken ct)
         {
             if (user.EmailConfirmed)
@@ -147,6 +163,7 @@ namespace Infrastructure.UseCases
             else
                 throw new ConfirmationFailedException("Failed to confirm email. Please try again or contact support.");
         }
+        #endregion
 
         #region Helpers
         private string FormatTimeSpan(TimeSpan t)

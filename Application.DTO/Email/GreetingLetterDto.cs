@@ -4,11 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Application.DTO
+namespace Application.DTO.Email
 {
-    public enum RenderTemplates
-    {
-        ConfirmEmail,
-        Greeting
-    }
+    public record GreetingLetterDto(string UserName, string Provider);
 }

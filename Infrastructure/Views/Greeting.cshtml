@@ -1,0 +1,33 @@
+﻿@using Application.DTO.Email
+@model GreetingLetterDto
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Welcome! Your account is ready to use</title>
+    <style>
+        body {
+            font-family: "Tahoma", sans-serif;
+            align-content: flex-start;
+        }
+
+        .container {
+            max-width: 600px;
+            min-height: 600px;
+            margin: auto;
+            padding: 20px;
+            background: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Welcome, @Model.UserName!</h2>
+        <p>Thank you for signing up with your @Model.Provider account!</p>
+        <p>Your account is already verified and ready to use.</p>
+        <br /><br />
+        <p>Need help? Contact our support team.</p>
+    </div>
+</body>
+</html>

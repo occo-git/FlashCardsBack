@@ -12,7 +12,7 @@ namespace Application.UseCases
         Task<User?> GetByIdAsync(Guid id, CancellationToken ct);
         Task<User?> GetByUsernameAsync(string username, CancellationToken ct);
         Task<User?> GetByEmailAsync(string email, CancellationToken ct);
-        Task<User?> GetByNameOrEmailAsync(string? text, CancellationToken ct);
+        Task<User?> GetByUsernameOrEmailAsync(string? text, CancellationToken ct);
         Task<IEnumerable<User>> GetAllAsync(CancellationToken ct);
         IAsyncEnumerable<User?> GetAllAsyncEnumerable(CancellationToken ct);
         Task<User> CreateNewAsync(User user, CancellationToken ct);

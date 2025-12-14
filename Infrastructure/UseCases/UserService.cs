@@ -81,7 +81,7 @@ namespace Infrastructure.UseCases
                 .FirstOrDefaultAsync(u => u.Email == email, ct);
         }
 
-        public async Task<User?> GetByNameOrEmailAsync(string? text, CancellationToken ct)
+        public async Task<User?> GetByUsernameOrEmailAsync(string? text, CancellationToken ct)
         {
             using var context = await _dbContextFactory.CreateDbContextAsync(ct);
             return await context.Users
@@ -133,7 +133,10 @@ namespace Infrastructure.UseCases
                 return existingUser;
 
             // unique name
-            var userName = $"{(String.IsNullOrEmpty(googleName) ? googleEmail.Split('@')[0] : googleName.Replace(" ", "").ToLower())}_{Guid.NewGuid().ToString("N")[..8]}";
+            var userName = $"{(String.IsNullOrEmpty(googleName) ? googleEmail.Split('@')[0] : googleName.Replace(" ", "").ToLower())}";
+            if (await GetByUsernameAsync(userName, ct) != null)
+                userName = $"{userName}_{Guid.NewGuid().ToString("N")[..8]}";
+
             var randomPassword = UserMapper.GenerateRandomPassword(32);
             var passwordHash = BCrypt.Net.BCrypt.HashPassword(randomPassword);
 
