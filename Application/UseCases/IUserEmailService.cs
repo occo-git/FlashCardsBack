@@ -9,9 +9,9 @@ namespace Application.UseCases
     {
         Task<SendEmailConfirmationResponseDto> ReSendEmailConfirmation(string token, CancellationToken ct);
         Task<SendEmailConfirmationResponseDto> SendEmailConfirmation(User user, CancellationToken ct);
-        void SendGreeting(User user);
-        void SendUsernameChanged(User user, string newUsername);
-        void SendPasswordChanged(User user);
+        Task SendGreeting(User user, CancellationToken ct);
+        Task SendUsernameChanged(User user, string newUsername, CancellationToken ct);
+        Task SendPasswordChanged(User user, CancellationToken ct);
         Task<ConfirmEmailResponseDto> ConfirmEmailAsync(string token, CancellationToken ct);
     }
 }

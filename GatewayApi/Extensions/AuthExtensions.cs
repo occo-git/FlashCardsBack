@@ -1,9 +1,6 @@
 ﻿using GatewayApi.Auth;
-using GatewayApi.Services;
 using GatewayApi.Services.Background;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Shared;
 using Shared.Configuration;

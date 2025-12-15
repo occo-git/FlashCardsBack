@@ -6,21 +6,21 @@ namespace GatewayApi.Services.Background
 {
     public class CacheRefreshBackgroundService : BackgroundService
     {
-        private readonly IServiceProvider _services;
+        private readonly IServiceScopeFactory _scopeFactory;
         private readonly ILogger _logger;
         private readonly TimeSpan _refreshInterval = TimeSpan.FromMinutes(240);
 
         public CacheRefreshBackgroundService(
-            IServiceProvider services,
+            IServiceScopeFactory scopeFactory,
             ILogger<CacheRefreshBackgroundService> logger,
             IOptions<CacheServiceOptions> options)
         {
-            ArgumentNullException.ThrowIfNull(services, nameof(services));
+            ArgumentNullException.ThrowIfNull(scopeFactory, nameof(scopeFactory));
             ArgumentNullException.ThrowIfNull(logger, nameof(logger));
             ArgumentNullException.ThrowIfNull(options, nameof(options));
             ArgumentNullException.ThrowIfNull(options.Value, nameof(options.Value));
 
-            _services = services;
+            _scopeFactory = scopeFactory;
             _logger = logger;
             _refreshInterval = TimeSpan.FromMinutes(options.Value.CacheRefreshIntervalMinutes);
         }
@@ -32,7 +32,7 @@ namespace GatewayApi.Services.Background
                 await Task.Delay(_refreshInterval, ct);
                 try
                 {
-                    using var scope = _services.CreateScope();
+                    using var scope = _scopeFactory.CreateScope();
                     var cache = scope.ServiceProvider.GetRequiredService<IRedisWordCacheService>();
                     await cache.PreloadAllLevelsAsync(ct);
                 }

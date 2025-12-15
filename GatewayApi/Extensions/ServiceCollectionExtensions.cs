@@ -9,6 +9,7 @@ using Infrastructure.Repositories;
 using Infrastructure.Security;
 using Infrastructure.Services.Auth;
 using Infrastructure.Services.Auth.Tokens;
+using Infrastructure.Services.Background;
 using Infrastructure.Services.EmailSender;
 using Infrastructure.Services.FileStorage;
 using Infrastructure.Services.Migration;
@@ -44,6 +45,9 @@ namespace GatewayApi.Extensions
         {
             services.Configure<SmtpOptions>(configuration.GetSection(SharedConstants.EnvSmtpGroup));
             services.AddTransient<IEmailSender, EmailSender>();
+
+            services.AddSingleton<IEmailQueue, EmailQueue>();
+            services.AddHostedService<EmailQueueBackgroundService>();
         }
 
         public static void AddInfrastructureServices(this IServiceCollection services)

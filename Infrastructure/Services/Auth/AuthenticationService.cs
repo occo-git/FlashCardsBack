@@ -111,7 +111,7 @@ namespace Infrastructure.Services.Auth
             await _userService.UpdateAsync(user, ct);
 
             if (isNewUser)
-                _userEmailService.SendGreeting(user);
+                await _userEmailService.SendGreeting(user, ct);
 
             return tokens;
         }

@@ -157,7 +157,7 @@ namespace GatewayApi.Controllers
                 var user = await _userService.UpdateUsernameAsync(request, userId, ct);
                 if (user != null)
                 {
-                    _emailService.SendUsernameChanged(user, request.NewUsername);
+                    await _emailService.SendUsernameChanged(user, request.NewUsername, ct);
                     return true;
                 }
                 return false;
@@ -182,7 +182,7 @@ namespace GatewayApi.Controllers
                 var user = await _userService.UpdatePasswordAsync(request, userId, ct);
                 if (user != null)
                 {
-                    _emailService.SendPasswordChanged(user);
+                    await _emailService.SendPasswordChanged(user, ct);
                     return true;
                 }
                 return false;

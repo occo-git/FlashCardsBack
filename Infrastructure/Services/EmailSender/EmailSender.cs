@@ -1,4 +1,5 @@
 ﻿using Application.Abstractions.Services;
+using Application.DTO.Email;
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using Microsoft.Extensions.Options;
@@ -6,7 +7,6 @@ using MimeKit;
 using Polly;
 using Polly.Retry;
 using Shared.Configuration;
-using System.ComponentModel;
 using System.Net.Mail;
 using System.Net.Sockets;
 
@@ -33,19 +33,19 @@ namespace Infrastructure.Services.EmailSender
                 .WaitAndRetryAsync(MaxRetryAttempts, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
         }
 
-        public async Task SendEmailAsync(string toEmail, string subject, string htmlMessage, CancellationToken ct)
+        public async Task SendEmailAsync(SendEmailDto emailDto, CancellationToken ct)
         {
             int retryAttempt = 0;
             await _retryPolicy.ExecuteAsync(async () =>
             {
                 retryAttempt++;
-                Console.WriteLine($"EmailSender: Try {retryAttempt}/{MaxRetryAttempts} to send email to {toEmail}");
+                Console.WriteLine($"EmailSender: Try {retryAttempt}/{MaxRetryAttempts} to send email to {emailDto.ToEmail}");
 
                 var mimeMessage = new MimeMessage();
                 mimeMessage.From.Add(MailboxAddress.Parse(_smtpOptions.From));
-                mimeMessage.To.Add(MailboxAddress.Parse(toEmail));
-                mimeMessage.Subject = subject;
-                mimeMessage.Body = new TextPart("html") { Text = htmlMessage };
+                mimeMessage.To.Add(MailboxAddress.Parse(emailDto.ToEmail));
+                mimeMessage.Subject = emailDto.Subject;
+                mimeMessage.Body = new TextPart("html") { Text = emailDto.HtmlMessage };
 
                 using var client = new MailKit.Net.Smtp.SmtpClient();
                 await client.ConnectAsync(_smtpOptions.Host, _smtpOptions.Port, SecureSocketOptions.StartTls, ct);

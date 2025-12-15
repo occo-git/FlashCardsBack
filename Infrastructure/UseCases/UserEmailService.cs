@@ -7,7 +7,9 @@ using Application.Exceptions;
 using Application.UseCases;
 using Domain.Entities;
 using Infrastructure.DataContexts;
+using Infrastructure.Services.Background;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Shared.Auth;
@@ -21,6 +23,7 @@ namespace Infrastructure.UseCases
     public class UserEmailService : IUserEmailService
     {
         private readonly IDbContextFactory<DataContext> _dbContextFactory;
+        private readonly IServiceScopeFactory _scopeFactory;
         private readonly IUserService _userService;
         private readonly ITokenGenerator<ConfirmationTokenDto> _confirmationTokenGenerator;
         private readonly IRazorRenderer _razorRenderer;
@@ -30,6 +33,7 @@ namespace Infrastructure.UseCases
 
         public UserEmailService(
             IDbContextFactory<DataContext> dbContextFactory,
+            IServiceScopeFactory scopeFactory,
             IUserService userService,
             ITokenGenerator<ConfirmationTokenDto> confirmationTokenGenerator,
             IRazorRenderer razorRenderer,
@@ -39,6 +43,7 @@ namespace Infrastructure.UseCases
         {
             ArgumentNullException.ThrowIfNull(dbContextFactory, nameof(dbContextFactory));
             ArgumentNullException.ThrowIfNull(userService, nameof(userService));
+            ArgumentNullException.ThrowIfNull(scopeFactory, nameof(scopeFactory));
             ArgumentNullException.ThrowIfNull(confirmationTokenGenerator, nameof(confirmationTokenGenerator));
             ArgumentNullException.ThrowIfNull(razorRenderer, nameof(razorRenderer));
             ArgumentNullException.ThrowIfNull(emailSender, nameof(emailSender));
@@ -48,6 +53,7 @@ namespace Infrastructure.UseCases
 
             _dbContextFactory = dbContextFactory;
             _userService = userService;
+            _scopeFactory = scopeFactory;
             _confirmationTokenGenerator = confirmationTokenGenerator;
             _razorRenderer = razorRenderer;
             _emailSender = emailSender;
@@ -68,7 +74,7 @@ namespace Infrastructure.UseCases
         }
 
         #region Greeting
-        public void SendGreeting(User user)
+        public async Task SendGreeting(User user, CancellationToken ct)
         {
             if (!user.Active)
                 throw new AccountNotActiveException("Account is currently inactive. Please contact support.");
@@ -78,16 +84,16 @@ namespace Infrastructure.UseCases
 
             var greetingLetterDto = new GreetingLetterDto(user.UserName, user.Provider, _apiOptions.LoginUrl);
 
-            FireAndFoget(async () => 
-            {
-                var confirmEmailHtml = await _razorRenderer.RenderViewToStringAsync(RenderTemplates.Greeting, greetingLetterDto);
-                await _emailSender.SendEmailAsync(user.Email, "FlashCards: Welcome!", confirmEmailHtml, CancellationToken.None);
-            });            
+            var confirmEmailHtml = await _razorRenderer.RenderViewToStringAsync(RenderTemplates.Greeting, greetingLetterDto);
+            var emailDto = new SendEmailDto(user.Email, "FlashCards: Welcome!", confirmEmailHtml);
+
+            await QueueEmailAsync(emailDto, ct);
+            //await _emailSender.SendEmailAsync(emailDto, ct);
         }
         #endregion
 
         #region Information
-        public void SendUsernameChanged(User user, string newUsername)
+        public async Task SendUsernameChanged(User user, string newUsername, CancellationToken ct)
         {
             var informationLetterDto = new InformationLetterDto(
                 "Username Changed",
@@ -100,10 +106,10 @@ namespace Infrastructure.UseCases
                 },
                 _apiOptions.LoginUrl);
 
-            FireAndFoget(async () => await SendInformation(user, informationLetterDto, CancellationToken.None));
-            
+            await SendInformation(user, informationLetterDto, ct);
+
         }
-        public void SendPasswordChanged(User user)
+        public async Task SendPasswordChanged(User user, CancellationToken ct)
         {
             var informationLetterDto = new InformationLetterDto(
                 "Password Changed",
@@ -113,12 +119,12 @@ namespace Infrastructure.UseCases
                     "Thank you for using your account!",
                     "Your password has been successfully updated.",
                     "Your account is secure and ready to use."
-                }, 
+                },
                 _apiOptions.LoginUrl);
 
-            FireAndFoget(async () => await SendInformation(user, informationLetterDto, CancellationToken.None));
+            await SendInformation(user, informationLetterDto, ct);
         }
-        private  async Task SendInformation(User user, InformationLetterDto informationLetterDto, CancellationToken ct)
+        private async Task SendInformation(User user, InformationLetterDto informationLetterDto, CancellationToken ct)
         {
             if (!user.Active)
                 throw new AccountNotActiveException("Account is currently inactive. Please contact support.");
@@ -127,7 +133,10 @@ namespace Infrastructure.UseCases
             _logger.LogInformation($"UserEmailService.SendEmailConfirmation Email = {user.Email}");
 
             var confirmEmailHtml = await _razorRenderer.RenderViewToStringAsync(RenderTemplates.Information, informationLetterDto);
-            await _emailSender.SendEmailAsync(user.Email, "FlashCards: Information", confirmEmailHtml, ct);
+            var emailDto = new SendEmailDto(user.Email, "FlashCards: Information", confirmEmailHtml);
+
+            await QueueEmailAsync(emailDto, ct);
+            //await _emailSender.SendEmailAsync(emailDto, ct);
         }
         #endregion
 
@@ -169,7 +178,8 @@ namespace Infrastructure.UseCases
 
             var confirmEmailLetterDto = new ConfirmEmailLetterDto(user.UserName, confirmationLink);
             var confirmEmailHtml = await _razorRenderer.RenderViewToStringAsync(RenderTemplates.ConfirmEmail, confirmEmailLetterDto);
-            await _emailSender.SendEmailAsync(user.Email, "FlashCards: Confirm your email, please", confirmEmailHtml, ct);
+            var emailDto = new SendEmailDto(user.Email, "FlashCards: Confirm your email, please", confirmEmailHtml);
+            await _emailSender.SendEmailAsync(emailDto, ct);
 
             return new SendEmailConfirmationResponseDto("Confirmation link has been sent.");
         }
@@ -270,8 +280,8 @@ namespace Infrastructure.UseCases
                 throw new TokenInvalidFormatException("Invalid or malformed confirmation token.");
 
             return expiration.ToUniversalTime();
-        }        
-        
+        }
+
         private Guid GetUserIdWithCheck(string token)
         {
             var claims = GetClaims(token);
@@ -283,22 +293,14 @@ namespace Infrastructure.UseCases
             if (!allowedGrants.Contains(GrantTypes.GrantTypeEmailConfirmation))
                 throw new ConfirmationFailedException("Unsupported grant type");
 
-            return GetUserId(claims); 
+            return GetUserId(claims);
         }
 
-        private void FireAndFoget(Func<Task> task)
+        private async Task QueueEmailAsync(SendEmailDto emailDto, CancellationToken ct)
         {
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    await task();
-                }
-                catch (Exception ex) 
-                {
-                    _logger.LogError(ex, "Error occurred during FireAndFoget.");
-                }
-            });
+            using var scope = _scopeFactory.CreateScope();
+            var emailQueue = scope.ServiceProvider.GetRequiredService<IEmailQueue>();
+            await emailQueue.QueueEmailAsync(emailDto, ct);
         }
         #endregion
     }
