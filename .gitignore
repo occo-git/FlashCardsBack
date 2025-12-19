@@ -366,3 +366,4 @@ FodyWeavers.xsd
 # Images
 /Infrastructure/Storage/Images/*
 /reports
+/d.bat
