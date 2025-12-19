@@ -14,5 +14,7 @@ namespace Shared.Configuration
         public int UpdateUsernamePermitLimit { get; set; } = 5; // per 1 hour
         public int UpdatePasswordPermitLimit { get; set; } = 3; // per 1 hour
         public int DeleteProfilePermitLimit { get; set; } = 1; // per 1 day
+        public int ResetPasswordRequestPermitLimit { get; set; } = 10; // per 1 hour
+        public int ResetPasswordPermitLimit { get; set; } = 20; // per 1 hour
     }
 }

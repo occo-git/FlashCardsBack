@@ -27,5 +27,7 @@
         public const string RateLimitUpdateUsernamePolicy = "RateLimitUsernameChangePolicy";
         public const string RateLimitUpdatePasswordPolicy = "RateLimitPasswordChangePolicy";
         public const string RateLimitDeleteProfilePolicy = "RateLimitDeleteProfilePolicy";
+        public const string RateLimitResetPasswordRequestPolicy = "RateLimitResetPasswordRequestPolicy";
+        public const string RateLimitResetPasswordPolicy = "RateLimitResetPasswordPolicy";
     }
 }

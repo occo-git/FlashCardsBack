@@ -22,13 +22,15 @@ namespace Infrastructure.DataContexts
         public DbSet<Word> Words { get; set; }
         public DbSet<WordTheme> WordThemes { get; set; }
         public DbSet<WordFillBlank> FillBlanks { get; set; }
-        public DbSet<UserBookmark> UserBookmarks{ get; set; }
+        public DbSet<UserBookmark> UserBookmarks { get; set; }
         public DbSet<UserWordsProgress> UserWordsProgress { get; set; }
+
+        public DbSet<ResetPasswordToken> ResetPasswordTokens { get; set; }
 
         public DataContext(DbContextOptions<DataContext> options)
             : base(options)
         {
-        }      
+        }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -55,7 +57,15 @@ namespace Infrastructure.DataContexts
                 .HasOne(rt => rt.User)
                 .WithMany(u => u.RefreshTokens)
                 .HasForeignKey(rt => rt.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Cascade); // delete User → delete Token
+            #endregion
+
+            #region ResetPasswordToken
+            modelBuilder.Entity<ResetPasswordToken>()
+                .HasOne(t => t.User)
+                .WithMany() // no token collection in User
+                .HasForeignKey(t => t.UserId)
+                .OnDelete(DeleteBehavior.Cascade); // delete User → delete Token
             #endregion
 
             #region WordThemes
@@ -69,11 +79,6 @@ namespace Infrastructure.DataContexts
             modelBuilder.Entity<Word>()
                 .Property(w => w.WordText)
                 .HasColumnName("Word");
-            
-            // check for PartOfSpeech
-            modelBuilder.Entity<Word>()
-                .Property(w => w.PartOfSpeech)
-                .HasColumnType("varchar(50)");
             #endregion
 
             #region UserWordsProgress
@@ -90,11 +95,6 @@ namespace Infrastructure.DataContexts
                 .WithMany(fb => fb.WordProgresses)
                 .HasForeignKey(wp => wp.FillBlankId)
                 .IsRequired(false);
-
-            // check for ActivityType
-            modelBuilder.Entity<UserWordsProgress>()
-                .Property(wp => wp.ActivityType)
-                .HasColumnType("varchar(20)");
             #endregion
 
             #region UserBookmarks
@@ -107,10 +107,11 @@ namespace Infrastructure.DataContexts
 
             // ralation with User
             modelBuilder.Entity<UserBookmark>()
-                .HasOne(wp => wp.User)
+                .HasOne(ub => ub.User)
                 .WithMany(u => u.Bookmarks)
-                .HasForeignKey(wp => wp.UserId)
-                .IsRequired(false);
+                .HasForeignKey(ub => ub.UserId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.Cascade); // delete User → delete Bookmarks
             #endregion
         }
     }

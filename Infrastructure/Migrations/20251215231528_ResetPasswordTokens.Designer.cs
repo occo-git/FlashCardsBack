@@ -3,6 +3,7 @@ using System;
 using Infrastructure.DataContexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20251215231528_ResetPasswordTokens")]
+    partial class ResetPasswordTokens
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -167,7 +170,8 @@ namespace Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId")
+                        .IsUnique();
 
                     b.ToTable("ResetPasswordTokens");
                 });
@@ -205,8 +209,7 @@ namespace Infrastructure.Migrations
 
                     b.Property<string>("ActivityType")
                         .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
+                        .HasColumnType("varchar(20)");
 
                     b.Property<int>("CorrectCount")
                         .HasColumnType("integer");
@@ -273,7 +276,7 @@ namespace Infrastructure.Migrations
                     b.Property<string>("PartOfSpeech")
                         .IsRequired()
                         .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
+                        .HasColumnType("varchar(50)");
 
                     b.Property<string>("Transcription")
                         .IsRequired()
@@ -350,8 +353,8 @@ namespace Infrastructure.Migrations
             modelBuilder.Entity("Domain.Entities.Users.ResetPasswordToken", b =>
                 {
                     b.HasOne("Domain.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
+                        .WithOne("ResetPasswordToken")
+                        .HasForeignKey("Domain.Entities.Users.ResetPasswordToken", "UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -362,8 +365,7 @@ namespace Infrastructure.Migrations
                 {
                     b.HasOne("Domain.Entities.User", "User")
                         .WithMany("Bookmarks")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .HasForeignKey("UserId");
 
                     b.HasOne("Domain.Entities.Words.Word", "Word")
                         .WithMany("Bookmarks")
@@ -437,6 +439,8 @@ namespace Infrastructure.Migrations
                     b.Navigation("Bookmarks");
 
                     b.Navigation("RefreshTokens");
+
+                    b.Navigation("ResetPasswordToken");
 
                     b.Navigation("WordProgresses");
                 });

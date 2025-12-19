@@ -23,6 +23,7 @@ namespace Domain.Entities.Users
         [ForeignKey(nameof(WordId))]
         public Word? Word { get; set; }
 
+        [StringLength(20)]
         public string ActivityType { get; set; } = null!; // "Quiz" or "FillBlank"
 
         public long? FillBlankId { get; set; }

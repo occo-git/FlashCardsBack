@@ -31,7 +31,7 @@ namespace Application.Mapping
             return new User
             {
                 UserName = dto.Username,
-                Email = dto.Email,
+                Email = dto.Email.Trim().ToLowerInvariant(),
                 PasswordHash = passwordHash,
                 Level = Levels.A1,
                 Provider = Providers.ProviderLocal,

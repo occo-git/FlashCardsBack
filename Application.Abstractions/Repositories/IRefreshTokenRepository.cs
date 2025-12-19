@@ -11,10 +11,10 @@ namespace Application.Abstractions.Repositories
 {
     public interface IRefreshTokenRepository
     {
-        Task<RefreshToken> AddRefreshTokenAsync(RefreshToken refreshToken, CancellationToken ct);
-        Task<RefreshToken?> GetRefreshTokenAsync(string tokenValue, CancellationToken ct);
-        Task<int> RevokeRefreshTokensAsync(Guid userId, string sessionId, CancellationToken ct);
-        Task<bool> ValidateRefreshTokenAsync(Guid userId, string sessionId, CancellationToken ct);
-        Task<RefreshToken> UpdateRefreshTokenAsync(RefreshToken oldRefreshToken, RefreshToken newRefreshToken, CancellationToken ct);
+        Task<int> AddAsync(RefreshToken refreshToken, CancellationToken ct);
+        Task<RefreshToken?> GetAsync(string tokenValue, CancellationToken ct);
+        Task<int> RevokeAsync(Guid userId, string sessionId, CancellationToken ct);
+        Task<bool> ValidateAsync(Guid userId, string sessionId, CancellationToken ct);
+        Task<RefreshToken> UpdateAsync(RefreshToken oldRefreshToken, RefreshToken newRefreshToken, CancellationToken ct);
     }
 }

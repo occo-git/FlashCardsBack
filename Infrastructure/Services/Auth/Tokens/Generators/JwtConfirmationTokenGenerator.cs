@@ -3,6 +3,7 @@ using Application.DTO.Tokens;
 using Domain.Entities;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Shared.Auth;
 using Shared.Configuration;
 using System;
 using System.Collections.Generic;
@@ -10,9 +11,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Infrastructure.Services.Auth.Tokens
+namespace Infrastructure.Services.Auth.Tokens.Generators
 {
-    public class JwtConfirmationTokenGenerator : JwtTokenGeneratorBase, ITokenGenerator<ConfirmationTokenDto>
+    public class JwtConfirmationTokenGenerator : JwtTokenGeneratorBase, ITokenGenerator<string>
     {
         private readonly int _confirmationTokenExpirationMinutes;
 
@@ -25,13 +26,11 @@ namespace Infrastructure.Services.Auth.Tokens
             _confirmationTokenExpirationMinutes = apiTokenOptions.Value.ConfirmationTokenExpiresMinutes;
         }
 
-        public ConfirmationTokenDto GenerateToken(User user, string clientId, string? sessionId = null)
+        public string GenerateToken(User user, string clientId, string? sessionId = null)
         {
             var expires = DateTime.UtcNow.AddMinutes(_confirmationTokenExpirationMinutes);
             var claims = CreateClaims(user, clientId, expires);
-            var token = GenerateJwtToken(claims, expires);
-
-            return new ConfirmationTokenDto(user.Id, token);
+            return GenerateJwtToken(claims, expires);
         }
 
         public int ExpiresInSeconds { get { return _confirmationTokenExpirationMinutes * 60; } }

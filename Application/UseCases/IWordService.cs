@@ -13,7 +13,7 @@ namespace Application.UseCases
         Task<CardDto?> GetCardById(long wordId, CancellationToken ct);
         IAsyncEnumerable<ThemeDto?> GetThemes(LevelFilterDto filter, CancellationToken ct);
         Task<CardExtendedDto?> GetCardWithNeighbors(CardRequestDto request, Guid userId, CancellationToken ct);      
-        Task ChangeMark(long wordId, Guid userId, CancellationToken ct);
+        Task<bool> ChangeMark(long wordId, Guid userId, CancellationToken ct);
         IAsyncEnumerable<WordDto?> GetWords(CardsPageRequestDto request, Guid userId, CancellationToken ct);  
     }
 }

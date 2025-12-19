@@ -9,7 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Infrastructure.Services.Auth.Tokens
+namespace Infrastructure.Services.Auth.Tokens.Generators
 {
     public class JwtAccessTokenGenerator : JwtTokenGeneratorBase, ITokenGenerator<string>
     {

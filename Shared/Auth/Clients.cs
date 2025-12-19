@@ -15,7 +15,7 @@ namespace Shared.Auth
 
         public static readonly IReadOnlyDictionary<string, string[]> All = new Dictionary<string, string[]>
         {
-            [DefaultClientId] = new string[] { GrantTypes.GrantTypeEmailConfirmation },
+            [DefaultClientId] = new string[] { GrantTypes.GrantTypeEmailConfirmation, GrantTypes.GrantTypePasswordReset },
             [WebAppClientId] = new string[] { GrantTypes.GrantTypePassword, GrantTypes.GrantTypeGoogle, GrantTypes.GrantTypeRefreshToken }
         };
     }

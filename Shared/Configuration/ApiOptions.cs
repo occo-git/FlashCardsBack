@@ -11,8 +11,8 @@ namespace Shared.Configuration
         public string OriginUrl { get; set; } = String.Empty;
         public string LoginUrl { get; set; } = String.Empty;
         public string ConfirmEmailUrlTemplate { get; set; } = String.Empty;
-
         public int ReSendConfirmationTimeoutSeconds { get; set; } = 60;
         public int ReSendConfirmationAttemptsMax { get; set; } = 5;
+        public string NewPasswordUrlTemplate { get; set; } = String.Empty;
     }
 }

@@ -103,24 +103,25 @@ namespace Infrastructure.UseCases
                 total);
         }
 
-        public async Task ChangeMark(long wordId, Guid userId, CancellationToken ct)
+        public async Task<bool> ChangeMark(long wordId, Guid userId, CancellationToken ct)
         {
             _logger.LogInformation("ChangeMark: WordId = {WordId}", wordId);
 
             await using var dbContext = _dbContextFactory.CreateDbContext();
+
+            bool isMarked = false;
             var bookmark = await dbContext.UserBookmarks.FirstOrDefaultAsync(b => b.WordId == wordId && b.UserId == userId, ct);
-            if (bookmark != null)
-            {                
-                dbContext.UserBookmarks.Remove(bookmark);
-                await dbContext.SaveChangesAsync(ct);
-            }
+            if (bookmark != null)       
+                await dbContext.UserBookmarks.Where(b => b.Id == bookmark.Id).ExecuteDeleteAsync(ct);
             else
             {
                 var newBookmark = new UserBookmark() { WordId = wordId, UserId = userId };
                 dbContext.UserBookmarks.Add(newBookmark);
                 await dbContext.SaveChangesAsync(ct);
+                isMarked = true;
             }
             await _wordCacheService.InvalidateBookmarksAsync(userId, ct); // invalidate bookmark cache for user
+            return isMarked;
         }
 
         public async IAsyncEnumerable<WordDto?> GetWords(CardsPageRequestDto request, Guid userId, [EnumeratorCancellation] CancellationToken ct)

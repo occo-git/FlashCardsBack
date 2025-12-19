@@ -12,12 +12,12 @@ namespace Application.Mapping
         public const string ErrorCode = "ErrorCode";
 
         private const string ErrAccountNotActive = "ERR_ACCOUNT_NOT_ACTIVE";
-        private const string ErrConfirmationFailed = "ERR_CONFIRMATION_FAILED";
+        private const string ErrClient = "ERR_CLIENT";
         private const string ErrConfirmationLinkMismatch = "ERR_CONFIRMATION_LINK_MISMATCH";
         private const string ErrConfirmationLinkRateLimit = "ERR_CONFIRMATION_LINK_RATE_LIMIT";
-        private const string ErrConfirmationSendFail = "ERR_CONFIRMATION_SEND_FAIL";
         private const string ErrEmailAlreadyConfirmed = "ERR_EMAIL_ALREADY_CONFIRMED";
         private const string ErrEmailNotConfirmed = "ERR_EMAIL_NOT_CONFIRMED";
+        private const string ErrResetPasswordLinkMismatch = "ERR_RESET_PASSWORD_LINK_MISMATCH";
         private const string ErrTokenInvalidFormat = "ERR_TOKEN_INVALID_FORMAT";
         private const string GenericError = "ERR_ERROR";
 
@@ -25,12 +25,12 @@ namespace Application.Mapping
         {
             null => String.Empty,
             AccountNotActiveException => ErrAccountNotActive,
-            ConfirmationFailedException => ErrConfirmationFailed,
+            AppClientException => ErrClient,
             ConfirmationLinkRateLimitException => ErrConfirmationLinkRateLimit,
             ConfirmationLinkMismatchException => ErrConfirmationLinkMismatch,
-            ConfirmationSendFailException => ErrConfirmationSendFail,
             EmailAlreadyConfirmedException => ErrEmailAlreadyConfirmed,
             EmailNotConfirmedException => ErrEmailNotConfirmed,
+            ResetPasswordLinkMismatchException => ErrResetPasswordLinkMismatch,
             TokenInvalidFormatException => ErrTokenInvalidFormat,
             _ => GenericError
         };

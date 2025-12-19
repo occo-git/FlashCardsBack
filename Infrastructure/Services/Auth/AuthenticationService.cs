@@ -68,8 +68,10 @@ namespace Infrastructure.Services.Auth
             User newUser = UserMapper.ToDomain(registerRequestDto, passwordHash);
 
             var createdUser = await _userService.CreateNewAsync(newUser, ct);
-            await _userEmailService.SendEmailConfirmation(createdUser, ct);
+            var sendLinkDto = await _userService.GenerateEmailConfirmationLinkAsync(createdUser, ct);
             await _userService.AddAsync(createdUser, ct);
+
+            await _userEmailService.SendEmailConfirmationLink(sendLinkDto, ct);
 
             return newUser;
         }
@@ -83,10 +85,9 @@ namespace Infrastructure.Services.Auth
 
             if (user == null || !_passwordHasher.VerifyHashedPassword(user.PasswordHash, loginUserDto.Password!))
                 throw new UnauthorizedAccessException("Incorrect username or password.");
+            
             UserValidator.ValidateActiveUser(user);
-
             var tokens = await GenerateTokens(user, loginUserDto.ClientId, sessionId, ct);
-
             await _userService.UpdateAsync(user, ct);
 
             return tokens;
@@ -107,7 +108,6 @@ namespace Infrastructure.Services.Auth
 
             UserValidator.ValidateActiveUser(user);
             var tokens = await GenerateTokens(user, clientId, sessionId, ct);
-
             await _userService.UpdateAsync(user, ct);
 
             if (isNewUser)
@@ -120,7 +120,7 @@ namespace Infrastructure.Services.Auth
         {
             ArgumentNullException.ThrowIfNullOrEmpty(request.RefreshToken, nameof(request.RefreshToken));
 
-            var oldRefreshToken = await _refreshTokenRepository.GetRefreshTokenAsync(request.RefreshToken, ct);
+            var oldRefreshToken = await _refreshTokenRepository.GetAsync(request.RefreshToken, ct);
             if (oldRefreshToken == null || oldRefreshToken.ExpiresAt < DateTime.UtcNow || oldRefreshToken.Revoked)
                 throw new UnauthorizedAccessException("Invalid or expired refresh token.");
 
@@ -137,7 +137,7 @@ namespace Infrastructure.Services.Auth
 
         public async Task<int> RevokeRefreshTokensAsync(Guid userId, string sessionId, CancellationToken ct)
         {
-            return await _refreshTokenRepository.RevokeRefreshTokensAsync(userId, sessionId, ct);
+            return await _refreshTokenRepository.RevokeAsync(userId, sessionId, ct);
         }
 
         #region Tokens
@@ -149,7 +149,8 @@ namespace Infrastructure.Services.Auth
             var newAccessToken = _accessTokenGenerator.GenerateToken(user, clientId);
             var newRefreshToken = _refreshTokenGenerator.GenerateToken(user, clientId, sessionId);
 
-            await _refreshTokenRepository.AddRefreshTokenAsync(newRefreshToken, ct);
+            ArgumentNullException.ThrowIfNull(newRefreshToken, nameof(newRefreshToken));
+            await _refreshTokenRepository.AddAsync(newRefreshToken, ct);
 
             return new TokenResponseDto(
                 newAccessToken, 
@@ -166,7 +167,9 @@ namespace Infrastructure.Services.Auth
             var newAccessToken = _accessTokenGenerator.GenerateToken(user, clientId);
             var newRefreshToken = _refreshTokenGenerator.GenerateToken(user, clientId, sessionId);
 
-            await _refreshTokenRepository.UpdateRefreshTokenAsync(oldRefreshToken, newRefreshToken, ct);
+
+            ArgumentNullException.ThrowIfNull(newRefreshToken, nameof(newRefreshToken));
+            await _refreshTokenRepository.UpdateAsync(oldRefreshToken, newRefreshToken, ct);
 
             return new TokenResponseDto(
                 newAccessToken, 

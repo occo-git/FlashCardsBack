@@ -2,90 +2,73 @@
 using Application.DTO;
 using Application.DTO.Email;
 using Application.DTO.Email.Letters;
-using Application.DTO.Tokens;
+using Application.DTO.Users.EmailConfirmation;
+using Application.DTO.Users.ResetPassword;
 using Application.Exceptions;
 using Application.UseCases;
 using Domain.Entities;
-using Infrastructure.DataContexts;
-using Infrastructure.Services.Background;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Shared.Auth;
 using Shared.Configuration;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Threading.Tasks;
 
 namespace Infrastructure.UseCases
 {
     public class UserEmailService : IUserEmailService
     {
-        private readonly IDbContextFactory<DataContext> _dbContextFactory;
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly IUserService _userService;
-        private readonly ITokenGenerator<ConfirmationTokenDto> _confirmationTokenGenerator;
+        private readonly IJwtTokenReader _tokenReader;
         private readonly IRazorRenderer _razorRenderer;
         private readonly IEmailSender _emailSender;
         private readonly ApiOptions _apiOptions;
+        private readonly ApiTokenOptions _apiTokenOptions;
         private readonly ILogger<UserService> _logger;
 
         public UserEmailService(
-            IDbContextFactory<DataContext> dbContextFactory,
             IServiceScopeFactory scopeFactory,
             IUserService userService,
-            ITokenGenerator<ConfirmationTokenDto> confirmationTokenGenerator,
+            IJwtTokenReader tokenReader,
             IRazorRenderer razorRenderer,
             IEmailSender emailSender,
             IOptions<ApiOptions> apiOptions,
+            IOptions<ApiTokenOptions> apiTokenOptions,
             ILogger<UserService> logger)
         {
-            ArgumentNullException.ThrowIfNull(dbContextFactory, nameof(dbContextFactory));
             ArgumentNullException.ThrowIfNull(userService, nameof(userService));
             ArgumentNullException.ThrowIfNull(scopeFactory, nameof(scopeFactory));
-            ArgumentNullException.ThrowIfNull(confirmationTokenGenerator, nameof(confirmationTokenGenerator));
+            ArgumentNullException.ThrowIfNull(tokenReader, nameof(tokenReader));
             ArgumentNullException.ThrowIfNull(razorRenderer, nameof(razorRenderer));
             ArgumentNullException.ThrowIfNull(emailSender, nameof(emailSender));
             ArgumentNullException.ThrowIfNull(apiOptions, nameof(apiOptions));
             ArgumentNullException.ThrowIfNull(apiOptions.Value, nameof(apiOptions.Value));
+            ArgumentNullException.ThrowIfNull(apiTokenOptions, nameof(apiTokenOptions));
+            ArgumentNullException.ThrowIfNull(apiTokenOptions.Value, nameof(apiTokenOptions.Value));
             ArgumentNullException.ThrowIfNull(logger, nameof(logger));
 
-            _dbContextFactory = dbContextFactory;
             _userService = userService;
             _scopeFactory = scopeFactory;
-            _confirmationTokenGenerator = confirmationTokenGenerator;
+            _tokenReader = tokenReader;
             _razorRenderer = razorRenderer;
             _emailSender = emailSender;
             _apiOptions = apiOptions.Value;
+            _apiTokenOptions = apiTokenOptions.Value;
             _logger = logger;
-        }
-
-        public async Task<SendEmailConfirmationResponseDto> ReSendEmailConfirmation(string email, CancellationToken ct)
-        {
-            var user = await _userService.GetByEmailAsync(email, ct);
-            if (user == null)
-                throw new KeyNotFoundException("User not found.");
-
-            var send = await SendEmailConfirmation(user, ct);
-            await _userService.UpdateAsync(user, ct);
-
-            return send;
         }
 
         #region Greeting
         public async Task SendGreeting(User user, CancellationToken ct)
         {
             if (!user.Active)
-                throw new AccountNotActiveException("Account is currently inactive. Please contact support.");
+                await SendNotActiveAccount(user, "a login", ct);
 
             ArgumentNullException.ThrowIfNullOrEmpty(user.Email, nameof(user.Email));
             _logger.LogInformation($"UserEmailService.SendEmailConfirmation Email = {user.Email}");
 
             var greetingLetterDto = new GreetingLetterDto(user.UserName, user.Provider, _apiOptions.LoginUrl);
 
-            var confirmEmailHtml = await _razorRenderer.RenderViewToStringAsync(RenderTemplates.Greeting, greetingLetterDto);
-            var emailDto = new SendEmailDto(user.Email, "FlashCards: Welcome!", confirmEmailHtml);
+            var html = await _razorRenderer.RenderViewToStringAsync(RenderTemplates.Greeting, greetingLetterDto);
+            var emailDto = new SendEmailDto(user.Email, "FlashCards: Welcome!", html);
 
             await QueueEmailAsync(emailDto, ct);
             //await _emailSender.SendEmailAsync(emailDto, ct);
@@ -95,6 +78,9 @@ namespace Infrastructure.UseCases
         #region Information
         public async Task SendUsernameChanged(User user, string newUsername, CancellationToken ct)
         {
+            if (!user.Active)
+                await SendNotActiveAccount(user, "a username change", ct);
+
             var informationLetterDto = new InformationLetterDto(
                 "Username Changed",
                 "Username changed!",
@@ -111,6 +97,9 @@ namespace Infrastructure.UseCases
         }
         public async Task SendPasswordChanged(User user, CancellationToken ct)
         {
+            if (!user.Active)
+                await SendNotActiveAccount(user, "a password change", ct);
+
             var informationLetterDto = new InformationLetterDto(
                 "Password Changed",
                 "Password changed!",
@@ -124,16 +113,27 @@ namespace Infrastructure.UseCases
 
             await SendInformation(user, informationLetterDto, ct);
         }
+        private async Task SendNotActiveAccount(User user, string actionName, CancellationToken ct)
+        {
+            var informationLetterDto = new InformationLetterDto(
+                "Account Inactive",
+                "Account Inactive!",
+                new string[]
+                {
+                    $"We noticed {actionName} attempt to your account.",
+                    "However, your account is currently marked as inactive.",
+                    "If this was you, please contact our support team to reactivate your account."
+                },
+                _apiOptions.LoginUrl);
+            await SendInformation(user, informationLetterDto, ct);
+        }
         private async Task SendInformation(User user, InformationLetterDto informationLetterDto, CancellationToken ct)
         {
-            if (!user.Active)
-                throw new AccountNotActiveException("Account is currently inactive. Please contact support.");
-
             ArgumentNullException.ThrowIfNullOrEmpty(user.Email, nameof(user.Email));
             _logger.LogInformation($"UserEmailService.SendEmailConfirmation Email = {user.Email}");
 
-            var confirmEmailHtml = await _razorRenderer.RenderViewToStringAsync(RenderTemplates.Information, informationLetterDto);
-            var emailDto = new SendEmailDto(user.Email, "FlashCards: Information", confirmEmailHtml);
+            var html = await _razorRenderer.RenderViewToStringAsync(RenderTemplates.Information, informationLetterDto);
+            var emailDto = new SendEmailDto(user.Email, "FlashCards: Information", html);
 
             await QueueEmailAsync(emailDto, ct);
             //await _emailSender.SendEmailAsync(emailDto, ct);
@@ -141,161 +141,34 @@ namespace Infrastructure.UseCases
         #endregion
 
         #region Email Confirmation
-        public async Task<SendEmailConfirmationResponseDto> SendEmailConfirmation(User user, CancellationToken ct)
+        public async Task SendEmailConfirmationLink(SendLinkDto sendLinkDto, CancellationToken ct)
         {
-            if (user.EmailConfirmed)
-                return new SendEmailConfirmationResponseDto("Email already confirmed.", true);
+            ArgumentNullException.ThrowIfNullOrEmpty(sendLinkDto.ToEmail, nameof(sendLinkDto.ToEmail));
+            _logger.LogInformation($"UserEmailService.SendEmailConfirmationLink Email = {sendLinkDto.ToEmail}");
 
-            if (!user.Active)
-                throw new AccountNotActiveException("Account is currently inactive. Please contact support.");
-
-            if (user.SecureCodeAttempts >= _apiOptions.ReSendConfirmationAttemptsMax)
-            {
-                user.Active = false;
-                await _userService.UpdateAsync(user, ct);
-                throw new ConfirmationLinkRateLimitException("User deactivated due to too many attempts.");
-            }
-            if (user.SecureCode != null && user.SecureCodeCreatedAt != null)
-            {
-                var delta = DateTime.UtcNow - user.SecureCodeCreatedAt.Value;
-                if (delta.TotalSeconds < _apiOptions.ReSendConfirmationTimeoutSeconds)
-                {
-                    _logger.LogInformation($"UserEmailService.SendEmailConfirmation: delta={delta.TotalSeconds}sec, attempts={user.SecureCodeAttempts}");
-                    var time = TimeSpan.FromSeconds(_apiOptions.ReSendConfirmationTimeoutSeconds) - delta;
-                    if (time > TimeSpan.Zero)
-                    {
-                        var attemptsLeft = _apiOptions.ReSendConfirmationAttemptsMax - user.SecureCodeAttempts;
-                        throw new ConfirmationLinkRateLimitException($"Try again in {FormatTimeSpan(time)}. Attempts left: {attemptsLeft}");
-                    }
-                }
-            }
-
-            ArgumentNullException.ThrowIfNullOrEmpty(user.Email, nameof(user.Email));
-            _logger.LogInformation($"UserEmailService.SendEmailConfirmation Email = {user.Email}");
-
-            var confirmationLink = GenerateEmailConfirmationLink(user, ct);
-            ArgumentNullException.ThrowIfNullOrEmpty(confirmationLink, nameof(confirmationLink));
-
-            var confirmEmailLetterDto = new ConfirmEmailLetterDto(user.UserName, confirmationLink);
-            var confirmEmailHtml = await _razorRenderer.RenderViewToStringAsync(RenderTemplates.ConfirmEmail, confirmEmailLetterDto);
-            var emailDto = new SendEmailDto(user.Email, "FlashCards: Confirm your email, please", confirmEmailHtml);
-            await _emailSender.SendEmailAsync(emailDto, ct);
-
-            return new SendEmailConfirmationResponseDto("Confirmation link has been sent.");
+            var confirmEmailLetterDto = new ConfirmEmailLetterDto(sendLinkDto.ToName, sendLinkDto.Link, _apiTokenOptions.ConfirmationTokenExpiresMinutes);
+            var html = await _razorRenderer.RenderViewToStringAsync(RenderTemplates.ConfirmEmail, confirmEmailLetterDto);
+            var emailDto = new SendEmailDto(sendLinkDto.ToEmail, "FlashCards: Confirm your email, please", html);
+            await QueueEmailAsync(emailDto, ct);
+            //await _emailSender.SendEmailAsync(emailDto, ct);
         }
+        #endregion
 
-        private string GenerateEmailConfirmationLink(User user, CancellationToken ct)
+        #region Reset Password
+        public async Task SendResetPasswordLink(SendLinkDto sendLinkDto, CancellationToken ct)
         {
-            var confirmationToken = _confirmationTokenGenerator.GenerateToken(user, Clients.DefaultClientId);
-            ArgumentNullException.ThrowIfNullOrEmpty(confirmationToken.Token, nameof(confirmationToken.Token));
+            ArgumentNullException.ThrowIfNullOrEmpty(sendLinkDto.ToEmail, nameof(sendLinkDto.ToEmail));
+            _logger.LogInformation($"UserEmailService.SendResetPasswordRequestLink Email = {sendLinkDto.ToEmail}");
 
-            user.SecureCode = confirmationToken.Token;
-            user.SecureCodeCreatedAt = DateTime.UtcNow;
-            user.SecureCodeAttempts += 1;
-
-            return String.Format(_apiOptions.ConfirmEmailUrlTemplate, confirmationToken.Token);
-        }
-
-        public async Task<ConfirmEmailResponseDto> ConfirmEmailAsync(string token, CancellationToken ct)
-        {
-            var userId = GetUserIdWithCheck(token);
-            var user = await _userService.GetByIdAsync(userId, ct);
-            if (user == null)
-                throw new KeyNotFoundException("User not found.");
-
-            if (user.EmailConfirmed)
-                return new ConfirmEmailResponseDto("Email already confirmed.");
-            else if (user.SecureCode != token)
-                throw new ConfirmationLinkMismatchException("Confirmation link is invalid or has expired.");
-            else
-            {
-                if (IsTokenExpired(user.SecureCode))
-                    throw new ConfirmationLinkMismatchException("The link is no longer valid.");
-            }
-
-            user.EmailConfirmed = true;
-            user.SecureCode = null;
-            user.SecureCodeCreatedAt = null;
-            var result = await _userService.UpdateAsync(user, ct);
-
-            if (result > 0)
-                return new ConfirmEmailResponseDto("Thank you! Your email has been successfully confirmed.");
-            else
-                throw new ConfirmationFailedException("Failed to confirm email. Please try again or contact support.");
+            var resetPasswordLetterDto = new ResetPasswordLetterDto(sendLinkDto.ToName, sendLinkDto.Link, _apiTokenOptions.ResetPasswordTokenExpiresMinutes);
+            var html = await _razorRenderer.RenderViewToStringAsync(RenderTemplates.ResetPassword, resetPasswordLetterDto);
+            var emailDto = new SendEmailDto(sendLinkDto.ToEmail, "FlashCards: Reset your password", html);
+            await QueueEmailAsync(emailDto, ct);
+            //await _emailSender.SendEmailAsync(emailDto, ct);
         }
         #endregion
 
         #region Helpers
-        private string FormatTimeSpan(TimeSpan t)
-        {
-            if (t <= TimeSpan.Zero) return "0 sec";
-
-            var minutes = (int)t.TotalMinutes;
-
-            if (minutes == 0) return $"{t.Seconds} sec";
-
-            return $"{minutes} min {t.Seconds:D2} sec";
-        }
-
-        private IEnumerable<Claim> GetClaims(string token)
-        {
-            try
-            {
-                var jwt = new JwtSecurityTokenHandler().ReadJwtToken(token);
-                return jwt.Claims;
-            }
-            catch (Exception)
-            {
-                throw new TokenInvalidFormatException("Invalid or malformed confirmation token.");
-            }
-        }
-
-        private string? GetClientId(IEnumerable<Claim> claims)
-        {
-            return claims.FirstOrDefault(c => c.Type == Clients.ClientIdClaim)?.Value;
-        }
-
-        private Guid GetUserId(IEnumerable<Claim> claims)
-        {
-            string? userIdStr = claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
-
-            if (String.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var userId))
-                throw new TokenInvalidFormatException("Invalid or malformed confirmation token.");
-
-            return userId;
-        }
-        private bool IsTokenExpired(string token)
-        {
-            var expiration = GetExpiration(token);
-            return DateTime.UtcNow > expiration;
-        }
-
-        private DateTime GetExpiration(string token)
-        {
-            var claims = GetClaims(token);
-            string? expirationStr = claims.FirstOrDefault(c => c.Type == ClaimTypes.Expiration)?.Value;
-
-            if (String.IsNullOrEmpty(expirationStr) ||
-                !DateTime.TryParse(expirationStr, null, System.Globalization.DateTimeStyles.RoundtripKind, out var expiration)) // DateTimeStyles.RoundtripKind to parse "o" (ISO 8601)
-                throw new TokenInvalidFormatException("Invalid or malformed confirmation token.");
-
-            return expiration.ToUniversalTime();
-        }
-
-        private Guid GetUserIdWithCheck(string token)
-        {
-            var claims = GetClaims(token);
-            var clientId = GetClientId(claims);
-            ArgumentNullException.ThrowIfNullOrEmpty(clientId, nameof(clientId));
-
-            if (!Clients.All.TryGetValue(clientId, out var allowedGrants))
-                throw new ConfirmationFailedException("Invalid client.");
-            if (!allowedGrants.Contains(GrantTypes.GrantTypeEmailConfirmation))
-                throw new ConfirmationFailedException("Unsupported grant type");
-
-            return GetUserId(claims);
-        }
-
         private async Task QueueEmailAsync(SendEmailDto emailDto, CancellationToken ct)
         {
             using var scope = _scopeFactory.CreateScope();

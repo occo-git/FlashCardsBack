@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20251213183014_DeleteUser")]
-    partial class DeleteUser
+    [Migration("20251219022433_ResetPasswordTokenFieldType")]
+    partial class ResetPasswordTokenFieldType
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -149,6 +149,32 @@ namespace Infrastructure.Migrations
                     b.ToTable("Users");
                 });
 
+            modelBuilder.Entity("Domain.Entities.Users.ResetPasswordToken", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("ResetPasswordTokens");
+                });
+
             modelBuilder.Entity("Domain.Entities.Users.UserBookmark", b =>
                 {
                     b.Property<long>("Id")
@@ -182,7 +208,8 @@ namespace Infrastructure.Migrations
 
                     b.Property<string>("ActivityType")
                         .IsRequired()
-                        .HasColumnType("varchar(20)");
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
 
                     b.Property<int>("CorrectCount")
                         .HasColumnType("integer");
@@ -249,7 +276,7 @@ namespace Infrastructure.Migrations
                     b.Property<string>("PartOfSpeech")
                         .IsRequired()
                         .HasMaxLength(20)
-                        .HasColumnType("varchar(50)");
+                        .HasColumnType("character varying(20)");
 
                     b.Property<string>("Transcription")
                         .IsRequired()
@@ -323,11 +350,23 @@ namespace Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Domain.Entities.Users.ResetPasswordToken", b =>
+                {
+                    b.HasOne("Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Domain.Entities.Users.UserBookmark", b =>
                 {
                     b.HasOne("Domain.Entities.User", "User")
                         .WithMany("Bookmarks")
-                        .HasForeignKey("UserId");
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.HasOne("Domain.Entities.Words.Word", "Word")
                         .WithMany("Bookmarks")

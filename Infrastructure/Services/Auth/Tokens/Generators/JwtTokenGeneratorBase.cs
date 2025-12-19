@@ -10,7 +10,7 @@ using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Infrastructure.Services.Auth.Tokens
+namespace Infrastructure.Services.Auth.Tokens.Generators
 {
     public abstract class JwtTokenGeneratorBase
     {

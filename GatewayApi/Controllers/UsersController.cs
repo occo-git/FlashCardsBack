@@ -1,5 +1,6 @@
 ﻿using Application.DTO.Activity;
 using Application.DTO.Users;
+using Application.DTO.Users.ResetPassword;
 using Application.Exceptions;
 using Application.Extensions;
 using Application.Mapping;
@@ -17,18 +18,18 @@ namespace GatewayApi.Controllers
     public class UsersController : UserControllerBase
     {
         private readonly IUserService _userService;
-        private readonly IUserEmailService _emailService;
+        private readonly IUserEmailService _userEmailService;
 
         public UsersController(
             IUserService userService,
-            IUserEmailService emailService,
+            IUserEmailService userEmailService,
             ILogger<UsersController> logger) : base(logger)
         {
             ArgumentNullException.ThrowIfNull(userService, nameof(userService));
-            ArgumentNullException.ThrowIfNull(emailService, nameof(emailService));
+            ArgumentNullException.ThrowIfNull(userEmailService, nameof(userEmailService));
 
             _userService = userService;
-            _emailService = emailService;
+            _userEmailService = userEmailService;
         }
 
         /// <summary>        
@@ -80,7 +81,7 @@ namespace GatewayApi.Controllers
             });
 
             if (result == null)
-                return NotFound("User not found");
+                return NotFound("User not found.");
             return
                 Ok(result);
         }
@@ -94,7 +95,9 @@ namespace GatewayApi.Controllers
         /// </remarks>
         [HttpPatch("level")]
         [Authorize]
-        public async Task<ActionResult<int>> SetLevel([FromBody] LevelRequestDto request, CancellationToken ct)
+        public async Task<ActionResult<int>> SetLevel(
+            [FromBody] LevelRequestDto request,
+            CancellationToken ct)
         {
             ArgumentNullException.ThrowIfNull(request, nameof(request));
             _logger.LogInformation($"> UsersController.SetLevel {request}");
@@ -131,7 +134,9 @@ namespace GatewayApi.Controllers
         /// </remarks>
         [HttpPost("progress/save")]
         [Authorize]
-        public async Task<ActionResult<int>> SaveProgress([FromBody] ActivityProgressRequestDto request, CancellationToken ct)
+        public async Task<ActionResult<int>> SaveProgress(
+            [FromBody] ActivityProgressRequestDto request,
+            CancellationToken ct)
         {
             ArgumentNullException.ThrowIfNull(request, nameof(request));
             var result = await GetCurrentUserAsync(async userId =>
@@ -143,6 +148,43 @@ namespace GatewayApi.Controllers
             return Ok(result);
         }
 
+        #region Reset Password
+        [HttpPost("password/request")]
+        [EnableRateLimiting(SharedConstants.RateLimitResetPasswordRequestPolicy)]
+        [AllowAnonymous]
+        public async Task<ActionResult<bool>> ResetPasswordRequest(
+            [FromBody] ResetPasswordRequestDto request,
+            CancellationToken ct)
+        {
+            ArgumentNullException.ThrowIfNull(request, nameof(request));
+            _logger.LogInformation($"> UsersController.ResetPasswordRequest: email={request.Email}");
+
+            var user = await _userService.GetByEmailAsync(request.Email, ct);
+            if (user == null)
+                return Ok(true);
+
+            var sendLinkDto = await _userService.GenerateResetPasswordRequestLink(user, ct);
+            await _userEmailService.SendResetPasswordLink(sendLinkDto, ct);
+
+            return Ok(true);
+        }
+
+        [HttpPost("password/reset")]
+        [EnableRateLimiting(SharedConstants.RateLimitResetPasswordPolicy)]
+        [AllowAnonymous]
+        public async Task<ActionResult<bool>> ResetPassword(
+            [FromBody] NewPasswordRequestDto request,
+            CancellationToken ct)
+        {
+            ArgumentNullException.ThrowIfNull(request, nameof(request));
+            _logger.LogInformation($"> UsersController.ResetPassword: email={request.Email}");
+
+            var result = await _userService.NewPasswordAsync(request, ct);
+            return Ok(result);
+        }
+        #endregion
+
+        #region Profile
         [HttpPatch("username")]
         [EnableRateLimiting(SharedConstants.RateLimitUpdateUsernamePolicy)]
         [Authorize]
@@ -157,7 +199,7 @@ namespace GatewayApi.Controllers
                 var user = await _userService.UpdateUsernameAsync(request, userId, ct);
                 if (user != null)
                 {
-                    await _emailService.SendUsernameChanged(user, request.NewUsername, ct);
+                    await _userEmailService.SendUsernameChanged(user, request.NewUsername, ct);
                     return true;
                 }
                 return false;
@@ -182,7 +224,7 @@ namespace GatewayApi.Controllers
                 var user = await _userService.UpdatePasswordAsync(request, userId, ct);
                 if (user != null)
                 {
-                    await _emailService.SendPasswordChanged(user, ct);
+                    await _userEmailService.SendPasswordChanged(user, ct);
                     return true;
                 }
                 return false;
@@ -193,7 +235,9 @@ namespace GatewayApi.Controllers
         [HttpPatch("delete")]
         [EnableRateLimiting(SharedConstants.RateLimitDeleteProfilePolicy)]
         [Authorize]
-        public async Task<ActionResult<int>> DeleteProfile([FromBody] DeleteProfileDto request, CancellationToken ct)
+        public async Task<ActionResult<int>> DeleteProfile(
+            [FromBody] DeleteProfileDto request,
+            CancellationToken ct)
         {
             ArgumentNullException.ThrowIfNull(request, nameof(request));
             var result = await GetCurrentUserAsync(async userId =>
@@ -203,5 +247,6 @@ namespace GatewayApi.Controllers
             });
             return Ok(result);
         }
+        #endregion
     }
 }

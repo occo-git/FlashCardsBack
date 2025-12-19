@@ -6,5 +6,5 @@ using System.Threading.Tasks;
 
 namespace Application.DTO.Email.Letters
 {
-    public record ConfirmEmailLetterDto(string UserName, string ConfirmationLink, int ExpiresInMinutes);
+    public record ResetPasswordLetterDto(string UserName, string ResetPasswordLink, int ExpiresInMinutes);
 }

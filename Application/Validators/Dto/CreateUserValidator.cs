@@ -12,11 +12,11 @@ namespace Application.Validators.Dto
     {
         public CreateUserValidator()
         {
-            // Name not empty - 8...100 length
+            // Username not empty - 8...100 length
             RuleFor(request => request.Username)
                 .NotEmpty().WithMessage("The user Name cannot be empty.")
                 .Length(8, 100).WithMessage("The user Name should have a length of 8-100.")
-                .Matches(@"^[a-zA-Z0-9_-]+$").WithMessage("Latin letters, digits, _, - only");
+                .Matches(@"^[a-zA-Z0-9._ % +-@]+$").WithMessage("Only Latin letters, digits, _ - . % + @ allowed");
 
             // Email not empty
             RuleFor(request => request.Email)

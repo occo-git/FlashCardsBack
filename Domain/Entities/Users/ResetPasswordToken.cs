@@ -6,9 +6,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Domain.Entities.Auth
+namespace Domain.Entities.Users
 {
-    public record RefreshToken
+    public class ResetPasswordToken
     {
         [Key]
         public Guid Id { get; set; }
@@ -22,23 +22,15 @@ namespace Domain.Entities.Auth
         [ForeignKey(nameof(UserId))]
         public User? User { get; set; }
 
-        [Required]
-        public string SessionId { get; set; }
-
-        public DateTime ExpiresAt { get; set; }
-
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        public bool Revoked { get; set; }
+        public int Attempts { get; set; } = 1;
 
-        public RefreshToken(Guid userId, string token, DateTime expiresAt, string sessionId)
+        public ResetPasswordToken(Guid userId, string token)
         {
             Id = Guid.NewGuid();
             Token = token;
             UserId = userId;
-            SessionId = sessionId;
-            ExpiresAt = expiresAt;
-            Revoked = false;
         }
     }
 }

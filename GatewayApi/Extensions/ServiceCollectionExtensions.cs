@@ -4,11 +4,12 @@ using Application.DTO.Tokens;
 using Application.Security;
 using Application.UseCases;
 using Domain.Entities.Auth;
+using Domain.Entities.Users;
 using Infrastructure.DataContexts;
 using Infrastructure.Repositories;
 using Infrastructure.Security;
 using Infrastructure.Services.Auth;
-using Infrastructure.Services.Auth.Tokens;
+using Infrastructure.Services.Auth.Tokens.Generators;
 using Infrastructure.Services.Background;
 using Infrastructure.Services.EmailSender;
 using Infrastructure.Services.FileStorage;
@@ -56,10 +57,14 @@ namespace GatewayApi.Extensions
             services.AddSingleton<IFileStorageService, FileStorageService>();
             services.AddScoped<IDatabaseMigrationService, DatabaseMigrationService>();
 
-            services.AddScoped<ITokenGenerator<ConfirmationTokenDto>, JwtConfirmationTokenGenerator>();
+            services.AddScoped<ITokenGenerator<string>, JwtConfirmationTokenGenerator>();
+            services.AddScoped<ITokenGenerator<string>, JwtResetPasswordTokenGenerator>();
             services.AddScoped<ITokenGenerator<string>, JwtAccessTokenGenerator>();
             services.AddScoped<ITokenGenerator<RefreshToken>, JwtRefreshTokenGenerator>();
+
+            services.AddScoped<IResetPasswordTokenRepository, ResetPasswordTokenRepository>();
             services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+            services.AddScoped<IJwtTokenReader, JwtTokenReader>();
 
             services.AddScoped<IUserPasswordHasher, BCryptPasswordHasher>();
             services.AddScoped<IUserService, UserService>();

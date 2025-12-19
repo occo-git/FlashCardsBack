@@ -52,7 +52,7 @@ namespace GatewayApi.Auth
 
             var ct = context.HttpContext.RequestAborted;
             //Console.WriteLine($">>> JwtEvents.TokenValidated: request.Path = {context.Request.Path}");
-            bool isValid = await _refreshTokenRepository.ValidateRefreshTokenAsync(userId, sessionId, ct);
+            bool isValid = await _refreshTokenRepository.ValidateAsync(userId, sessionId, ct);
             if (!isValid)
             {
                 context.Fail("Invalid session.");

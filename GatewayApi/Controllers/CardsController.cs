@@ -66,15 +66,15 @@ namespace GatewayApi.Controllers
         /// </summary>
         [HttpPost("change-mark")]
         [Authorize]
-        public async Task<IActionResult> ChangeMark([FromBody] WordRequestDto request, CancellationToken ct)
+        public async Task<ActionResult<bool>> ChangeMark([FromBody] WordRequestDto request, CancellationToken ct)
         {
             ArgumentNullException.ThrowIfNull(request, nameof(request));
             _logger.LogInformation($"ChangeMark {request}");
 
-            await GetCurrentUser(async userId => 
+            var result = await GetCurrentUser(async userId => 
                 await _wordService.ChangeMark(request.WordId, userId, ct));
 
-            return Ok();
+            return Ok(result);
         }
 
         /// <summary>

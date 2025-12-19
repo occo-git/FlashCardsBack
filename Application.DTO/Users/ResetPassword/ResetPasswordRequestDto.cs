@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Application.DTO.Tokens
+namespace Application.DTO.Users.ResetPassword
 {
-    public record ConfirmationTokenDto(Guid UserId, string Token);
+    public record ResetPasswordRequestDto(string Email);
 }

@@ -6,5 +6,5 @@ using System.Threading.Tasks;
 
 namespace Application.DTO.Email
 {
-    public record ConfirmEmailResponseDto(string? Message);
+    public record SendLinkDto(string ToEmail, string ToName, string Link);
 }

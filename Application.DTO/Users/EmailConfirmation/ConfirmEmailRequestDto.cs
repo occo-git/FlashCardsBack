@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Application.DTO.Email
+namespace Application.DTO.Users.EmailConfirmation
 {
-    public record SendEmailConfirmationRequestDto(string Email);
+    public record ConfirmEmailRequestDto(string Token);
 }

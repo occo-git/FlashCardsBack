@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 
 namespace Application.Exceptions
 {
-    public class ConfirmationSendFailException : Exception
+    public class ResetPasswordLinkMismatchException : Exception
     {
-        public ConfirmationSendFailException(string message) : base(message) { }
+        public ResetPasswordLinkMismatchException(string message) : base(message) { }
     }
 }

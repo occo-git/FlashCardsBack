@@ -10,7 +10,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Infrastructure.Services.Auth.Tokens
+namespace Infrastructure.Services.Auth.Tokens.Generators
 {
     public class JwtRefreshTokenGenerator : JwtTokenGeneratorBase, ITokenGenerator<RefreshToken>
     {
@@ -33,7 +33,7 @@ namespace Infrastructure.Services.Auth.Tokens
             var claims = CreateClaims(user, clientId, expires);
             var token = GenerateJwtToken(claims, expires);
 
-            return new RefreshToken(token, user.Id, expires, sessionId);
+            return new RefreshToken(user.Id, token, expires, sessionId);
         }
 
         public int ExpiresInSeconds { get { return _refreshTokenExpirationDays * 86400; } }

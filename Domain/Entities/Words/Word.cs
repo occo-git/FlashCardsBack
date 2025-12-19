@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -13,6 +14,7 @@ namespace Domain.Entities.Words
         public long Id { get; set; }
         [StringLength(30)]
         public string WordText { get; set; } = null!;
+
         [StringLength(20)]
         public string PartOfSpeech { get; set; } = null!; // e.g., noun, verb, adjective 
         [StringLength(30)]

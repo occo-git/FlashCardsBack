@@ -54,6 +54,8 @@ namespace GatewayApi.Extensions
                     options.AddFixedWindowLimiter(SharedConstants.RateLimitUpdateUsernamePolicy, o => o.SetOptions(rlo.UpdateUsernamePermitLimit, TimeSpan.FromHours(1))); // 5 / 1 hour
                     options.AddFixedWindowLimiter(SharedConstants.RateLimitUpdatePasswordPolicy, o => o.SetOptions(rlo.UpdatePasswordPermitLimit, TimeSpan.FromHours(1))); // 3 / 1 hour
                     options.AddFixedWindowLimiter(SharedConstants.RateLimitDeleteProfilePolicy, o => o.SetOptions(rlo.DeleteProfilePermitLimit, TimeSpan.FromHours(24))); // 1 / 24 hours
+                    options.AddFixedWindowLimiter(SharedConstants.RateLimitResetPasswordRequestPolicy, o => o.SetOptions(rlo.ResetPasswordRequestPermitLimit, TimeSpan.FromHours(1))); // 10 / 1 hours
+                    options.AddFixedWindowLimiter(SharedConstants.RateLimitResetPasswordPolicy, o => o.SetOptions(rlo.ResetPasswordPermitLimit, TimeSpan.FromHours(1))); // 20 / 1 hours
                 });
             }
         }

@@ -34,9 +34,9 @@ namespace Domain.Entities
         public DateTime? SecureCodeCreatedAt { get; set; }
         public int SecureCodeAttempts { get; set; }
         public bool EmailConfirmed { get; set; }
+        
         public bool Active { get; set; }
         public string Provider { get; set; } = null!;
-
         public bool IsDeleted { get; set; } = false;
         public DateTime? DeletedAt { get; set; }
 
